@@ -86,7 +86,18 @@ function AuthProvider({ children }) {
       toast.success(`Welcome back, ${userData.name}!`);
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Login failed');
+      console.error('Login error:', error);
+      let errorMessage = 'Login failed';
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        } else if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map(err => err.msg || err).join(', ');
+        } else {
+          errorMessage = 'Invalid login credentials';
+        }
+      }
+      toast.error(errorMessage);
       return false;
     }
   };
