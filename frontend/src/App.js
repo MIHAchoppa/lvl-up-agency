@@ -113,7 +113,18 @@ function AuthProvider({ children }) {
       toast.success(`Welcome to Level Up, ${newUser.name}!`);
       return true;
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Registration failed');
+      console.error('Registration error:', error);
+      let errorMessage = 'Registration failed';
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        } else if (Array.isArray(error.response.data.detail)) {
+          errorMessage = error.response.data.detail.map(err => err.msg || err).join(', ');
+        } else {
+          errorMessage = 'Registration failed - please check your details';
+        }
+      }
+      toast.error(errorMessage);
       return false;
     }
   };
