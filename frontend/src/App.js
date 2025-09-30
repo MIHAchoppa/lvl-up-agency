@@ -534,7 +534,7 @@ function LandingPage({ onGetStarted, user }) {
             onClick={() => window.open('https://wa.me/12892005372', '_blank')}
             variant="outline" 
             size="lg"
-            className="border-green-500 text-green-600 hover:bg-green-50 text-lg px-8 py-6"
+            className="border-green-500 text-green-400 hover:bg-green-900/20 text-lg px-8 py-6"
           >
             <Phone className="w-5 h-5 mr-2" />
             WhatsApp: 289-200-5372
