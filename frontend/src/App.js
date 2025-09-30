@@ -1920,6 +1920,7 @@ function Dashboard() {
     switch (currentPage) {
       case 'home': return <HomePage />;
       case 'recruitment': return <InfluencerRecruitment />;
+      case 'quota-tracker': return <QuotaTrackerPage />;
       // ... other cases would be here
       default: return <HomePage />;
     }
