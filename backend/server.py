@@ -1115,6 +1115,41 @@ async def list_attendees(event_id: str, current_user: User = Depends(get_current
             if u:
                 users_map[uid] = {"id": u["id"], "name": u.get("name"), "bigo_id": u.get("bigo_id")}
     attendees = [{"user": users_map.get(r["user_id"]) , "status": r.get("status")} for r in rsvps if r["user_id"] in users_map]
+
+# Group chat (Agency Lounge) and DMs
+DEFAULT_AGENCY_CHANNEL_NAME = "agency-lounge"
+
+@api_router.post("/chat/channels/init-default")
+async def init_default_channel(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    existing = await db.channels.find_one({"name": DEFAULT_AGENCY_CHANNEL_NAME})
+    if not existing:
+        ch = Channel(name=DEFAULT_AGENCY_CHANNEL_NAME, description="Agency-wide chat", visibility="private")
+        await db.channels.insert_one(ch.dict())
+        return {"message": "Default channel created", "channel": ch}
+    return {"message": "Already exists"}
+
+@api_router.get("/chat/channels")
+async def list_channels(current_user: User = Depends(get_current_user)):
+    # Only return private default channel id; guests excluded because they cannot auth
+    chans = await db.channels.find({"visibility": {"$in": ["public", "private"]}}).to_list(100)
+    return [Channel(**c) for c in chans]
+
+@api_router.post("/chat/channels/{channel_id}/messages")
+async def post_channel_message(channel_id: str, body: dict, current_user: User = Depends(get_current_user)):
+    # Ensure channel exists
+    ch = await db.channels.find_one({"id": channel_id})
+    if not ch:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    # prevent guests - but guests cannot auth, so safe
+    msg = Message(channel_id=channel_id, user_id=current_user.id, body=body.get("body", ""))
+    await db.messages.insert_one(msg.dict())
+    return msg
+
+@api_router.get("/chat/channels/{channel_id}/messages")
+async def list_channel_messages(channel_id: str, current_user: User = Depends(get_current_user)):
+    msgs = await db.messages.find({"channel_id": channel_id}).sort("created_at", 1).to_list(1000)
+    return [Message(**m) for m in msgs]
+
     return attendees
 
             email_content = await create_outreach_email(lead)
