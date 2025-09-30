@@ -563,7 +563,7 @@ function LandingPage({ onGetStarted, user }) {
 
       {/* Recruitment Flyers Section */}
       <section className="container mx-auto px-4 py-20">
-        <h2 className="text-4xl font-serif font-bold text-center mb-16 text-gray-900">
+        <h2 className="text-4xl font-serif font-bold text-center mb-16 text-gray-100">
           Join Our Elite Network of Successful Hosts
         </h2>
         
@@ -633,7 +633,7 @@ function LandingPage({ onGetStarted, user }) {
       {/* Features Section */}
       <section className="bg-gray-50 py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-serif font-bold text-center mb-16 text-gray-900">
+          <h2 className="text-4xl font-serif font-bold text-center mb-16 text-gray-100">
             Why Choose LVLUP AGENCY?
           </h2>
           
