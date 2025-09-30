@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, Query, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import StreamingResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -7,13 +8,21 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, AsyncGenerator
 import uuid
 from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 import jwt
 from enum import Enum
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+import asyncio
+import json
+import aiofiles
+import openpyxl
+from groq import AsyncGroq
+import re
+import smtplib
+from email.mime.text import MimeText
+from email.mime.multipart import MimeMultipart
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -25,9 +34,9 @@ db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
 app = FastAPI(
-    title="Level Up Agency - BIGO Live Host Management Platform",
-    description="The Ultimate BIGO Live Host Success Platform - Tasks, Rewards, AI Coaching & More!",
-    version="1.0.0"
+    title="Level Up Agency - Ultimate BIGO Live Host Recruitment & Management Platform",
+    description="The Most Advanced BIGO Live Host Success Platform with AI Agents, Voice Coaching & Automated Recruitment!",
+    version="2.0.0"
 )
 
 # Create a router with the /api prefix
@@ -39,8 +48,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.environ.get("JWT_SECRET", "levelup-bigo-hosts-secret-2025")
 ALGORITHM = "HS256"
 
-# AI Chat Setup
-EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY")
+# Groq AI Setup
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+groq_client = AsyncGroq(api_key=GROQ_API_KEY)
 
 # Enums
 class UserRole(str, Enum):
@@ -73,6 +83,13 @@ class MessageStatus(str, Enum):
     READ = "read"
     ARCHIVED = "archived"
 
+class InfluencerStatus(str, Enum):
+    FOUND = "found"
+    CONTACTED = "contacted"
+    RESPONDED = "responded"
+    RECRUITED = "recruited"
+    REJECTED = "rejected"
+
 # Models
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -92,7 +109,7 @@ class User(BaseModel):
 class UserCreate(BaseModel):
     bigo_id: str
     password: str
-    email: Optional[EmailStr] = None
+    email: EmailStr  # Now required
     name: str
     timezone: str = "UTC"
     passcode: Optional[str] = None
@@ -100,6 +117,37 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     bigo_id: str
     password: str
+
+class AdminAction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    admin_id: str
+    action_type: str  # create_event, update_category, manage_user, etc.
+    action_data: Dict[str, Any]
+    executed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    success: bool = True
+    error_message: Optional[str] = None
+
+class VoiceRequest(BaseModel):
+    text: str
+    voice_type: str = "admin"  # admin, strategy_coach
+    user_id: Optional[str] = None
+
+class InfluencerLead(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    platform: str  # instagram, tiktok, youtube, etc.
+    username: str
+    follower_count: Optional[int] = None
+    engagement_rate: Optional[float] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    bio: Optional[str] = None
+    profile_url: str
+    status: InfluencerStatus = InfluencerStatus.FOUND
+    contact_attempts: int = 0
+    last_contacted: Optional[datetime] = None
+    notes: Optional[str] = None
+    discovered_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Task(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -113,6 +161,7 @@ class Task(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
     youtube_video: Optional[str] = None
+    category: str = "general"
 
 class TaskSubmission(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -124,6 +173,25 @@ class TaskSubmission(BaseModel):
     reviewed_by: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     submitted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Event(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    description: str
+    event_type: EventType
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    timezone_display: str = "PST"
+    creator_id: str
+    creator_bigo_id: str
+    flyer_url: Optional[str] = None
+    bigo_live_link: Optional[str] = None
+    signup_form_link: Optional[str] = None
+    location: Optional[str] = None
+    max_participants: Optional[int] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    active: bool = True
+    category: str = "general"
 
 class Quiz(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -159,6 +227,7 @@ class Reward(BaseModel):
     fulfillment_type: str = "manual"
     terms: str
     active: bool = True
+    category: str = "general"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class Redemption(BaseModel):
@@ -190,24 +259,6 @@ class Announcement(BaseModel):
     created_by: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-class Event(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    title: str
-    description: str
-    event_type: EventType
-    start_time: datetime
-    end_time: Optional[datetime] = None
-    timezone_display: str = "PST"
-    creator_id: str
-    creator_bigo_id: str
-    flyer_url: Optional[str] = None
-    bigo_live_link: Optional[str] = None
-    signup_form_link: Optional[str] = None
-    location: Optional[str] = None
-    max_participants: Optional[int] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    active: bool = True
-
 class PrivateMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     sender_id: str
@@ -222,17 +273,52 @@ class AIChat(BaseModel):
     user_id: str
     message: str
     ai_response: str
-    chat_type: str = "general"  # general, content_ideas, flyer, math, quota
+    chat_type: str = "general"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class QuotaTarget(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
-    target_type: str  # weekly, monthly
+    target_type: str
     target_amount: float
     current_progress: float = 0.0
     bonus_rate: float = 0.0
     cash_out_threshold: float = 0.0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    active: bool = True
+
+class Resource(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    category: str
+    type: str
+    content_url: Optional[str] = None
+    content_text: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    active: bool = True
+
+class Channel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = None
+    visibility: str = "public"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Message(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    channel_id: str
+    user_id: str
+    body: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    flagged: bool = False
+
+class ProfilePost(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    title: str
+    content: str
+    image_url: Optional[str] = None
+    post_type: str = "update"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
 
@@ -274,29 +360,194 @@ def require_role(required_roles: List[UserRole]):
         return current_user
     return role_checker
 
-# AI Helper
-async def get_ai_response(user_message: str, chat_type: str = "general"):
+# Groq AI Helper - Strategy Coach for BIGO Live
+async def get_groq_response(user_message: str, chat_type: str = "strategy_coach"):
     try:
         system_messages = {
-            "general": "You are a BIGO Live expert AI assistant. You help BIGO hosts maximize their success, earnings, and audience engagement. Provide actionable advice with enthusiasm and positivity.",
-            "content_ideas": "You are a content creation specialist for BIGO Live hosts. Generate creative, engaging content ideas that will attract viewers and increase gifts. Focus on trending topics, interactive formats, and audience engagement strategies.",
-            "flyer": "You are a marketing expert creating promotional flyers for BIGO Live events. Provide compelling copy, suggest visual elements, and create attention-grabbing headlines that drive participation.",
-            "math": "You are a financial calculator for BIGO hosts. Help calculate earnings, conversion rates, gift values, and commission structures. Explain complex calculations in simple terms.",
-            "quota": "You are a performance coach for BIGO Live hosts. Help them understand quotas, set realistic goals, track progress, and develop strategies to meet targets for maximum earnings."
+            "strategy_coach": """You are the ULTIMATE BIGO Live strategy coach and mentor. You help BIGO hosts dominate the platform, maximize earnings, win PK battles, and build massive audiences. 
+
+Your expertise includes:
+- PK battle psychology and winning strategies
+- Gift maximization techniques and viewer psychology  
+- Audience building and retention tactics
+- Content creation that drives engagement and gifts
+- Streaming optimization for maximum earnings
+- BIGO Live algorithm understanding
+- Host psychology and confidence building
+
+Always provide actionable, specific advice with enthusiasm. Use examples, numbers, and proven strategies. Make hosts feel empowered to dominate BIGO Live!""",
+            
+            "admin_assistant": """You are an advanced admin assistant for Level Up Agency. You help with:
+- Platform management and optimization
+- User analytics and insights
+- Event planning and execution  
+- Recruitment strategies for new hosts
+- Performance tracking and reporting
+- System administration tasks
+
+Provide clear, actionable advice for platform growth and management.""",
+            
+            "recruitment_agent": """You are a BIGO Live host recruitment specialist. You identify potential influencers who could succeed as BIGO Live hosts and create compelling outreach strategies. Focus on conversion tactics and relationship building."""
         }
         
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"levelup_{chat_type}_{datetime.now().timestamp()}",
-            system_message=system_messages.get(chat_type, system_messages["general"])
-        ).with_model("openai", "gpt-4o")
+        response = await groq_client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[
+                {"role": "system", "content": system_messages.get(chat_type, system_messages["strategy_coach"])},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.8,
+            max_tokens=2048,
+            top_p=1,
+            stream=False
+        )
         
-        user_msg = UserMessage(text=user_message)
-        response = await chat.send_message(user_msg)
-        
-        return response
+        return response.choices[0].message.content
     except Exception as e:
-        return f"I'm sorry, I'm experiencing technical difficulties. Please try again later. Error: {str(e)}"
+        return f"Strategy Coach temporarily unavailable. Error: {str(e)}"
+
+# Advanced Admin Agent
+async def execute_admin_action(action_type: str, action_data: Dict[str, Any], admin_id: str):
+    try:
+        if action_type == "create_event":
+            event = Event(**action_data, creator_id=admin_id, creator_bigo_id="ADMIN")
+            await db.events.insert_one(event.dict())
+            return {"success": True, "message": f"Event '{event.title}' created successfully", "data": event}
+            
+        elif action_type == "update_categories":
+            category_updates = action_data.get("updates", [])
+            updated_count = 0
+            
+            for update in category_updates:
+                collection = update.get("collection")
+                old_category = update.get("old_category") 
+                new_category = update.get("new_category")
+                
+                if collection and old_category and new_category:
+                    result = await db[collection].update_many(
+                        {"category": old_category},
+                        {"$set": {"category": new_category}}
+                    )
+                    updated_count += result.modified_count
+            
+            return {"success": True, "message": f"Updated {updated_count} items across categories"}
+            
+        elif action_type == "bulk_user_management":
+            user_actions = action_data.get("actions", [])
+            processed = 0
+            
+            for user_action in user_actions:
+                user_id = user_action.get("user_id")
+                action = user_action.get("action")  # promote, demote, suspend, activate
+                
+                if user_id and action:
+                    if action == "promote":
+                        await db.users.update_one({"id": user_id}, {"$set": {"role": "coach"}})
+                    elif action == "suspend":
+                        await db.users.update_one({"id": user_id}, {"$set": {"status": "suspended"}})
+                    elif action == "activate":
+                        await db.users.update_one({"id": user_id}, {"$set": {"status": "active"}})
+                    processed += 1
+            
+            return {"success": True, "message": f"Processed {processed} user management actions"}
+            
+        elif action_type == "system_announcement":
+            announcement = Announcement(**action_data, created_by=admin_id)
+            await db.announcements.insert_one(announcement.dict())
+            return {"success": True, "message": "System announcement created", "data": announcement}
+            
+        else:
+            return {"success": False, "message": f"Unknown action type: {action_type}"}
+            
+    except Exception as e:
+        return {"success": False, "message": f"Action failed: {str(e)}"}
+
+# Influencer Search and Auto-Outreach System
+async def search_influencers(platform: str, keywords: List[str], min_followers: int = 1000):
+    try:
+        # Use Groq's browser search to find influencers
+        search_query = f"Find {platform} influencers with keywords: {', '.join(keywords)} minimum {min_followers} followers contact information email"
+        
+        response = await groq_client.chat.completions.create(
+            model="openai/gpt-oss-20b", 
+            messages=[
+                {"role": "system", "content": "You are an expert at finding social media influencers with public contact information. Extract names, usernames, follower counts, emails, and profile URLs."},
+                {"role": "user", "content": search_query}
+            ],
+            temperature=0.3,
+            max_tokens=2048,
+            tools=[{"type": "browser_search"}],
+            tool_choice="required"
+        )
+        
+        # Parse the response to extract influencer data
+        content = response.choices[0].message.content
+        
+        # Extract structured data (simplified - would need more robust parsing)
+        influencers = []
+        lines = content.split('\n')
+        
+        current_influencer = {}
+        for line in lines:
+            line = line.strip()
+            if '@' in line and 'http' in line:
+                # Found a profile, process current influencer if exists
+                if current_influencer.get('name'):
+                    influencers.append(current_influencer)
+                current_influencer = {"platform": platform}
+                
+            # Extract email if found  
+            email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', line)
+            if email_match:
+                current_influencer['email'] = email_match.group()
+                
+        return influencers
+        
+    except Exception as e:
+        print(f"Influencer search error: {str(e)}")
+        return []
+
+async def create_outreach_email(influencer_data: Dict[str, Any]) -> str:
+    try:
+        prompt = f"""Create a compelling recruitment email for a {influencer_data.get('platform')} influencer named {influencer_data.get('name')} with {influencer_data.get('follower_count', 'many')} followers.
+
+The email should:
+- Be personalized and engaging
+- Introduce Level Up Agency as the #1 BIGO Live host success platform
+- Highlight earning potential on BIGO Live (mention 5x earnings potential)
+- Include our AI coaching and support system
+- Create urgency with limited spots available
+- Include a clear call-to-action to join
+
+Keep it under 200 words and professional but exciting."""
+
+        response = await groq_client.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[
+                {"role": "system", "content": "You are an expert email copywriter specializing in influencer recruitment for BIGO Live hosting."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1024
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        return f"Error creating email: {str(e)}"
+
+# Voice TTS/STT Integration (placeholder for Groq's upcoming TTS)
+async def generate_voice_response(text: str, voice_type: str = "strategy_coach"):
+    try:
+        # For now, return the text - would integrate with Groq TTS when available
+        return {
+            "audio_url": None,  # Would contain generated audio URL
+            "text": text,
+            "voice_type": voice_type,
+            "duration_seconds": len(text) * 0.1  # Estimated
+        }
+    except Exception as e:
+        return {"error": f"Voice generation failed: {str(e)}"}
 
 # Auth Routes
 @api_router.post("/auth/register")
@@ -304,6 +555,10 @@ async def register(user_data: UserCreate):
     existing_user = await db.users.find_one({"bigo_id": user_data.bigo_id})
     if existing_user:
         raise HTTPException(status_code=400, detail="BIGO ID already registered")
+    
+    existing_email = await db.users.find_one({"email": user_data.email})
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already registered")
     
     MEMBER_PASSCODE = "LEVELUP2025"
     discord_access = user_data.passcode == MEMBER_PASSCODE if user_data.passcode else False
@@ -344,6 +599,192 @@ async def login(login_data: UserLogin):
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+# Enhanced AI Routes with Groq
+@api_router.post("/ai/chat")
+async def ai_chat(chat_data: dict, current_user: User = Depends(get_current_user)):
+    message = chat_data.get("message", "")
+    chat_type = chat_data.get("chat_type", "strategy_coach")
+    
+    ai_response = await get_groq_response(message, chat_type)
+    
+    chat_record = AIChat(
+        user_id=current_user.id,
+        message=message,
+        ai_response=ai_response,
+        chat_type=chat_type
+    )
+    
+    await db.ai_chats.insert_one(chat_record.dict())
+    
+    return {"response": ai_response, "chat_type": chat_type}
+
+@api_router.get("/ai/chat/history")
+async def get_ai_chat_history(current_user: User = Depends(get_current_user)):
+    chats = await db.ai_chats.find({"user_id": current_user.id}).sort("created_at", -1).limit(50).to_list(50)
+    return [AIChat(**chat) for chat in chats]
+
+# Voice Assistant Routes
+@api_router.post("/voice/generate")
+async def generate_voice(voice_request: VoiceRequest, current_user: User = Depends(get_current_user)):
+    # Get AI response first
+    ai_response = await get_groq_response(voice_request.text, voice_request.voice_type)
+    
+    # Generate voice response
+    voice_result = await generate_voice_response(ai_response, voice_request.voice_type)
+    
+    return {
+        "text_response": ai_response,
+        "voice_response": voice_result,
+        "voice_type": voice_request.voice_type
+    }
+
+# Advanced Admin Routes
+@api_router.post("/admin/execute")
+async def execute_admin_command(action_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    action_type = action_data.get("action_type")
+    action_params = action_data.get("params", {})
+    
+    result = await execute_admin_action(action_type, action_params, current_user.id)
+    
+    # Log admin action
+    admin_action = AdminAction(
+        admin_id=current_user.id,
+        action_type=action_type,
+        action_data=action_params,
+        success=result.get("success", False),
+        error_message=result.get("message") if not result.get("success") else None
+    )
+    
+    await db.admin_actions.insert_one(admin_action.dict())
+    
+    return result
+
+@api_router.get("/admin/actions/history")
+async def get_admin_actions(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    actions = await db.admin_actions.find({}).sort("executed_at", -1).limit(100).to_list(100)
+    return [AdminAction(**action) for action in actions]
+
+# Influencer Recruitment Routes
+@api_router.post("/recruitment/search")
+async def search_potential_hosts(search_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    platform = search_data.get("platform", "instagram")
+    keywords = search_data.get("keywords", ["lifestyle", "entertainment", "streaming"])
+    min_followers = search_data.get("min_followers", 5000)
+    
+    influencers = await search_influencers(platform, keywords, min_followers)
+    
+    # Save found influencers to database
+    saved_count = 0
+    for inf_data in influencers:
+        try:
+            influencer = InfluencerLead(
+                name=inf_data.get("name", "Unknown"),
+                platform=platform,
+                username=inf_data.get("username", ""),
+                follower_count=inf_data.get("followers"),
+                email=inf_data.get("email"),
+                phone=inf_data.get("phone"),
+                profile_url=inf_data.get("profile_url", ""),
+                bio=inf_data.get("bio", "")
+            )
+            
+            await db.influencer_leads.insert_one(influencer.dict())
+            saved_count += 1
+        except:
+            continue
+    
+    return {
+        "found_count": len(influencers),
+        "saved_count": saved_count,
+        "influencers": influencers[:10]  # Return first 10 for preview
+    }
+
+@api_router.get("/recruitment/leads")
+async def get_influencer_leads(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    leads = await db.influencer_leads.find({}).sort("discovered_at", -1).to_list(1000)
+    return [InfluencerLead(**lead) for lead in leads]
+
+@api_router.post("/recruitment/outreach")
+async def send_outreach_emails(outreach_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    lead_ids = outreach_data.get("lead_ids", [])
+    custom_message = outreach_data.get("custom_message", "")
+    
+    contacted_count = 0
+    failed_count = 0
+    
+    for lead_id in lead_ids:
+        try:
+            lead = await db.influencer_leads.find_one({"id": lead_id})
+            if not lead or not lead.get("email"):
+                failed_count += 1
+                continue
+            
+            # Generate personalized email
+            email_content = await create_outreach_email(lead)
+            if custom_message:
+                email_content = f"{custom_message}\n\n{email_content}"
+            
+            # Here you would send the actual email
+            # For now, just update the lead status
+            await db.influencer_leads.update_one(
+                {"id": lead_id},
+                {
+                    "$set": {
+                        "status": "contacted",
+                        "last_contacted": datetime.now(timezone.utc),
+                        "contact_attempts": lead.get("contact_attempts", 0) + 1
+                    }
+                }
+            )
+            
+            contacted_count += 1
+            
+        except Exception as e:
+            failed_count += 1
+            continue
+    
+    return {
+        "contacted_count": contacted_count,
+        "failed_count": failed_count,
+        "message": f"Outreach completed: {contacted_count} emails sent, {failed_count} failed"
+    }
+
+@api_router.get("/recruitment/export")
+async def export_leads_spreadsheet(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    leads = await db.influencer_leads.find({}).to_list(1000)
+    
+    # Create Excel workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "BIGO Influencer Leads"
+    
+    # Headers
+    headers = ["Name", "Platform", "Username", "Followers", "Email", "Phone", "Status", "Contact Attempts", "Profile URL", "Discovered Date"]
+    ws.append(headers)
+    
+    # Data
+    for lead in leads:
+        row = [
+            lead.get("name", ""),
+            lead.get("platform", ""),
+            lead.get("username", ""),
+            lead.get("follower_count", 0),
+            lead.get("email", ""),
+            lead.get("phone", ""),
+            lead.get("status", ""),
+            lead.get("contact_attempts", 0),
+            lead.get("profile_url", ""),
+            lead.get("discovered_at", "").strftime("%Y-%m-%d %H:%M") if lead.get("discovered_at") else ""
+        ]
+        ws.append(row)
+    
+    # Save to file
+    filename = f"bigo_influencer_leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filepath = f"/tmp/{filename}"
+    wb.save(filepath)
+    
+    return {"download_url": f"/api/recruitment/download/{filename}", "filename": filename}
+
 # Task Routes
 @api_router.post("/tasks")
 async def create_task(task_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN, UserRole.COACH]))):
@@ -352,8 +793,12 @@ async def create_task(task_data: dict, current_user: User = Depends(require_role
     return task
 
 @api_router.get("/tasks")
-async def get_tasks(current_user: User = Depends(get_current_user)):
-    tasks = await db.tasks.find({"active": True}).to_list(1000)
+async def get_tasks(category: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    filter_query = {"active": True}
+    if category:
+        filter_query["category"] = category
+    
+    tasks = await db.tasks.find(filter_query).to_list(1000)
     return [Task(**task) for task in tasks]
 
 @api_router.post("/tasks/{task_id}/submit")
@@ -419,8 +864,12 @@ async def create_quiz(quiz_data: dict, current_user: User = Depends(require_role
     return quiz
 
 @api_router.get("/quizzes")
-async def get_quizzes(current_user: User = Depends(get_current_user)):
-    quizzes = await db.quizzes.find({"active": True}).to_list(1000)
+async def get_quizzes(category: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    filter_query = {"active": True}
+    if category:
+        filter_query["category"] = category
+    
+    quizzes = await db.quizzes.find(filter_query).to_list(1000)
     return [Quiz(**quiz) for quiz in quizzes]
 
 @api_router.get("/quizzes/{quiz_id}/questions")
@@ -471,7 +920,7 @@ async def attempt_quiz(quiz_id: str, answers: List[int], current_user: User = De
     
     return {"attempt": attempt, "correct_answers": [q["correct_index"] for q in questions]}
 
-# Calendar/Events Routes
+# Event Routes
 @api_router.post("/events")
 async def create_event(event_data: dict, current_user: User = Depends(get_current_user)):
     event = Event(**event_data, creator_id=current_user.id, creator_bigo_id=current_user.bigo_id)
@@ -479,10 +928,12 @@ async def create_event(event_data: dict, current_user: User = Depends(get_curren
     return event
 
 @api_router.get("/events")
-async def get_events(event_type: Optional[EventType] = None, current_user: User = Depends(get_current_user)):
+async def get_events(event_type: Optional[EventType] = None, category: Optional[str] = None, current_user: User = Depends(get_current_user)):
     filter_query = {"active": True}
     if event_type:
         filter_query["event_type"] = event_type
+    if category:
+        filter_query["category"] = category
     
     events = await db.events.find(filter_query).sort("start_time", 1).to_list(1000)
     return [Event(**event) for event in events]
@@ -495,79 +946,14 @@ async def get_personal_events(current_user: User = Depends(get_current_user)):
     }).sort("start_time", 1).to_list(1000)
     return [Event(**event) for event in events]
 
-# Private Messaging Routes
-@api_router.post("/messages")
-async def send_message(message_data: dict, current_user: User = Depends(get_current_user)):
-    message = PrivateMessage(**message_data, sender_id=current_user.id)
-    await db.private_messages.insert_one(message.dict())
-    return message
-
-@api_router.get("/messages")
-async def get_messages(current_user: User = Depends(get_current_user)):
-    messages = await db.private_messages.find({
-        "$or": [
-            {"sender_id": current_user.id},
-            {"recipient_id": current_user.id}
-        ]
-    }).sort("sent_at", -1).to_list(1000)
-    return [PrivateMessage(**msg) for msg in messages]
-
-@api_router.put("/messages/{message_id}/read")
-async def mark_message_read(message_id: str, current_user: User = Depends(get_current_user)):
-    await db.private_messages.update_one(
-        {"id": message_id, "recipient_id": current_user.id},
-        {"$set": {"status": "read", "read_at": datetime.now(timezone.utc)}}
-    )
-    return {"message": "Message marked as read"}
-
-# AI Chat Routes
-@api_router.post("/ai/chat")
-async def ai_chat(chat_data: dict, current_user: User = Depends(get_current_user)):
-    message = chat_data.get("message", "")
-    chat_type = chat_data.get("chat_type", "general")
-    
-    ai_response = await get_ai_response(message, chat_type)
-    
-    chat_record = AIChat(
-        user_id=current_user.id,
-        message=message,
-        ai_response=ai_response,
-        chat_type=chat_type
-    )
-    
-    await db.ai_chats.insert_one(chat_record.dict())
-    
-    return {"response": ai_response, "chat_type": chat_type}
-
-@api_router.get("/ai/chat/history")
-async def get_ai_chat_history(current_user: User = Depends(get_current_user)):
-    chats = await db.ai_chats.find({"user_id": current_user.id}).sort("created_at", -1).limit(50).to_list(50)
-    return [AIChat(**chat) for chat in chats]
-
-# Quota Management Routes
-@api_router.post("/quotas")
-async def create_quota_target(quota_data: dict, current_user: User = Depends(get_current_user)):
-    quota = QuotaTarget(**quota_data, user_id=current_user.id)
-    await db.quota_targets.insert_one(quota.dict())
-    return quota
-
-@api_router.get("/quotas")
-async def get_quota_targets(current_user: User = Depends(get_current_user)):
-    quotas = await db.quota_targets.find({"user_id": current_user.id, "active": True}).to_list(1000)
-    return [QuotaTarget(**quota) for quota in quotas]
-
-@api_router.put("/quotas/{quota_id}/progress")
-async def update_quota_progress(quota_id: str, progress_data: dict, current_user: User = Depends(get_current_user)):
-    await db.quota_targets.update_one(
-        {"id": quota_id, "user_id": current_user.id},
-        {"$set": {"current_progress": progress_data.get("current_progress", 0.0)}}
-    )
-    return {"message": "Quota progress updated"}
-
 # Rewards Routes
 @api_router.get("/rewards")
-async def get_rewards(current_user: User = Depends(get_current_user)):
-    rewards = await db.rewards.find({"active": True}).to_list(1000)
+async def get_rewards(category: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    filter_query = {"active": True}
+    if category:
+        filter_query["category"] = category
+    
+    rewards = await db.rewards.find(filter_query).to_list(1000)
     return [Reward(**reward) for reward in rewards]
 
 @api_router.post("/rewards/{reward_id}/redeem")
@@ -602,6 +988,51 @@ async def redeem_reward(reward_id: str, current_user: User = Depends(get_current
     
     return redemption
 
+# Private Messaging Routes
+@api_router.post("/messages")
+async def send_message(message_data: dict, current_user: User = Depends(get_current_user)):
+    message = PrivateMessage(**message_data, sender_id=current_user.id)
+    await db.private_messages.insert_one(message.dict())
+    return message
+
+@api_router.get("/messages")
+async def get_messages(current_user: User = Depends(get_current_user)):
+    messages = await db.private_messages.find({
+        "$or": [
+            {"sender_id": current_user.id},
+            {"recipient_id": current_user.id}
+        ]
+    }).sort("sent_at", -1).to_list(1000)
+    return [PrivateMessage(**msg) for msg in messages]
+
+@api_router.put("/messages/{message_id}/read")
+async def mark_message_read(message_id: str, current_user: User = Depends(get_current_user)):
+    await db.private_messages.update_one(
+        {"id": message_id, "recipient_id": current_user.id},
+        {"$set": {"status": "read", "read_at": datetime.now(timezone.utc)}}
+    )
+    return {"message": "Message marked as read"}
+
+# Quota Routes
+@api_router.post("/quotas")
+async def create_quota_target(quota_data: dict, current_user: User = Depends(get_current_user)):
+    quota = QuotaTarget(**quota_data, user_id=current_user.id)
+    await db.quota_targets.insert_one(quota.dict())
+    return quota
+
+@api_router.get("/quotas")
+async def get_quota_targets(current_user: User = Depends(get_current_user)):
+    quotas = await db.quota_targets.find({"user_id": current_user.id, "active": True}).to_list(1000)
+    return [QuotaTarget(**quota) for quota in quotas]
+
+@api_router.put("/quotas/{quota_id}/progress")
+async def update_quota_progress(quota_id: str, progress_data: dict, current_user: User = Depends(get_current_user)):
+    await db.quota_targets.update_one(
+        {"id": quota_id, "user_id": current_user.id},
+        {"$set": {"current_progress": progress_data.get("current_progress", 0.0)}}
+    )
+    return {"message": "Quota progress updated"}
+
 # Announcements Routes
 @api_router.get("/announcements")
 async def get_announcements(current_user: User = Depends(get_current_user)):
@@ -614,7 +1045,7 @@ async def create_announcement(ann_data: dict, current_user: User = Depends(requi
     await db.announcements.insert_one(announcement.dict())
     return announcement
 
-# Admin Routes
+# Admin Dashboard Routes
 @api_router.get("/admin/dashboard")
 async def get_admin_dashboard(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
     total_users = await db.users.count_documents({})
@@ -638,6 +1069,10 @@ async def get_admin_dashboard(current_user: User = Depends(require_role([UserRol
     ]).to_list(1)
     total_points_redeemed = abs(points_redeemed[0]["total"]) if points_redeemed else 0
     
+    # Influencer recruitment stats
+    total_leads = await db.influencer_leads.count_documents({})
+    contacted_leads = await db.influencer_leads.count_documents({"status": "contacted"})
+    
     return {
         "total_users": total_users,
         "total_hosts": total_hosts,
@@ -645,7 +1080,9 @@ async def get_admin_dashboard(current_user: User = Depends(require_role([UserRol
         "pending_submissions": pending_submissions,
         "pending_redemptions": pending_redemptions,
         "total_points_issued": total_points_issued,
-        "total_points_redeemed": total_points_redeemed
+        "total_points_redeemed": total_points_redeemed,
+        "total_influencer_leads": total_leads,
+        "contacted_leads": contacted_leads
     }
 
 @api_router.get("/admin/users")
