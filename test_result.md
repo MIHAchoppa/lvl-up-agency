@@ -104,15 +104,18 @@
 ## backend:
   - task: "Audition video upload via Mongo GridFS (init/chunk/complete, stream, delete)"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Implemented /api/public/audition/upload/* with chunked upload, composition into final GridFS file, admin list/review/stream/delete; enforced 500MB limit and allowed types."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL: Upload completion endpoint fails with 500 error. GridFS stream handling bug at line 752 - 'object NoneType can't be used in await expression'. Init and chunk upload work correctly, but completion fails preventing full workflow."
   - task: "Guest access + public endpoints"
     implemented: true
     working: true
