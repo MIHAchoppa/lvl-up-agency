@@ -1688,6 +1688,229 @@ function HomePage() {
 // Continue with other components... (rest of the app components would be here)
 // For brevity, I'll add just the essential ones for now
 
+function QuotaTrackerPage() {
+  const [selectedTier, setSelectedTier] = useState('S10');
+  const [currentBeans, setCurrentBeans] = useState(500000);
+  const [monthlyProgress, setMonthlyProgress] = useState(65);
+
+  const tierData = {
+    'S25': { target: 5000000, maxEarnings: 535000, hourlyReq: 50 },
+    'S23': { target: 5000000, maxEarnings: 528000, hourlyReq: 50 },
+    'S22': { target: 4500000, maxEarnings: 521000, hourlyReq: 50 },
+    'S21': { target: 4000000, maxEarnings: 513000, hourlyReq: 50 },
+    'S20': { target: 4000000, maxEarnings: 237000, hourlyReq: 50 },
+    'S19': { target: 3750000, maxEarnings: 237000, hourlyReq: 48 },
+    'S18': { target: 3500000, maxEarnings: 226000, hourlyReq: 48 },
+    'S17': { target: 3250000, maxEarnings: 215000, hourlyReq: 50 },
+    'S16': { target: 3000000, maxEarnings: 224000, hourlyReq: 50 },
+    'S15': { target: 2750000, maxEarnings: 219000, hourlyReq: 50 },
+    'S14': { target: 2500000, maxEarnings: 216000, hourlyReq: 50 },
+    'S13': { target: 2250000, maxEarnings: 217000, hourlyReq: 48 },
+    'S12': { target: 2000000, maxEarnings: 216000, hourlyReq: 48 },
+    'S11': { target: 1750000, maxEarnings: 213000, hourlyReq: 46 },
+    'S10': { target: 1500000, maxEarnings: 212000, hourlyReq: 46 },
+    'S9': { target: 1250000, maxEarnings: 210000, hourlyReq: 44 },
+    'S8': { target: 1000000, maxEarnings: 209000, hourlyReq: 42 },
+    'S7': { target: 800000, maxEarnings: 205000, hourlyReq: 40 },
+    'S6': { target: 600000, maxEarnings: 205700, hourlyReq: 38 },
+    'S5': { target: 400000, maxEarnings: 203200, hourlyReq: 36 },
+    'S4': { target: 300000, maxEarnings: 202600, hourlyReq: 34 },
+    'S3': { target: 240000, maxEarnings: 202000, hourlyReq: 33 },
+    'S2': { target: 170000, maxEarnings: 201500, hourlyReq: 32 },
+    'S1': { target: 140000, maxEarnings: 201120, hourlyReq: 32 }
+  };
+
+  const currentTierData = tierData[selectedTier];
+  const progressPercent = (currentBeans / currentTierData.target) * 100;
+  const usdValue = Math.floor(currentBeans / 210); // 210 beans = $1
+  const diamondValue = Math.floor(currentBeans / 4); // Approximate diamond conversion
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-gray-900">BIGO Bean Tier Tracker</h1>
+          <p className="text-gray-600">Master Agent Mihanna's S-Tier System & Maximize Your Earnings</p>
+        </div>
+        <div className="text-right">
+          <div className="w-48 h-32 bg-gradient-to-r from-black to-gray-800 rounded-lg border-2 border-gold relative overflow-hidden">
+            <img 
+              src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/ivdzbuwy_ae2490ad-77f4-4a6c-be9c-d84a69fbf59a.webp"
+              alt="BIGO Bean Tier Chart"
+              className="w-full h-full object-contain"
+            />
+            <div className="absolute top-1 left-2 text-gold text-xs font-bold">TIER CHART</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Current Progress */}
+        <Card className="lg:col-span-2 border-gold/20">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-900">
+              <Trophy className="w-6 h-6 mr-2 text-gold" />
+              Current Tier Progress: {selectedTier}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-4">
+                <Select value={selectedTier} onValueChange={setSelectedTier}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(tierData).map(tier => (
+                      <SelectItem key={tier} value={tier}>Tier {tier}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-gold">{currentBeans.toLocaleString()}</div>
+                  <div className="text-sm text-gray-600">Current Beans</div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Progress to {selectedTier}</span>
+                  <span>{progressPercent.toFixed(1)}%</span>
+                </div>
+                <Progress value={Math.min(progressPercent, 100)} className="h-3" />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>0</span>
+                  <span>{currentTierData.target.toLocaleString()} beans needed</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <div className="text-2xl font-bold text-green-700">${usdValue}</div>
+                  <div className="text-sm text-green-600">USD Value</div>
+                  <div className="text-xs text-gray-500">210 beans = $1</div>
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="text-2xl font-bold text-blue-700">{diamondValue.toLocaleString()}</div>
+                  <div className="text-sm text-blue-600">Diamond Value</div>
+                  <div className="text-xs text-gray-500">Approx conversion</div>
+                </div>
+                
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                  <div className="text-2xl font-bold text-purple-700">{currentTierData.hourlyReq}h</div>
+                  <div className="text-sm text-purple-600">Required Hours</div>
+                  <div className="text-xs text-gray-500">Monthly minimum</div>
+                </div>
+                
+                <div className="bg-gold/10 p-4 rounded-lg border border-gold/30">
+                  <div className="text-2xl font-bold text-gold">${(currentTierData.maxEarnings / 1000).toFixed(0)}K</div>
+                  <div className="text-sm text-gray-700">Max Earnings</div>
+                  <div className="text-xs text-gray-500">Monthly potential</div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-gold/10 to-yellow-500/10 p-4 rounded-lg border border-gold/20">
+                <h4 className="font-semibold text-gray-900 mb-2">📈 Tier Strategy Insights</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Beans Needed:</span> {(currentTierData.target - currentBeans).toLocaleString()} more
+                  </div>
+                  <div>
+                    <span className="font-medium">Daily Target:</span> {Math.ceil((currentTierData.target - currentBeans) / 30).toLocaleString()} beans
+                  </div>
+                  <div>
+                    <span className="font-medium">USD Cashout:</span> ${Math.floor(currentBeans / 210)} available
+                  </div>
+                  <div>
+                    <span className="font-medium">Diamond Exchange:</span> {Math.floor(currentBeans * 2900 / 10299)} diamonds (bulk rate)
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tier Ladder */}
+        <Card className="border-gold/20">
+          <CardHeader>
+            <CardTitle className="text-gray-900">S-Tier Ladder</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {Object.entries(tierData).slice(0, 12).map(([tier, data]) => (
+                <div 
+                  key={tier}
+                  className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                    tier === selectedTier 
+                      ? 'bg-gold/20 border-gold text-gray-900' 
+                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                  }`}
+                  onClick={() => setSelectedTier(tier)}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="font-bold">{tier}</div>
+                      <div className="text-xs text-gray-600">{data.target.toLocaleString()} beans</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-green-600">${(data.maxEarnings / 1000).toFixed(0)}K</div>
+                      <div className="text-xs text-gray-500">{data.hourlyReq}h req</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Conversion Calculator */}
+      <Card className="border-gold/20">
+        <CardHeader>
+          <CardTitle className="flex items-center text-gray-900">
+            <Calculator className="w-6 h-6 mr-2 text-gold" />
+            Bean Conversion Calculator
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-green-700 mb-2">💰 Cash Out</h4>
+              <p className="text-sm text-green-600 mb-2">210 beans = $1 USD</p>
+              <div className="space-y-1 text-xs">
+                <div>100,000 beans = $476</div>
+                <div>500,000 beans = $2,381</div>
+                <div>1,000,000 beans = $4,762</div>
+              </div>
+            </div>
+            
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-blue-700 mb-2">💎 Diamond Exchange</h4>
+              <p className="text-sm text-blue-600 mb-2">Better rates for bulk!</p>
+              <div className="space-y-1 text-xs">
+                <div>8 beans = 2 diamonds (basic)</div>
+                <div>10,299 beans = 2,900 diamonds</div>
+                <div>Exchange cheaper than buying!</div>
+              </div>
+            </div>
+            
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-purple-700 mb-2">🎁 Rebate Events</h4>
+              <p className="text-sm text-purple-600 mb-2">Bonus beans (no tier count)</p>
+              <div className="space-y-1 text-xs">
+                <div>Regular beans: Count toward tier</div>
+                <div>Rebate beans: Extra cashout value</div>
+                <div>Strategic event participation</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 // Main Dashboard Component
 function Dashboard() {
   const [currentPage, setCurrentPage] = useState('home');
