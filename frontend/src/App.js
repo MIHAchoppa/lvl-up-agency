@@ -928,17 +928,257 @@ function HomePage() {
   );
 }
 
-// Placeholder pages for new features
+// BIGO Quizzes Page
 function QuizzesPage() {
+  const [quizzes, setQuizzes] = useState([]);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState([]);
+  const [showResults, setShowResults] = useState(false);
+  const [quizResult, setQuizResult] = useState(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    fetchQuizzes();
+  }, []);
+
+  const fetchQuizzes = async () => {
+    try {
+      const response = await axios.get(`${API}/quizzes`);
+      setQuizzes(response.data);
+    } catch (error) {
+      toast.error('Failed to load quizzes');
+    }
+  };
+
+  const startQuiz = async (quiz) => {
+    try {
+      const response = await axios.get(`${API}/quizzes/${quiz.id}/questions`);
+      setQuestions(response.data);
+      setSelectedQuiz(quiz);
+      setCurrentQuestion(0);
+      setAnswers([]);
+      setShowResults(false);
+    } catch (error) {
+      toast.error('Failed to load quiz questions');
+    }
+  };
+
+  const selectAnswer = (answerIndex) => {
+    const newAnswers = [...answers];
+    newAnswers[currentQuestion] = answerIndex;
+    setAnswers(newAnswers);
+  };
+
+  const nextQuestion = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    } else {
+      submitQuiz();
+    }
+  };
+
+  const submitQuiz = async () => {
+    try {
+      const response = await axios.post(`${API}/quizzes/${selectedQuiz.id}/attempt`, answers);
+      setQuizResult(response.data);
+      setShowResults(true);
+      
+      if (response.data.attempt.passed) {
+        toast.success(`Quiz passed! You earned ${selectedQuiz.points} points!`);
+      } else {
+        toast.info(`Quiz completed. Score: ${response.data.attempt.score}%`);
+      }
+    } catch (error) {
+      toast.error('Failed to submit quiz');
+    }
+  };
+
+  const resetQuiz = () => {
+    setSelectedQuiz(null);
+    setQuestions([]);
+    setCurrentQuestion(0);
+    setAnswers([]);
+    setShowResults(false);
+    setQuizResult(null);
+  };
+
+  if (showResults && quizResult) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-serif font-bold text-gray-900">Quiz Results</h1>
+          <Button onClick={resetQuiz} variant="outline">
+            Back to Quizzes
+          </Button>
+        </div>
+
+        <Card className="border-gold/20">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">{selectedQuiz.title}</CardTitle>
+            <div className={`text-6xl font-bold ${quizResult.attempt.passed ? 'text-green-600' : 'text-orange-600'}`}>
+              {quizResult.attempt.score}%
+            </div>
+            <CardDescription>
+              {quizResult.attempt.passed ? 
+                `🎉 Congratulations! You passed and earned ${selectedQuiz.points} points!` :
+                `Keep studying! You need ${selectedQuiz.pass_mark}% to pass.`
+              }
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <div className="space-y-4">
+              <h3 className="font-semibold">Review Your Answers:</h3>
+              {questions.map((question, index) => (
+                <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                  <p className="font-medium mb-2">{question.prompt}</p>
+                  <div className="space-y-2">
+                    {question.options.map((option, optionIndex) => (
+                      <div key={optionIndex} className={`p-2 rounded ${
+                        optionIndex === question.correct_index ? 'bg-green-100 text-green-800' :
+                        optionIndex === answers[index] && optionIndex !== question.correct_index ? 'bg-red-100 text-red-800' :
+                        'bg-white'
+                      }`}>
+                        {optionIndex === question.correct_index && '✅ '}
+                        {optionIndex === answers[index] && optionIndex !== question.correct_index && '❌ '}
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                  {question.explanation && (
+                    <div className="mt-2 p-2 bg-blue-50 text-blue-800 rounded text-sm">
+                      💡 {question.explanation}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (selectedQuiz && questions.length > 0) {
+    const question = questions[currentQuestion];
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-serif font-bold text-gray-900">{selectedQuiz.title}</h1>
+          <Button onClick={resetQuiz} variant="outline">
+            Exit Quiz
+          </Button>
+        </div>
+
+        <Card className="border-gold/20">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Question {currentQuestion + 1} of {questions.length}</CardTitle>
+              <Badge className="bg-gold/20 text-gold">+{selectedQuiz.points} pts</Badge>
+            </div>
+            <Progress value={(currentQuestion / questions.length) * 100} className="w-full" />
+          </CardHeader>
+          
+          <CardContent>
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold">{question.prompt}</h2>
+              
+              <div className="space-y-3">
+                {question.options.map((option, index) => (
+                  <Button
+                    key={index}
+                    variant={answers[currentQuestion] === index ? "default" : "outline"}
+                    className={`w-full text-left justify-start p-4 h-auto ${
+                      answers[currentQuestion] === index ? 'bg-gold hover:bg-gold/90' : ''
+                    }`}
+                    onClick={() => selectAnswer(index)}
+                  >
+                    <span className="mr-3 font-bold">{String.fromCharCode(65 + index)}.</span>
+                    {option}
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="flex justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
+                  disabled={currentQuestion === 0}
+                >
+                  Previous
+                </Button>
+                
+                <Button 
+                  onClick={nextQuestion}
+                  disabled={answers[currentQuestion] === undefined}
+                  className="bg-gold hover:bg-gold/90"
+                >
+                  {currentQuestion === questions.length - 1 ? 'Submit Quiz' : 'Next Question'}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-serif font-bold text-gray-900">BIGO Live Quizzes</h1>
-      <p className="text-gray-600">Test your BIGO Live knowledge and earn points!</p>
-      <div className="text-center py-20">
-        <BookOpen className="w-24 h-24 text-gold mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Coming Soon!</h2>
-        <p className="text-gray-600">Interactive BIGO Live quizzes to boost your skills and earnings</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-gray-900">BIGO Live Quizzes</h1>
+          <p className="text-gray-600">Test your BIGO Live knowledge and earn points!</p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-600">Your Points</p>
+          <p className="text-2xl font-bold text-gold">{user?.total_points || 0}</p>
+        </div>
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {quizzes.map((quiz) => (
+          <Card key={quiz.id} className="border-gold/20 hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-xl">{quiz.title}</CardTitle>
+                  <CardDescription className="mt-2">{quiz.description}</CardDescription>
+                </div>
+                <Badge className="bg-gold/20 text-gold ml-2">+{quiz.points} pts</Badge>
+              </div>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm text-gray-600">
+                  <span>Category: {quiz.category}</span>
+                  <span>Pass Mark: {quiz.pass_mark}%</span>
+                </div>
+                
+                <Button 
+                  onClick={() => startQuiz(quiz)}
+                  className="w-full bg-gold hover:bg-gold/90"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Start Quiz
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {quizzes.length === 0 && (
+        <div className="text-center py-20">
+          <BookOpen className="w-24 h-24 text-gold mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">No Quizzes Available</h2>
+          <p className="text-gray-600">Check back later for new BIGO Live quizzes!</p>
+        </div>
+      )}
     </div>
   );
 }
