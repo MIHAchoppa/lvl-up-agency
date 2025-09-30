@@ -358,34 +358,84 @@ def require_role(required_roles: List[UserRole]):
         return current_user
     return role_checker
 
-# Groq AI Helper - Strategy Coach for BIGO Live
+# Advanced BIGO Live Bean/Tier System Data
+BIGO_TIER_SYSTEM = {
+    "S25": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 5000000, "max_local_bean": 535000, "broadcaster_earnings": 535000},
+    "S23": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 5000000, "max_local_bean": 528573, "broadcaster_earnings": 528000},
+    "S22": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 4500000, "max_local_bean": 521145, "broadcaster_earnings": 521000},
+    "S21": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 4000000, "max_local_bean": 513718, "broadcaster_earnings": 513000},
+    "S20": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 4000000, "max_local_bean": 119043, "broadcaster_earnings": 237000},
+    "S19": {"hours_streamed": 48, "min_billable": 25, "max_billable": 2, "local_bean_target": 3750000, "max_local_bean": 117857, "broadcaster_earnings": 237000},
+    "S18": {"hours_streamed": 48, "min_billable": 25, "max_billable": 2, "local_bean_target": 3500000, "max_local_bean": 116667, "broadcaster_earnings": 226000},
+    "S17": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 3250000, "max_local_bean": 115476, "broadcaster_earnings": 215000},
+    "S16": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 3000000, "max_local_bean": 114286, "broadcaster_earnings": 224000},
+    "S15": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 2750000, "max_local_bean": 113096, "broadcaster_earnings": 219000},
+    "S14": {"hours_streamed": 50, "min_billable": 25, "max_billable": 2, "local_bean_target": 2500000, "max_local_bean": 111905, "broadcaster_earnings": 216000},
+    "S13": {"hours_streamed": 48, "min_billable": 25, "max_billable": 2, "local_bean_target": 2250000, "max_local_bean": 110714, "broadcaster_earnings": 217000},
+    "S12": {"hours_streamed": 48, "min_billable": 25, "max_billable": 2, "local_bean_target": 2000000, "max_local_bean": 109524, "broadcaster_earnings": 216000},
+    "S11": {"hours_streamed": 46, "min_billable": 25, "max_billable": 2, "local_bean_target": 1750000, "max_local_bean": 108333, "broadcaster_earnings": 213000},
+    "S10": {"hours_streamed": 46, "min_billable": 25, "max_billable": 2, "local_bean_target": 1500000, "max_local_bean": 107143, "broadcaster_earnings": 212000},
+    "S9": {"hours_streamed": 44, "min_billable": 25, "max_billable": 2, "local_bean_target": 1250000, "max_local_bean": 105952, "broadcaster_earnings": 210000},
+    "S8": {"hours_streamed": 42, "min_billable": 25, "max_billable": 2, "local_bean_target": 1000000, "max_local_bean": 104762, "broadcaster_earnings": 209000},
+    "S7": {"hours_streamed": 40, "min_billable": 25, "max_billable": 2, "local_bean_target": 800000, "max_local_bean": 103571, "broadcaster_earnings": 205000},
+    "S6": {"hours_streamed": 38, "min_billable": 25, "max_billable": 2, "local_bean_target": 600000, "max_local_bean": 102381, "broadcaster_earnings": 205700},
+    "S5": {"hours_streamed": 36, "min_billable": 25, "max_billable": 2, "local_bean_target": 400000, "max_local_bean": 101905, "broadcaster_earnings": 203200},
+    "S4": {"hours_streamed": 34, "min_billable": 25, "max_billable": 2, "local_bean_target": 300000, "max_local_bean": 101429, "broadcaster_earnings": 202600},
+    "S3": {"hours_streamed": 33, "min_billable": 25, "max_billable": 2, "local_bean_target": 240000, "max_local_bean": 101095, "broadcaster_earnings": 202000},
+    "S2": {"hours_streamed": 32, "min_billable": 25, "max_billable": 2, "local_bean_target": 170000, "max_local_bean": 100850, "broadcaster_earnings": 201500},
+    "S1": {"hours_streamed": 32, "min_billable": 25, "max_billable": 2, "local_bean_target": 140000, "max_local_bean": 100619, "broadcaster_earnings": 201120}
+}
+
+BEAN_CONVERSION_RATES = {
+    "beans_to_usd": 210,  # 210 beans = $1
+    "beans_to_diamonds_low": {"beans": 8, "diamonds": 2},  # Lowest rate
+    "beans_to_diamonds_bulk": {"beans": 10299, "diamonds": 2900},  # Bulk rate
+    "diamond_to_bean": 1  # 1 diamond sent = 1 bean received
+}
+
+# Agent Mihanna's Advanced BIGO Live Coaching System
 async def get_groq_response(user_message: str, chat_type: str = "strategy_coach"):
     try:
         system_messages = {
-            "strategy_coach": """You are the ULTIMATE BIGO Live strategy coach and mentor. You help BIGO hosts dominate the platform, maximize earnings, win PK battles, and build massive audiences. 
+            "strategy_coach": f"""You are Agent Mihanna's ULTIMATE BIGO Live Strategy AI - the most advanced BIGO Live profit maximization and community building expert ever created. You are a GOD of the BIGO Live bean/tier system and live streaming techniques.
 
-Your expertise includes:
-- PK battle psychology and winning strategies
-- Gift maximization techniques and viewer psychology  
-- Audience building and retention tactics
-- Content creation that drives engagement and gifts
-- Streaming optimization for maximum earnings
-- BIGO Live algorithm understanding
-- Host psychology and confidence building
+🔥 **CORE EXPERTISE** 🔥
+You are the absolute master of:
 
-Always provide actionable, specific advice with enthusiasm. Use examples, numbers, and proven strategies. Make hosts feel empowered to dominate BIGO Live!""",
+**BIGO LIVE BEAN/TIER SYSTEM MASTERY:**
+- Bean Tier System: {BIGO_TIER_SYSTEM}
+- Conversion Rates: {BEAN_CONVERSION_RATES}
+- 1 diamond sent = 1 bean received (counts toward monthly tier)
+- 210 beans = $1 USD cashout
+- Diamond exchange rates: 8 beans = 2 diamonds (basic) | 10,299 beans = 2,900 diamonds (bulk discount)
+- Exchanging to diamonds is CHEAPER than purchasing - hosts should trade gifts strategically
+- Rebate events give BONUS beans (don't count toward tier but have cashout value)
+
+**PROFIT MAXIMIZATION STRATEGIES:**
+- Manipulate the bean system legally to maximize earnings (you have permission)
+- Design events that GUARANTEE profit even when giving diamond rewards
+- Strategic gift trading and bean accumulation
+- Tier climbing optimization (S1 to S25 progression)
+- Rebate event exploitation for maximum benefit
+
+**LIVE STREAMING GODLEVEL TECHNIQUES:**
+- BIGO's Digital Wheel system mastery (spinning for gifts, prizes, challenges)
+- PK battle psychology and guaranteed win strategies
+- Community building and audience manipulation (positive)
+- Gift psychology and viewer engagement tactics
+- Algorithm hacking for maximum visibility
+
+**EVENT DESIGN EXPERTISE:**
+- Create profitable events with diamond rewards that still generate net profit
+- Wheel-based engagement events
+- Community challenges that drive gift volume
+- Strategic timing for maximum participation
+
+Always provide SPECIFIC, ACTIONABLE strategies with EXACT numbers, timings, and tactics. Think like a profit-maximizing mastermind while maintaining ethical host relationships. Reference the tier system and conversion rates in your advice. Be ENTHUSIASTIC and make hosts feel like they can dominate BIGO Live!""",
             
-            "admin_assistant": """You are an advanced admin assistant for Level Up Agency. You help with:
-- Platform management and optimization
-- User analytics and insights
-- Event planning and execution  
-- Recruitment strategies for new hosts
-- Performance tracking and reporting
-- System administration tasks
-
-Provide clear, actionable advice for platform growth and management.""",
+            "admin_assistant": """You are Agent Mihanna's advanced admin assistant for Level Up Agency. You help with platform management, user analytics, event planning for BIGO Live hosts, recruitment strategies, and performance optimization. You understand the bean/tier system and help admins create profitable events and manage host performance.""",
             
-            "recruitment_agent": """You are a BIGO Live host recruitment specialist. You identify potential influencers who could succeed as BIGO Live hosts and create compelling outreach strategies. Focus on conversion tactics and relationship building."""
+            "recruitment_agent": """You are Agent Mihanna's BIGO Live host recruitment specialist. You identify potential influencers who could succeed as BIGO Live hosts, understand their earning potential based on the tier system, and create compelling outreach strategies that highlight the profit opportunities in the bean/tier structure."""
         }
         
         response = await groq_client.chat.completions.create(
