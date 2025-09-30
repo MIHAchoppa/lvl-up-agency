@@ -598,6 +598,12 @@ async def generate_voice_response(text: str, voice_type: str = "strategy_coach")
         return {"error": f"Voice generation failed: {str(e)}"}
 
 # Audition System Model
+class AuditionUploadInitAuth(BaseModel):
+    filename: str
+    content_type: Optional[str] = None
+    total_chunks: Optional[int] = None
+    file_size: Optional[int] = None
+
 class AuditionSubmission(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
