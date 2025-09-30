@@ -99,5 +99,97 @@
 
 
 #====================================================================================================
+## user_problem_statement: Build production-ready auditions (video upload), guest access, calendar with RSVP + event links, group chat + DMs, remove mock data, and fix frontend JSX error.
+
+## backend:
+  - task: "Audition video upload via Mongo GridFS (init/chunk/complete, stream, delete)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Implemented /api/public/audition/upload/* with chunked upload, composition into final GridFS file, admin list/review/stream/delete; enforced 500MB limit and allowed types."
+  - task: "Guest access + public endpoints"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Public audition routes and SEO summary; no guest chat access."
+  - task: "Calendar RSVP & attendees visibility with event link"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added /api/events/{id}/rsvp and /api/events/{id}/attendees; everyone can see attendees; event has link field."
+  - task: "Group chat channel + DMs (no guests)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added default agency-lounge channel init and message post/list endpoints; 1:1 DMs already existed."
+  - task: "Remove mock-runtime seeding"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Verified no runtime seeding; scripts remain in /app/scripts but not invoked."
+
+## frontend:
+  - task: "Fix JSX error in App.js (unclosed CardContent)"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Replaced stray </Card> with </CardContent> causing parse error at line ~628."
+
+## metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+## test_plan:
+  current_focus:
+    - "Backend auditions upload flow (init/chunk/complete, stream, delete)"
+    - "Calendar RSVP + attendees list"
+    - "Chat channels + DMs auth enforcement"
+  stuck_tasks:
+    - "None"
+  test_all: false
+  test_priority: "high_first"
+
+## agent_communication:
+  - agent: "main"
+    message: "Please run backend tests for auditions, events RSVP, chat endpoints. Auth: create/register a user then test protected routes. Ensure all endpoints are under /api."
+
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
