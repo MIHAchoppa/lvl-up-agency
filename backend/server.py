@@ -743,12 +743,13 @@ async def audition_upload_complete_auth(upload_id: str = Query(...), current_use
         with open(final_tmp, 'wb') as fout:
             for c in chunks:
                 stream = await gridfs_bucket.open_download_stream_by_name(c["filename"]) 
-                while True:
-                    b = await stream.read(1024 * 1024)
-                    if not b:
-                        break
-                    fout.write(b)
-                await stream.close()
+                if stream:
+                    while True:
+                        b = await stream.read(1024 * 1024)
+                        if not b:
+                            break
+                        fout.write(b)
+                    await stream.close()
         with open(final_tmp, 'rb') as fin:
             await gridfs_bucket.upload_from_stream(filename=gridfs_filename, source=fin, metadata={
                 "upload_id": upload_id,
