@@ -631,7 +631,7 @@ function LandingPage({ onGetStarted, user }) {
       </section>
 
       {/* Features Section */}
-      <section className="bg-gray-50 py-20">
+      <section className="bg-gray-900 py-20">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-serif font-bold text-center mb-16 text-gray-100">
             Why Choose LVLUP AGENCY?
