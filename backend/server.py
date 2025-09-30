@@ -1088,6 +1088,35 @@ async def send_outreach_emails(outreach_data: dict, current_user: User = Depends
                 continue
             
             # Generate personalized email
+
+# Calendar RSVP and visibility
+@api_router.post("/events/{event_id}/rsvp")
+async def rsvp_event(event_id: str, body: dict, current_user: User = Depends(get_current_user)):
+    status_val = body.get("status", "going")
+    if status_val not in ["going", "interested", "cancelled"]:
+        raise HTTPException(status_code=400, detail="Invalid RSVP status")
+    # upsert RSVP
+    await db.event_rsvps.update_one(
+        {"event_id": event_id, "user_id": current_user.id},
+        {"$set": {"status": status_val, "responded_at": datetime.now(timezone.utc), "id": str(uuid.uuid4())}},
+        upsert=True
+    )
+    return {"message": "RSVP updated"}
+
+@api_router.get("/events/{event_id}/attendees")
+async def list_attendees(event_id: str, current_user: User = Depends(get_current_user)):
+    rsvps = await db.event_rsvps.find({"event_id": event_id, "status": {"$in": ["going", "interested"]}}).to_list(1000)
+    # Return minimal data
+    users_map = {}
+    for r in rsvps:
+        uid = r["user_id"]
+        if uid not in users_map:
+            u = await db.users.find_one({"id": uid})
+            if u:
+                users_map[uid] = {"id": u["id"], "name": u.get("name"), "bigo_id": u.get("bigo_id")}
+    attendees = [{"user": users_map.get(r["user_id"]) , "status": r.get("status")} for r in rsvps if r["user_id"] in users_map]
+    return attendees
+
             email_content = await create_outreach_email(lead)
             if custom_message:
                 email_content = f"{custom_message}\n\n{email_content}"
