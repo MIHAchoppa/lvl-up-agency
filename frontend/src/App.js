@@ -1029,6 +1029,10 @@ function AuthPage({ onBack }) {
   });
   const { login, register } = useAuth();
 
+  useEffect(() => {
+    localStorage.setItem('authTab', authTab);
+  }, [authTab]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     await login(bigoId, password);
