@@ -1252,8 +1252,7 @@ async def seo_summary():
             "BIGO Live agency", "BIGO host audition", "BIGO beans to USD", "BIGO tier calculator", "BIGO coach",
             "become a streamer", "audition video upload", "Agent Mihanna"
         ],
-        "description": "Audition to join LEVEL UP AGENCY by Agent Mihanna. Upload your video, access elite coaching, events, and earn more with our bean/tier mastery.
-        "
+        "description": "Audition to join LEVEL UP AGENCY by Agent Mihanna. Upload your video, access elite coaching, events, and earn more with our bean/tier mastery."
     }
 
     
