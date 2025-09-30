@@ -220,15 +220,34 @@ class LevelUpAPITester:
     def test_admin_stream_video(self):
         """Test admin video streaming"""
         self.current_token = self.admin_token
+        url = f"{self.api_url}/admin/auditions/{self.submission_id}/video"
+        headers = {'Authorization': f'Bearer {self.current_token}'}
         
-        success, response = self.run_test(
-            f"Admin Stream Video",
-            "GET",
-            f"admin/auditions/{self.submission_id}/video",
-            200
-        )
+        self.tests_run += 1
+        print(f"\n🔍 Testing Admin Stream Video...")
+        print(f"   URL: {url}")
         
-        return success
+        try:
+            response = requests.get(url, headers=headers, stream=True)
+            success = response.status_code == 200
+            
+            if success:
+                self.tests_passed += 1
+                print(f"✅ Passed - Status: {response.status_code}")
+                print(f"   Content-Type: {response.headers.get('content-type', 'N/A')}")
+                # Read a small amount to verify it's actually streaming video data
+                chunk = next(response.iter_content(chunk_size=1024), None)
+                if chunk:
+                    print(f"   Streaming data received: {len(chunk)} bytes")
+            else:
+                print(f"❌ Failed - Expected 200, got {response.status_code}")
+                print(f"   Response: {response.text}")
+            
+            return success
+            
+        except Exception as e:
+            print(f"❌ Failed - Error: {str(e)}")
+            return False
 
     def test_admin_delete_audition(self):
         """Test admin audition deletion"""
