@@ -466,8 +466,13 @@ function LandingPage({ onGetStarted, user }) {
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex justify-between items-center border-b border-gray-800">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-r from-gold to-yellow-500 rounded-full flex items-center justify-center border-2 border-gold">
-            <Crown className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center border-2 border-gold overflow-hidden">
+            <img
+              src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp"
+              alt="LVLUP Logo"
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
           </div>
           <div>
             <h1 className="text-2xl font-serif font-bold text-gray-100">LVLUP AGENCY</h1>
