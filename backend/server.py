@@ -736,7 +736,7 @@ async def audition_upload_complete(upload_id: str = Query(...)):
     chunks.sort(key=lambda c: idx(c["filename"]))
 
     # Create final file
-    final_id = None
+    final_id = None  # retained for potential future ObjectId usage (not used in filename-based retrieval)
     try:
         # Create a pipe via temporary file to compose
         final_tmp = f"/tmp/{gridfs_filename}.final"
