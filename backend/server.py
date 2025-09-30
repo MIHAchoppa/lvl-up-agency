@@ -637,6 +637,11 @@ MAX_VIDEO_BYTES = 500 * 1024 * 1024  # 500MB
 ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/webm"}
 
 class EventRSVP(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_id: str
+    user_id: str
+    status: str = "going"  # going | interested | cancelled
+    responded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # AUTH-REQUIRED audition endpoints
 @api_router.post("/audition/upload/init")
