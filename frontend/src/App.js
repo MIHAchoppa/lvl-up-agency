@@ -214,25 +214,38 @@ const useAuth = () => {
   return context;
 };
 
-// Landing Page Component with SEO
+// Landing Page Component with SEO and Agent Mihanna Branding
 function LandingPage({ onGetStarted }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50 text-gray-900">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-white relative overflow-hidden">
       <SEOMeta />
       
+      {/* Agent Mihanna Background */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/v5hjw882_IMG_6003.webp"
+          alt="Agent Mihanna - Level Up Agency Owner"
+          className="w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent"></div>
+      </div>
+      
       {/* Header */}
-      <header className="container mx-auto px-4 py-6 flex justify-between items-center">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-gold to-yellow-500 rounded-full flex items-center justify-center">
+      <header className="container mx-auto px-4 py-6 flex justify-between items-center relative z-10">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gradient-to-r from-gold to-yellow-500 rounded-full flex items-center justify-center border-2 border-gold">
             <Crown className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-serif font-bold text-gray-900">Level Up Agency</h1>
+          <div>
+            <h1 className="text-2xl font-serif font-bold text-white">Level Up Agency</h1>
+            <p className="text-gold text-sm">Agent Mihanna's Elite BIGO Network</p>
+          </div>
         </div>
         <Button 
           onClick={onGetStarted}
-          className="bg-gold hover:bg-gold/90 text-white font-bold px-6"
+          className="bg-gold hover:bg-gold/90 text-black font-bold px-8 py-3 shadow-lg hover:shadow-xl transition-all duration-300"
         >
-          Get Started Free
+          Join The Elite
         </Button>
       </header>
 
