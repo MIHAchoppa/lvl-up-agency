@@ -796,15 +796,6 @@ async def audition_upload_chunk_deprecated():
 async def audition_upload_complete_deprecated():
     raise HTTPException(status_code=401, detail="Login required to submit an audition")
 
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    event_id: str
-    user_id: str
-    status: str = "going"  # going | interested | cancelled
-    responded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-
-    reviewed_at: Optional[datetime] = None
-
 
 @api_router.post("/public/audition/upload/init")
 async def audition_upload_init(meta: AuditionUploadInit):
