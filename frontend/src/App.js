@@ -1098,6 +1098,41 @@ function AuthPage({ onBack }) {
                   />
                 </div>
                 <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white font-semibold">
+            <TabsContent value="admin">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="admin-bigo-id">Admin BIGO ID</Label>
+                  <Input
+                    id="admin-bigo-id"
+                    type="text"
+                    placeholder="Admin"
+                    value={bigoId}
+                    onChange={(e) => setBigoId(e.target.value)}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="admin-password">Password</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    placeholder="admin333"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Tip: Create an admin by registering with passcode <span className="font-semibold">ADMIN2025</span>. Then log in here using your BIGO ID.
+                </p>
+                <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white font-semibold">
+                  Admin Access
+                </Button>
+              </form>
+            </TabsContent>
+
                   Access Dashboard
                 </Button>
               </form>
