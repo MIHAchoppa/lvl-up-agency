@@ -647,6 +647,14 @@ async def audition_upload_init_auth(meta: AuditionUploadInitAuth, current_user: 
     if meta.file_size and meta.file_size > MAX_VIDEO_BYTES:
         raise HTTPException(status_code=400, detail="File too large (max 500MB)")
 
+    # Enforce single active submission (uploading/submitted)
+    existing = await db.audition_submissions.find_one({
+        "bigo_id": current_user.bigo_id,
+        "status": {"$in": ["uploading", "submitted"]}
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="You already have an active audition. Please wait for review or ask admin to reset.")
+
     # Create submission placeholder linked to user
     submission = AuditionSubmission(
         name=current_user.name,
