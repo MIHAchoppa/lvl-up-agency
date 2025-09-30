@@ -1919,9 +1919,15 @@ function Dashboard() {
   const renderPage = () => {
     switch (currentPage) {
       case 'home': return <HomePage />;
-      case 'recruitment': return <InfluencerRecruitment />;
+      case 'tasks': return <div className="p-6"><h1 className="text-2xl font-bold">Tasks & Rewards - Coming Soon</h1></div>;
+      case 'quizzes': return <div className="p-6"><h1 className="text-2xl font-bold">BIGO Quizzes - Coming Soon</h1></div>;
+      case 'calendar': return <div className="p-6"><h1 className="text-2xl font-bold">Events & Calendar - Coming Soon</h1></div>;
       case 'quota-tracker': return <QuotaTrackerPage />;
-      // ... other cases would be here
+      case 'education': return <div className="p-6"><h1 className="text-2xl font-bold">BIGO Academy - Coming Soon</h1></div>;
+      case 'messages': return <div className="p-6"><h1 className="text-2xl font-bold">Messages - Coming Soon</h1></div>;
+      case 'profile': return <div className="p-6"><h1 className="text-2xl font-bold">Profile - Coming Soon</h1></div>;
+      case 'recruitment': return <InfluencerRecruitment />;
+      case 'admin': return <div className="p-6"><h1 className="text-2xl font-bold">Admin Panel - Coming Soon</h1></div>;
       default: return <HomePage />;
     }
   };
