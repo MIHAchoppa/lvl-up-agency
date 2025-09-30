@@ -904,14 +904,18 @@ async def audition_upload_complete(upload_id: str = Query(...)):
         with open(final_tmp, 'wb') as fout:
             for c in chunks:
                 # download each chunk and append
-                stream = await gridfs_bucket.open_download_stream_by_name(c["filename"]) 
-                if stream:
-                    while True:
-                        b = await stream.read(1024 * 1024)
-                        if not b:
-                            break
-                        fout.write(b)
-                    await stream.close()
+                try:
+                    stream = await gridfs_bucket.open_download_stream_by_name(c["filename"]) 
+                    if stream:
+                        while True:
+                            b = await stream.read(1024 * 1024)
+                            if not b:
+                                break
+                            fout.write(b)
+                        await stream.close()
+                except Exception as e:
+                    print(f"Error processing chunk {c['filename']}: {e}")
+                    continue
         # upload composed file
         with open(final_tmp, 'rb') as fin:
             await gridfs_bucket.upload_from_stream(filename=gridfs_filename, source=fin, metadata={
