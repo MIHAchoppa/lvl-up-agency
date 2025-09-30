@@ -566,72 +566,61 @@ function LandingPage({ onGetStarted, user }) {
         </div>
       </section>
 
-      {/* Recruitment Flyers Section */}
+      {/* Highlight Sections (Images spread across page) */}
       <section className="container mx-auto px-4 py-20">
         <h2 className="text-4xl font-serif font-bold text-center mb-16 text-gray-100">
           Join Our Elite Network of Successful Hosts
         </h2>
-        
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <Card className="bg-white border-2 border-gold/20 hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="aspect-square">
-              <img 
-                src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/btd98w68_IMG_6006.webp"
-                alt="Artists Go Live & Earn - LVLUP AGENCY"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <CardContent className="p-6 text-center">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Artists & Creatives</h3>
-              <p className="text-gray-600 mb-4">Share your talent and monetize your art on BIGO Live</p>
-              <Button 
-                onClick={() => setShowAudition(true)}
-                className="w-full bg-red-500 hover:bg-red-600 text-white"
-              >
-                Apply Now
-              </Button>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-white border-2 border-gold/20 hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="aspect-square">
-              <img 
-                src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/hn7bkjkl_IMG_6007.webp"
-                alt="Wellness & Lifestyle Hosts - LVLUP AGENCY"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <CardContent className="p-6 text-center">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Wellness & Lifestyle</h3>
-              <p className="text-gray-600 mb-4">Share your wellness journey and inspire others while earning</p>
-              <Button 
-                onClick={() => setShowAudition(true)}
-                className="w-full bg-green-500 hover:bg-green-600 text-white"
-              >
-                Apply Now
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Artists & Creatives */}
+        <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto mb-24">
+          <div>
+            <img 
+              src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/btd98w68_IMG_6006.webp"
+              alt="Artists Go Live & Earn - LVLUP AGENCY"
+              className="w-full rounded-xl shadow-2xl border border-gold/20"
+              loading="lazy"
+            />
+          </div>
+          <div>
+            <h3 className="text-3xl font-bold text-gray-100 mb-3">Artists & Creatives</h3>
+            <p className="text-gray-300 mb-6">Share your talent and monetize your art on BIGO Live.</p>
+            <Button onClick={onGetStarted} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
+          </div>
+        </div>
 
-          <Card className="bg-white border-2 border-gold/20 hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="aspect-square">
-              <img 
-                src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/6louc2s4_IMG_6008.webp"
-                alt="Entertainment Hosts - LVLUP AGENCY"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <CardContent className="p-6 text-center">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Entertainment & Fun</h3>
-              <p className="text-gray-600 mb-4">Bring joy and entertainment while building your income stream</p>
-              <Button 
-                onClick={() => setShowAudition(true)}
-                className="w-full bg-green-500 hover:bg-green-600 text-white"
-              >
-                Apply Now
-              </Button>
-            </CardContent>
-          </Card>
+        {/* Wellness & Lifestyle */}
+        <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto mb-24">
+          <div className="order-2 md:order-1">
+            <h3 className="text-3xl font-bold text-gray-100 mb-3">Wellness & Lifestyle</h3>
+            <p className="text-gray-300 mb-6">Share your wellness journey and inspire others while earning.</p>
+            <Button onClick={onGetStarted} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
+          </div>
+          <div className="order-1 md:order-2">
+            <img 
+              src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/hn7bkjkl_IMG_6007.webp"
+              alt="Wellness & Lifestyle Hosts - LVLUP AGENCY"
+              className="w-full rounded-xl shadow-2xl border border-gold/20"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        {/* Entertainment & Fun */}
+        <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+          <div>
+            <img 
+              src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/6louc2s4_IMG_6008.webp"
+              alt="Entertainment Hosts - LVLUP AGENCY"
+              className="w-full rounded-xl shadow-2xl border border-gold/20"
+              loading="lazy"
+            />
+          </div>
+          <div>
+            <h3 className="text-3xl font-bold text-gray-100 mb-3">Entertainment & Fun</h3>
+            <p className="text-gray-300 mb-6">Bring joy and entertainment while building your income stream.</p>
+            <Button onClick={onGetStarted} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
+          </div>
         </div>
       </section>
 
