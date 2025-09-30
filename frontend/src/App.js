@@ -464,7 +464,7 @@ function LandingPage({ onGetStarted, user }) {
       <SEOMeta />
       
       {/* Header */}
-      <header className="container mx-auto px-4 py-6 flex justify-between items-center border-b border-gray-200">
+      <header className="container mx-auto px-4 py-6 flex justify-between items-center border-b border-gray-800">
         <div className="flex items-center space-x-4">
           <div className="w-12 h-12 bg-gradient-to-r from-gold to-yellow-500 rounded-full flex items-center justify-center border-2 border-gold">
             <Crown className="w-6 h-6 text-white" />
