@@ -401,97 +401,118 @@ class LevelUpAPITester:
         return success
 
 def main():
-    print("🚀 Starting Level Up Agency API Tests")
-    print("=" * 50)
+    print("🚀 Starting Level Up Agency API Tests - Updated Specs")
+    print("=" * 60)
     
     tester = LevelUpAPITester()
+    failed_tests = []
     
-    # Test user registration with passcode (for Discord access)
-    print("\n📝 TESTING REGISTRATION WITH PASSCODE")
-    test_user_member = f"testmember_{datetime.now().strftime('%H%M%S')}"
-    if not tester.test_register(test_user_member, "password123", "Test Member", "LEVELUP2025"):
-        print("❌ Member registration failed, continuing with other tests...")
+    # AUTH SETUP
+    print("\n" + "="*50)
+    print("🔐 AUTH SETUP")
+    print("="*50)
     
-    # Test user registration without passcode
-    print("\n📝 TESTING REGISTRATION WITHOUT PASSCODE")
-    test_user_host = f"testhost_{datetime.now().strftime('%H%M%S')}"
-    if not tester.test_register(test_user_host, "password123", "Test Host"):
-        print("❌ Host registration failed, stopping tests")
+    # Register admin with ADMIN2025 passcode
+    admin_success, admin_bigo_id = tester.test_register_admin()
+    if not admin_success:
+        failed_tests.append("Admin Registration")
+        print("❌ Admin registration failed - continuing with other tests")
+    
+    # Register host user (no passcode)
+    host_success, host_bigo_id = tester.test_register_host()
+    if not host_success:
+        failed_tests.append("Host Registration")
+        print("❌ Host registration failed - stopping tests")
         return 1
     
-    # Test authentication endpoints
-    print("\n🔐 TESTING AUTHENTICATION")
-    if not tester.test_get_current_user():
-        print("❌ Get current user failed")
-        return 1
+    # AUDITION SYSTEM (AUTH-ONLY)
+    print("\n" + "="*50)
+    print("🎬 AUDITION SYSTEM (AUTH-REQUIRED)")
+    print("="*50)
     
-    # Test login with the registered user
-    print("\n🔑 TESTING LOGIN")
-    if not tester.test_login(test_user_host, "password123"):
-        print("❌ Login failed")
-        return 1
+    # Test public endpoints return 401
+    if not tester.test_public_audition_endpoints_unauthorized():
+        failed_tests.append("Public Audition Endpoints 401")
     
-    # Test core features
-    print("\n📋 TESTING TASKS")
-    tasks_success, tasks = tester.test_get_tasks()
-    if not tasks_success:
-        print("❌ Get tasks failed")
-    elif len(tasks) > 0:
-        # Try to submit the first task
-        first_task = tasks[0]
-        task_id = first_task.get('id')
-        if task_id:
-            tester.test_submit_task(
-                task_id, 
-                proof_url="https://example.com/proof.jpg" if first_task.get('requires_proof') else None,
-                note="Test submission from API test"
-            )
+    # Test audition upload flow with host token
+    if not tester.test_audition_upload_init():
+        failed_tests.append("Audition Upload Init")
+        print("❌ Upload init failed - skipping chunk/complete tests")
     else:
-        print("⚠️  No tasks found in database - seeded data may be missing")
-    
-    print("\n🎁 TESTING REWARDS")
-    rewards_success, rewards = tester.test_get_rewards()
-    if not rewards_success:
-        print("❌ Get rewards failed")
-    elif len(rewards) > 0:
-        # Find a reward we can afford (or try the cheapest one)
-        affordable_reward = None
-        for reward in rewards:
-            if (tester.user_data.get('total_points', 0) >= reward.get('cost_points', 0)):
-                affordable_reward = reward
-                break
+        # Upload chunks
+        chunk_success = True
+        for chunk_idx in [0, 1]:
+            if not tester.test_audition_upload_chunk(chunk_idx):
+                failed_tests.append(f"Audition Upload Chunk {chunk_idx}")
+                chunk_success = False
         
-        if affordable_reward:
-            tester.test_redeem_reward(affordable_reward['id'])
-        else:
-            print("⚠️  No affordable rewards found - user has insufficient points")
+        if chunk_success:
+            # Complete upload
+            if not tester.test_audition_upload_complete():
+                failed_tests.append("Audition Upload Complete")
+            else:
+                # Test admin functions
+                if admin_success:
+                    if not tester.test_admin_list_auditions():
+                        failed_tests.append("Admin List Auditions")
+                    
+                    if not tester.test_admin_stream_video():
+                        failed_tests.append("Admin Stream Video")
+                    
+                    if not tester.test_admin_delete_audition():
+                        failed_tests.append("Admin Delete Audition")
+    
+    # EVENTS RSVP
+    print("\n" + "="*50)
+    print("📅 EVENTS RSVP SYSTEM")
+    print("="*50)
+    
+    if not tester.test_create_event():
+        failed_tests.append("Create Event")
+        print("❌ Event creation failed - skipping RSVP tests")
     else:
-        print("⚠️  No rewards found in database - seeded data may be missing")
+        if not tester.test_rsvp_event():
+            failed_tests.append("RSVP Event")
+        
+        if not tester.test_get_attendees():
+            failed_tests.append("Get Event Attendees")
     
-    print("\n📢 TESTING ANNOUNCEMENTS")
-    announcements_success, announcements = tester.test_get_announcements()
-    if not announcements_success:
-        print("❌ Get announcements failed")
-    elif len(announcements) == 0:
-        print("⚠️  No announcements found in database - seeded data may be missing")
+    # CHAT SYSTEM
+    print("\n" + "="*50)
+    print("💬 CHAT SYSTEM")
+    print("="*50)
     
-    # Test invalid token
-    print("\n🔒 TESTING INVALID TOKEN")
-    original_token = tester.token
-    tester.token = "invalid_token_123"
-    tester.run_test("Invalid Token Test", "GET", "auth/me", 401)
-    tester.token = original_token
+    if admin_success:
+        if not tester.test_init_default_chat_channel():
+            failed_tests.append("Init Default Chat Channel")
     
-    # Print final results
-    print("\n" + "=" * 50)
-    print(f"📊 FINAL RESULTS: {tester.tests_passed}/{tester.tests_run} tests passed")
-    
-    if tester.tests_passed == tester.tests_run:
-        print("🎉 All tests passed!")
-        return 0
+    if not tester.test_get_chat_channels():
+        failed_tests.append("Get Chat Channels")
+        print("❌ Get channels failed - skipping message tests")
     else:
-        print(f"⚠️  {tester.tests_run - tester.tests_passed} tests failed")
+        if not tester.test_post_chat_message():
+            failed_tests.append("Post Chat Message")
+        
+        if not tester.test_get_chat_messages():
+            failed_tests.append("Get Chat Messages")
+    
+    # FINAL RESULTS
+    print("\n" + "="*60)
+    print("📊 FINAL RESULTS")
+    print("="*60)
+    print(f"Tests Run: {tester.tests_run}")
+    print(f"Tests Passed: {tester.tests_passed}")
+    print(f"Tests Failed: {len(failed_tests)}")
+    
+    if failed_tests:
+        print("\n❌ FAILED TESTS:")
+        for test in failed_tests:
+            print(f"   • {test}")
+        print(f"\n⚠️  {len(failed_tests)} tests failed out of {tester.tests_run}")
         return 1
+    else:
+        print("\n🎉 ALL TESTS PASSED!")
+        return 0
 
 if __name__ == "__main__":
     sys.exit(main())
