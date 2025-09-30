@@ -609,6 +609,35 @@ class AuditionSubmission(BaseModel):
     submission_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     review_notes: Optional[str] = None
     reviewed_by: Optional[str] = None
+
+# GridFS setup for audition videos
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+import shutil
+import mimetypes
+
+gridfs_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="audition_videos")
+
+class AuditionUploadInit(BaseModel):
+    name: str
+    bigo_id: str
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    filename: str
+    content_type: Optional[str] = None
+    total_chunks: Optional[int] = None  # required for chunked upload
+    file_size: Optional[int] = None
+
+MAX_VIDEO_BYTES = 500 * 1024 * 1024  # 500MB
+ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/webm"}
+
+class EventRSVP(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_id: str
+    user_id: str
+    status: str = "going"  # going | interested | cancelled
+    responded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
     reviewed_at: Optional[datetime] = None
 
 # Public Routes (No authentication required)
