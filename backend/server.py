@@ -752,7 +752,7 @@ async def audition_upload_complete(upload_id: str = Query(...)):
                 await stream.close()
         # upload composed file
         with open(final_tmp, 'rb') as fin:
-            final_id = await gridfs_bucket.upload_from_stream(filename=gridfs_filename, source=fin, metadata={
+            await gridfs_bucket.upload_from_stream(filename=gridfs_filename, source=fin, metadata={
                 "upload_id": upload_id,
                 "content_type": upload_rec.get("content_type"),
                 "type": "final"
