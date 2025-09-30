@@ -605,7 +605,7 @@ class AuditionSubmission(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     video_url: Optional[str] = None
-    status: str = "submitted"  # submitted, reviewed, approved, rejected
+    status: str = "submitted"  # uploading, submitted, reviewed, approved, rejected
     submission_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     review_notes: Optional[str] = None
     reviewed_by: Optional[str] = None
