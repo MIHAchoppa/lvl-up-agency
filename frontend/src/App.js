@@ -518,7 +518,7 @@ function LandingPage({ onGetStarted, user }) {
           <h3 className="text-gold font-serif text-lg mb-2">Agent Mihanna Presents</h3>
         </div>
         
-        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gray-900">
+        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gray-100">
           MAKE MONEY FROM YOUR PHONE
         </h1>
         <h2 className="text-xl md:text-2xl text-gray-700 mb-8 max-w-4xl mx-auto">
