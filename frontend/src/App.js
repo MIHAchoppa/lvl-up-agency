@@ -250,12 +250,26 @@ function LandingPage({ onGetStarted }) {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 bg-gradient-to-r from-gold via-yellow-600 to-gold bg-clip-text text-transparent">
-          Transform Your BIGO Live Success
+      <section className="container mx-auto px-4 py-20 text-center relative z-10">
+        <div className="mb-8">
+          <div className="w-32 h-32 mx-auto mb-6 relative">
+            <img 
+              src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/v5hjw882_IMG_6003.webp"
+              alt="Agent Mihanna"
+              className="w-full h-full rounded-full border-4 border-gold shadow-2xl object-cover"
+            />
+            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gold rounded-full flex items-center justify-center">
+              <Crown className="w-5 h-5 text-black" />
+            </div>
+          </div>
+          <h3 className="text-gold font-serif text-lg mb-2">Agent Mihanna Presents</h3>
+        </div>
+        
+        <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 bg-gradient-to-r from-gold via-yellow-300 to-gold bg-clip-text text-transparent">
+          Master BIGO Live's Bean Empire
         </h1>
-        <h2 className="text-xl md:text-2xl text-gray-700 mb-8 max-w-4xl mx-auto">
-          Join 1000+ BIGO Live hosts earning 5x more with our AI-powered coaching platform. Master PK battles, maximize gifts, and build massive audiences.
+        <h2 className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto">
+          Join Agent Mihanna's elite network of BIGO hosts dominating the S-Tier system. Master bean maximization, tier climbing, and profit strategies that guarantee success.
         </h2>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
