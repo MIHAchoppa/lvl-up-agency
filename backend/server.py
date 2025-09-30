@@ -1242,6 +1242,20 @@ async def submit_task(task_id: str, submission_data: dict, current_user: User = 
     existing = await db.task_submissions.find_one({"user_id": current_user.id, "task_id": task_id})
     if existing:
         raise HTTPException(status_code=400, detail="Task already submitted")
+
+# SEO helper public endpoint (no sensitive data). Could be used by frontend for meta tags.
+@api_router.get("/public/seo/summary")
+async def seo_summary():
+    return {
+        "h1": "LEVEL UP AGENCY – Become a Top-Earning BIGO Live Host",
+        "keywords": [
+            "BIGO Live agency", "BIGO host audition", "BIGO beans to USD", "BIGO tier calculator", "BIGO coach",
+            "become a streamer", "audition video upload", "Agent Mihanna"
+        ],
+        "description": "Audition to join LEVEL UP AGENCY by Agent Mihanna. Upload your video, access elite coaching, events, and earn more with our bean/tier mastery.
+        "
+    }
+
     
     submission = TaskSubmission(
         user_id=current_user.id,
