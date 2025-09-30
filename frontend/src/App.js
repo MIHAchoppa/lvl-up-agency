@@ -470,7 +470,7 @@ function LandingPage({ onGetStarted, user }) {
             <Crown className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-serif font-bold text-gray-900">LVLUP AGENCY</h1>
+            <h1 className="text-2xl font-serif font-bold text-gray-100">LVLUP AGENCY</h1>
             <p className="text-gold text-sm">Elite BIGO Live Host Network</p>
           </div>
         </div>
