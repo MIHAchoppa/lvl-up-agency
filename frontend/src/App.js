@@ -314,32 +314,32 @@ function LandingPage({ onGetStarted }) {
         </h2>
         
         <div className="grid md:grid-cols-3 gap-8">
-          <Card className="bg-white border-gold/20 hover:shadow-lg transition-shadow">
+          <Card className="bg-black/40 border-gold/30 hover:bg-black/50 transition-all duration-300 backdrop-blur-sm">
             <CardHeader>
-              <Bot className="w-12 h-12 text-gold mb-4" />
-              <CardTitle className="text-xl text-gray-900">AI BIGO Coach</CardTitle>
-              <CardDescription className="text-gray-600">
-                Get personalized coaching from our AI trained on 1000+ successful BIGO hosts
+              <BarChart3 className="w-12 h-12 text-gold mb-4" />
+              <CardTitle className="text-xl text-gold">S-Tier Bean Mastery</CardTitle>
+              <CardDescription className="text-gray-300">
+                Master the S25 tier system, bean conversion rates, and profit maximization strategies that guarantee $535K+ earnings
               </CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="bg-white border-gold/20 hover:shadow-lg transition-shadow">
+          <Card className="bg-black/40 border-gold/30 hover:bg-black/50 transition-all duration-300 backdrop-blur-sm">
             <CardHeader>
-              <TrendingUp className="w-12 h-12 text-gold mb-4" />
-              <CardTitle className="text-xl text-gray-900">PK Battle Mastery</CardTitle>
-              <CardDescription className="text-gray-600">
-                Master PK strategies, timing, and audience engagement for maximum earnings
+              <Zap className="w-12 h-12 text-gold mb-4" />
+              <CardTitle className="text-xl text-gold">Digital Wheel Domination</CardTitle>
+              <CardDescription className="text-gray-300">
+                Exploit BIGO's digital wheel system for guaranteed profits, strategic gift trading, and audience engagement mastery
               </CardDescription>
             </CardHeader>
           </Card>
 
-          <Card className="bg-white border-gold/20 hover:shadow-lg transition-shadow">
+          <Card className="bg-black/40 border-gold/30 hover:bg-black/50 transition-all duration-300 backdrop-blur-sm">
             <CardHeader>
-              <DollarSign className="w-12 h-12 text-gold mb-4" />
-              <CardTitle className="text-xl text-gray-900">Maximize Earnings</CardTitle>
-              <CardDescription className="text-gray-600">
-                Proven strategies to increase gifts, bonuses, and overall BIGO Live income
+              <Users2 className="w-12 h-12 text-gold mb-4" />
+              <CardTitle className="text-xl text-gold">Elite Community Building</CardTitle>
+              <CardDescription className="text-gray-300">
+                Build unstoppable communities using advanced psychology, rebate events, and profit-driven engagement strategies
               </CardDescription>
             </CardHeader>
           </Card>
