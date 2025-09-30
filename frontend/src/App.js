@@ -546,7 +546,7 @@ function LandingPage({ onGetStarted, user }) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto text-sm text-gray-200">
           <div className="flex items-center justify-center text-green-600">
             <CheckCircle className="w-4 h-4 mr-2" />
             Free Training
