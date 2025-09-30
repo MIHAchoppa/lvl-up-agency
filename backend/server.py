@@ -818,12 +818,14 @@ async def stream_audition_video(submission_id: str, current_user: User = Depends
     stream = await gridfs_bucket.open_download_stream_by_name(file_name)
 
     async def iterfile() -> AsyncGenerator[bytes, None]:
-        while True:
-            chunk = await stream.read(1024 * 1024)
-            if not chunk:
-                break
-            yield chunk
-        await stream.close()
+        try:
+            while True:
+                chunk = await stream.read(1024 * 1024)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            await stream.close()
 
     return StreamingResponse(iterfile(), media_type="video/mp4")
 
