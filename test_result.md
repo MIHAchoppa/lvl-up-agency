@@ -194,6 +194,18 @@
 
 ## test_plan:
   current_focus:
+  - task: "Audition auth requirement + single-active-submission rule"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Moved upload routes to /api/audition/* with auth; deprecated public routes return 401; enforced one active submission per user."
+
     - "Fix audition upload completion GridFS bug"
   stuck_tasks:
     - "Audition video upload via Mongo GridFS (init/chunk/complete, stream, delete)"
