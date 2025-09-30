@@ -638,25 +638,25 @@ function LandingPage({ onGetStarted, user }) {
           </h2>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="bg-white border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
+            <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <DollarSign className="w-12 h-12 text-gold mb-4 mx-auto" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Top Earnings</h3>
               <p className="text-gray-600">Earn $500-$5000+ monthly with our proven strategies</p>
             </Card>
 
-            <Card className="bg-white border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
+            <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <Users className="w-12 h-12 text-gold mb-4 mx-auto" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Expert Coaching</h3>
               <p className="text-gray-600">Get personalized training from top BIGO Live experts</p>
             </Card>
 
-            <Card className="bg-white border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
+            <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <Clock className="w-12 h-12 text-gold mb-4 mx-auto" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Flexible Schedule</h3>
               <p className="text-gray-600">Work when you want - set your own streaming hours</p>
             </Card>
 
-            <Card className="bg-white border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
+            <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <Trophy className="w-12 h-12 text-gold mb-4 mx-auto" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Proven Success</h3>
               <p className="text-gray-600">Join 1000+ successful hosts in our elite network</p>
