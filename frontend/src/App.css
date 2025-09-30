@@ -13,7 +13,7 @@ body {
   background-color: #f9fafb;
 }
 
-/* Custom CSS Variables for Brand Colors */
+/* Light Theme Color Variables */
 :root {
   --color-black: #0A0A0A;
   --color-gold: #D4AF37;
@@ -79,6 +79,39 @@ h1, h2, h3, h4, h5, h6 {
   border-color: rgba(212, 175, 55, 0.3);
 }
 
+/* Light Theme Specific Styles */
+.bg-light {
+  background-color: #ffffff;
+}
+
+.bg-light-secondary {
+  background-color: #f8fafc;
+}
+
+.text-light-primary {
+  color: #1e293b;
+}
+
+.text-light-secondary {
+  color: #64748b;
+}
+
+.border-light {
+  border-color: #e2e8f0;
+}
+
+/* Card Styles for Light Theme */
+.card-light {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.card-light:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
 /* Animation Classes */
 .animate-shimmer {
   background: linear-gradient(
@@ -105,25 +138,17 @@ h1, h2, h3, h4, h5, h6 {
   50% { transform: translateY(-10px); }
 }
 
-/* Glass morphism effect */
-.glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* Custom scrollbar */
+/* Light theme scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-gray-100);
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-gray-300);
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
@@ -137,8 +162,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 /* Button animations */
@@ -175,10 +200,11 @@ h1, h2, h3, h4, h5, h6 {
   background-clip: text;
 }
 
-/* Custom focus states */
+/* Focus states for light theme */
 .focus-gold:focus {
   outline: 2px solid var(--color-gold);
   outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
 }
 
 /* Loading states */
@@ -191,7 +217,7 @@ h1, h2, h3, h4, h5, h6 {
   50% { opacity: 0.5; }
 }
 
-/* Status indicators */
+/* Status indicators for light theme */
 .status-dot {
   position: relative;
 }
@@ -206,6 +232,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 50%;
   background: var(--color-gold);
   border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 /* Progress bars */
@@ -217,6 +244,34 @@ h1, h2, h3, h4, h5, h6 {
   );
 }
 
+/* Voice assistant specific styles */
+.voice-assistant-pulse {
+  animation: voice-pulse 2s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+  0%, 100% { 
+    background-color: var(--color-gold);
+    transform: scale(1);
+  }
+  50% { 
+    background-color: #f59e0b;
+    transform: scale(1.05);
+  }
+}
+
+/* Admin agent specific styles */
+.admin-glow {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+/* Recruitment panel styles */
+.recruitment-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #0ea5e9;
+  border-radius: 12px;
+}
+
 /* Mobile responsiveness helpers */
 @media (max-width: 768px) {
   .mobile-p-4 {
@@ -226,21 +281,33 @@ h1, h2, h3, h4, h5, h6 {
   .mobile-text-sm {
     font-size: 0.875rem;
   }
+  
+  .voice-assistant-mobile {
+    width: 12px;
+    height: 12px;
+  }
 }
 
-/* Dark theme compatibility */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-gray-50: #1f2937;
-    --color-gray-100: #374151;
-    --color-gray-200: #4b5563;
-    --color-gray-300: #6b7280;
-    --color-gray-400: #9ca3af;
-    --color-gray-500: #d1d5db;
-    --color-gray-600: #e5e7eb;
-    --color-gray-700: #f3f4f6;
-    --color-gray-800: #f9fafb;
-    --color-gray-900: #ffffff;
+/* Light theme specific overrides */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: #ffffff;
+  }
+  
+  .bg-gray-50 {
+    background-color: #f8fafc !important;
+  }
+  
+  .text-gray-900 {
+    color: #0f172a !important;
+  }
+  
+  .text-gray-600 {
+    color: #475569 !important;
+  }
+  
+  .border-gray-200 {
+    border-color: #e2e8f0 !important;
   }
 }
 
@@ -280,6 +347,30 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
 }
 
+/* Floating assistant positioning */
+.floating-assistants {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Success/Error message styles for light theme */
+.toast-success {
+  background-color: #dcfce7;
+  border: 1px solid #16a34a;
+  color: #15803d;
+}
+
+.toast-error {
+  background-color: #fef2f2;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+}
+
 /* Print styles */
 @media print {
   .no-print {
@@ -288,5 +379,39 @@ h1, h2, h3, h4, h5, h6 {
   
   .print-only {
     display: block !important;
+  }
+  
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .text-gold {
+    color: #b8860b;
+  }
+  
+  .bg-gold {
+    background-color: #b8860b;
+  }
+  
+  .border-gold {
+    border-color: #b8860b;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer,
+  .animate-float,
+  .loading-pulse,
+  .voice-assistant-pulse {
+    animation: none;
+  }
+  
+  .card-hover {
+    transition: none;
   }
 }
