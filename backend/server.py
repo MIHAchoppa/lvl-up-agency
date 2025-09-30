@@ -640,6 +640,206 @@ class EventRSVP(BaseModel):
 
     reviewed_at: Optional[datetime] = None
 
+
+@api_router.post("/public/audition/upload/init")
+async def audition_upload_init(meta: AuditionUploadInit):
+    # Validate type if provided
+    if meta.content_type and meta.content_type not in ALLOWED_VIDEO_TYPES:
+        raise HTTPException(status_code=400, detail="Unsupported video type")
+    if meta.file_size and meta.file_size > MAX_VIDEO_BYTES:
+        raise HTTPException(status_code=400, detail="File too large (max 500MB)")
+
+    # Create submission placeholder
+    submission = AuditionSubmission(
+        name=meta.name,
+        bigo_id=meta.bigo_id,
+        email=meta.email,
+        phone=meta.phone,
+        video_url=None,
+        status="uploading"
+    )
+    await db.audition_submissions.insert_one(submission.dict())
+
+    # Create a GridFS file and return its id as upload_id
+    upload_id = str(uuid.uuid4())
+    await db.audition_uploads.insert_one({
+        "id": upload_id,
+        "submission_id": submission.id,
+        "filename": meta.filename,
+        "content_type": meta.content_type or mimetypes.guess_type(meta.filename)[0] or "application/octet-stream",
+        "total_chunks": meta.total_chunks,
+        "received_bytes": 0,
+        "created_at": datetime.now(timezone.utc)
+    })
+    return {"upload_id": upload_id, "submission_id": submission.id}
+
+@api_router.post("/public/audition/upload/chunk")
+async def audition_upload_chunk(upload_id: str = Query(...), chunk_index: int = Query(...), chunk: UploadFile = File(...)):
+    upload_rec = await db.audition_uploads.find_one({"id": upload_id})
+    if not upload_rec:
+        raise HTTPException(status_code=404, detail="Upload session not found")
+
+    # Append chunk to GridFS file stream named by upload_id
+    gridfs_filename = f"{upload_id}_{upload_rec['filename']}"
+    # We store each chunk as a temp file under /tmp then append via GridFS upload_from_stream
+    tmp_path = f"/tmp/{gridfs_filename}_{chunk_index}.part"
+    try:
+        async with aiofiles.open(tmp_path, 'wb') as f:
+            while True:
+                data = await chunk.read(1024 * 1024)
+                if not data:
+                    break
+                await f.write(data)
+
+        # Save chunk into GridFS as separate file chunk refs
+        with open(tmp_path, 'rb') as fsrc:
+            await gridfs_bucket.upload_from_stream(filename=f"{gridfs_filename}:{chunk_index}", source=fsrc, metadata={
+                "upload_id": upload_id,
+                "chunk_index": chunk_index,
+                "type": "chunk"
+            })
+        await db.audition_uploads.update_one({"id": upload_id}, {"$inc": {"received_bytes": chunk.spool_max_size if hasattr(chunk, 'spool_max_size') else 0}})
+    finally:
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+    return {"message": "Chunk received"}
+
+@api_router.post("/public/audition/upload/complete")
+async def audition_upload_complete(upload_id: str = Query(...)):
+    upload_rec = await db.audition_uploads.find_one({"id": upload_id})
+    if not upload_rec:
+        raise HTTPException(status_code=404, detail="Upload session not found")
+
+    # Reassemble by streaming all chunk files in order into final GridFS file
+    gridfs_filename = f"{upload_id}_{upload_rec['filename']}"
+
+    # List chunk files stored in GridFS
+    chunks = []
+    async for file in gridfs_bucket.find({"filename": {"$regex": f"^{gridfs_filename}:"}, "metadata.upload_id": upload_id}):
+        chunks.append({"id": file._id, "filename": file.filename})
+    if not chunks:
+        raise HTTPException(status_code=400, detail="No chunks found")
+
+    # Sort by chunk index
+    def idx(name: str):
+        try:
+            return int(name.split(":")[-1])
+        except Exception:
+            return 0
+    chunks.sort(key=lambda c: idx(c["filename"]))
+
+    # Create final file
+    final_id = None
+    try:
+        # Create a pipe via temporary file to compose
+        final_tmp = f"/tmp/{gridfs_filename}.final"
+        with open(final_tmp, 'wb') as fout:
+            for c in chunks:
+                # download each chunk and append
+                stream = await gridfs_bucket.open_download_stream_by_name(c["filename"]) 
+                while True:
+                    b = await stream.read(1024 * 1024)
+                    if not b:
+                        break
+                    fout.write(b)
+                await stream.close()
+        # upload composed file
+        with open(final_tmp, 'rb') as fin:
+            final_id = await gridfs_bucket.upload_from_stream(filename=gridfs_filename, source=fin, metadata={
+                "upload_id": upload_id,
+                "content_type": upload_rec.get("content_type"),
+                "type": "final"
+            })
+    finally:
+        try:
+            os.remove(final_tmp)
+        except Exception:
+            pass
+
+    # Clean up chunk files
+    async for file in gridfs_bucket.find({"filename": {"$regex": f"^{gridfs_filename}:"}, "metadata.upload_id": upload_id}):
+        try:
+            await gridfs_bucket.delete(file._id)
+        except Exception:
+            pass
+
+    # Link to submission
+    final_url = f"gridfs://auditions/{str(final_id)}"
+    submission_id = upload_rec["submission_id"]
+    await db.audition_submissions.update_one({"id": submission_id}, {"$set": {"video_url": final_url, "status": "submitted"}})
+
+    # Notify admin in-app
+    await db.admin_notifications.insert_one({
+        "type": "new_audition",
+        "message": f"New audition submitted (upload completed)",
+        "audition_id": submission_id,
+        "created_at": datetime.now(timezone.utc)
+    })
+
+    return {"message": "Upload completed", "submission_id": submission_id}
+
+@api_router.get("/admin/auditions")
+async def list_auditions(status: Optional[str] = None, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN, UserRole.COACH]))):
+    q = {}
+    if status:
+        q["status"] = status
+    items = await db.audition_submissions.find(q).sort("submission_date", -1).to_list(1000)
+    return [AuditionSubmission(**x) for x in items]
+
+@api_router.put("/admin/auditions/{submission_id}/review")
+async def review_audition(submission_id: str, body: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN, UserRole.COACH]))):
+    status_val = body.get("status")
+    notes = body.get("review_notes")
+    if status_val not in ["reviewed", "approved", "rejected"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    await db.audition_submissions.update_one({"id": submission_id}, {"$set": {
+        "status": status_val,
+        "review_notes": notes,
+        "reviewed_by": current_user.id,
+        "reviewed_at": datetime.now(timezone.utc)
+    }})
+    return {"message": "Audition updated"}
+
+@api_router.get("/admin/auditions/{submission_id}/video")
+async def stream_audition_video(submission_id: str, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN, UserRole.COACH]))):
+    sub = await db.audition_submissions.find_one({"id": submission_id})
+    if not sub or not sub.get("video_url"):
+        raise HTTPException(status_code=404, detail="Video not found")
+    # parse gridfs url
+    file_id = sub["video_url"].split("/")[-1]
+    try:
+        stream = await gridfs_bucket.open_download_stream(file_id)
+    except Exception:
+        # maybe stored by filename
+        stream = await gridfs_bucket.open_download_stream_by_name(file_id)
+
+    async def iterfile() -> AsyncGenerator[bytes, None]:
+        while True:
+            chunk = await stream.read(1024 * 1024)
+            if not chunk:
+                break
+            yield chunk
+        await stream.close()
+
+    return StreamingResponse(iterfile(), media_type="video/mp4")
+
+@api_router.delete("/admin/auditions/{submission_id}")
+async def delete_audition(submission_id: str, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    sub = await db.audition_submissions.find_one({"id": submission_id})
+    if not sub:
+        raise HTTPException(status_code=404, detail="Not found")
+    # delete video
+    if sub.get("video_url") and sub["video_url"].startswith("gridfs://"):
+        file_id = sub["video_url"].split("/")[-1]
+        try:
+            await gridfs_bucket.delete(file_id)
+        except Exception:
+            pass
+    await db.audition_submissions.delete_one({"id": submission_id})
+    return {"message": "Deleted"}
+
 # Public Routes (No authentication required)
 @api_router.post("/public/audition/submit")
 async def submit_audition(audition_data: dict):
