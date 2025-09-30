@@ -1330,7 +1330,7 @@ function AdminPanel() {
               <Clock className="w-8 h-8 text-orange-500" />
             </div>
           </CardContent>
-        </div>
+        </Card>
 
         <Card className="border-gold/20">
           <CardContent className="p-6">
