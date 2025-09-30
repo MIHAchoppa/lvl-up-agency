@@ -637,6 +637,152 @@ MAX_VIDEO_BYTES = 500 * 1024 * 1024  # 500MB
 ALLOWED_VIDEO_TYPES = {"video/mp4", "video/quicktime", "video/webm"}
 
 class EventRSVP(BaseModel):
+
+# AUTH-REQUIRED audition endpoints
+@api_router.post("/audition/upload/init")
+async def audition_upload_init_auth(meta: AuditionUploadInitAuth, current_user: User = Depends(get_current_user)):
+    # Validate
+    if meta.content_type and meta.content_type not in ALLOWED_VIDEO_TYPES:
+        raise HTTPException(status_code=400, detail="Unsupported video type")
+    if meta.file_size and meta.file_size > MAX_VIDEO_BYTES:
+        raise HTTPException(status_code=400, detail="File too large (max 500MB)")
+
+    # Create submission placeholder linked to user
+    submission = AuditionSubmission(
+        name=current_user.name,
+        bigo_id=current_user.bigo_id,
+        email=current_user.email,
+        phone=None,
+        video_url=None,
+        status="uploading"
+    )
+    await db.audition_submissions.insert_one(submission.dict())
+
+    # Create upload session record
+    upload_id = str(uuid.uuid4())
+    await db.audition_uploads.insert_one({
+        "id": upload_id,
+        "submission_id": submission.id,
+        "user_id": current_user.id,
+        "filename": meta.filename,
+        "content_type": meta.content_type or mimetypes.guess_type(meta.filename)[0] or "application/octet-stream",
+        "total_chunks": meta.total_chunks,
+        "received_bytes": 0,
+        "created_at": datetime.now(timezone.utc)
+    })
+    return {"upload_id": upload_id, "submission_id": submission.id}
+
+@api_router.post("/audition/upload/chunk")
+async def audition_upload_chunk_auth(upload_id: str = Query(...), chunk_index: int = Query(...), chunk: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    upload_rec = await db.audition_uploads.find_one({"id": upload_id, "user_id": current_user.id})
+    if not upload_rec:
+        raise HTTPException(status_code=404, detail="Upload session not found")
+    gridfs_filename = f"{upload_id}_{upload_rec['filename']}"
+    tmp_path = f"/tmp/{gridfs_filename}_{chunk_index}.part"
+    try:
+        async with aiofiles.open(tmp_path, 'wb') as f:
+            while True:
+                data = await chunk.read(1024 * 1024)
+                if not data:
+                    break
+                await f.write(data)
+        with open(tmp_path, 'rb') as fsrc:
+            await gridfs_bucket.upload_from_stream(filename=f"{gridfs_filename}:{chunk_index}", source=fsrc, metadata={
+                "upload_id": upload_id,
+                "chunk_index": chunk_index,
+                "type": "chunk",
+                "user_id": current_user.id
+            })
+        try:
+            size = os.path.getsize(tmp_path)
+        except Exception:
+            size = 0
+        await db.audition_uploads.update_one({"id": upload_id}, {"$inc": {"received_bytes": size}})
+    finally:
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+    return {"message": "Chunk received"}
+
+@api_router.post("/audition/upload/complete")
+async def audition_upload_complete_auth(upload_id: str = Query(...), current_user: User = Depends(get_current_user)):
+    upload_rec = await db.audition_uploads.find_one({"id": upload_id, "user_id": current_user.id})
+    if not upload_rec:
+        raise HTTPException(status_code=404, detail="Upload session not found")
+    gridfs_filename = f"{upload_id}_{upload_rec['filename']}"
+
+    # Compose final file
+    chunks = []
+    async for file in gridfs_bucket.find({"filename": {"$regex": f"^{gridfs_filename}:"}, "metadata.upload_id": upload_id}):
+        chunks.append({"id": file._id, "filename": file.filename})
+    if not chunks:
+        raise HTTPException(status_code=400, detail="No chunks found")
+    def idx(name: str):
+        try:
+            return int(name.split(":")[-1])
+        except Exception:
+            return 0
+    chunks.sort(key=lambda c: idx(c["filename"]))
+
+    try:
+        final_tmp = f"/tmp/{gridfs_filename}.final"
+        with open(final_tmp, 'wb') as fout:
+            for c in chunks:
+                stream = await gridfs_bucket.open_download_stream_by_name(c["filename"]) 
+                while True:
+                    b = await stream.read(1024 * 1024)
+                    if not b:
+                        break
+                    fout.write(b)
+                await stream.close()
+        with open(final_tmp, 'rb') as fin:
+            await gridfs_bucket.upload_from_stream(filename=gridfs_filename, source=fin, metadata={
+                "upload_id": upload_id,
+                "content_type": upload_rec.get("content_type"),
+                "type": "final",
+                "user_id": current_user.id
+            })
+    finally:
+        try:
+            os.remove(final_tmp)
+        except Exception:
+            pass
+
+    # Clean chunk parts
+    async for file in gridfs_bucket.find({"filename": {"$regex": f"^{gridfs_filename}:"}, "metadata.upload_id": upload_id}):
+        try:
+            await gridfs_bucket.delete(file._id)
+        except Exception:
+            pass
+
+    # Link to submission
+    final_url = f"gridfs://auditions/byname/{gridfs_filename}"
+    await db.audition_submissions.update_one({"id": upload_rec["submission_id"]}, {"$set": {"video_url": final_url, "status": "submitted"}})
+
+    # Notify admins
+    await db.admin_notifications.insert_one({
+        "type": "new_audition",
+        "message": f"New audition submitted (upload completed)",
+        "audition_id": upload_rec["submission_id"],
+        "created_at": datetime.now(timezone.utc)
+    })
+
+    return {"message": "Upload completed", "submission_id": upload_rec["submission_id"]}
+
+# DEPRECATE old public endpoints (force auth)
+@api_router.post("/public/audition/upload/init")
+async def audition_upload_init_deprecated():
+    raise HTTPException(status_code=401, detail="Login required to submit an audition")
+
+@api_router.post("/public/audition/upload/chunk")
+async def audition_upload_chunk_deprecated():
+    raise HTTPException(status_code=401, detail="Login required to submit an audition")
+
+@api_router.post("/public/audition/upload/complete")
+async def audition_upload_complete_deprecated():
+    raise HTTPException(status_code=401, detail="Login required to submit an audition")
+
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     event_id: str
     user_id: str
