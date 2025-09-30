@@ -1064,10 +1064,11 @@ function AuthPage({ onBack }) {
         </CardHeader>
         
         <CardContent>
-          <Tabs value={isLogin ? "login" : "register"} onValueChange={(value) => setIsLogin(value === "login")}>
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+          <Tabs value={authTab} onValueChange={(value) => setAuthTab(value)}>
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="login">Host Login</TabsTrigger>
               <TabsTrigger value="register">Join Agency</TabsTrigger>
+              <TabsTrigger value="admin">Admin Login</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
