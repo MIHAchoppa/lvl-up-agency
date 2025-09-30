@@ -625,7 +625,7 @@ function LandingPage({ onGetStarted, user }) {
               >
                 Apply Now
               </Button>
-            </Card>
+            </CardContent>
           </Card>
         </div>
       </section>
