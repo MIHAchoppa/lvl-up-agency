@@ -5,7 +5,7 @@ from datetime import datetime
 import time
 
 class ComprehensiveLevelUpTester:
-    def __init__(self, base_url="https://host-dashboard-6.preview.emergentagent.com"):
+    def __init__(self, base_url="https://host-dashboard-8.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None
