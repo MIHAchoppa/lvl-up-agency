@@ -122,11 +122,14 @@
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Public audition routes and SEO summary; no guest chat access."
+      - working: true
+        agent: "testing"
+        comment: "Public endpoints working correctly: /api/public/stats and /api/public/seo/summary return proper data. Guest access properly blocked for protected endpoints."
   - task: "Calendar RSVP & attendees visibility with event link"
     implemented: true
     working: true
