@@ -1242,6 +1242,15 @@ async def submit_task(task_id: str, submission_data: dict, current_user: User = 
     existing = await db.task_submissions.find_one({"user_id": current_user.id, "task_id": task_id})
     if existing:
         raise HTTPException(status_code=400, detail="Task already submitted")
+    
+    submission = TaskSubmission(
+        user_id=current_user.id,
+        task_id=task_id,
+        **submission_data
+    )
+    
+    await db.task_submissions.insert_one(submission.dict())
+    return submission
 
 # SEO helper public endpoint (no sensitive data). Could be used by frontend for meta tags.
 @api_router.get("/public/seo/summary")
@@ -1254,16 +1263,6 @@ async def seo_summary():
         ],
         "description": "Audition to join LEVEL UP AGENCY by Agent Mihanna. Upload your video, access elite coaching, events, and earn more with our bean/tier mastery."
     }
-
-    
-    submission = TaskSubmission(
-        user_id=current_user.id,
-        task_id=task_id,
-        **submission_data
-    )
-    
-    await db.task_submissions.insert_one(submission.dict())
-    return submission
 
 @api_router.put("/task-submissions/{submission_id}/review")
 async def review_submission(submission_id: str, review_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN, UserRole.COACH]))):
