@@ -809,12 +809,8 @@ async def stream_audition_video(submission_id: str, current_user: User = Depends
     if not sub or not sub.get("video_url"):
         raise HTTPException(status_code=404, detail="Video not found")
     # parse gridfs url
-    file_id = sub["video_url"].split("/")[-1]
-    try:
-        stream = await gridfs_bucket.open_download_stream(file_id)
-    except Exception:
-        # maybe stored by filename
-        stream = await gridfs_bucket.open_download_stream_by_name(file_id)
+    file_name = sub["video_url"].split("byname/")[-1]
+    stream = await gridfs_bucket.open_download_stream_by_name(file_name)
 
     async def iterfile() -> AsyncGenerator[bytes, None]:
         while True:
