@@ -76,20 +76,20 @@ class LevelUpAPITester:
             print(f"❌ Failed - Error: {str(e)}")
             return False, {}
 
-    def test_register(self, bigo_id, password, name, passcode=None):
-        """Test user registration"""
+    def test_register_admin(self):
+        """Test admin registration with ADMIN2025 passcode"""
+        admin_bigo_id = f"admin_{datetime.now().strftime('%H%M%S')}"
         data = {
-            "bigo_id": bigo_id,
-            "password": password,
-            "name": name,
-            "email": f"{bigo_id}@test.com",
-            "timezone": "UTC"
+            "bigo_id": admin_bigo_id,
+            "password": "adminpass123",
+            "name": "Test Admin",
+            "email": f"{admin_bigo_id}@test.com",
+            "timezone": "UTC",
+            "passcode": "ADMIN2025"
         }
-        if passcode:
-            data["passcode"] = passcode
-            
+        
         success, response = self.run_test(
-            f"Register User ({bigo_id})",
+            "Register Admin User",
             "POST",
             "auth/register",
             200,
@@ -97,134 +97,308 @@ class LevelUpAPITester:
         )
         
         if success and 'access_token' in response:
-            self.token = response['access_token']
-            self.user_data = response['user']
-            print(f"   🔑 Token obtained for {bigo_id}")
-            print(f"   👤 User ID: {self.user_data.get('id')}")
-            print(f"   🎮 Discord Access: {self.user_data.get('discord_access')}")
-            return True
-        return False
+            self.admin_token = response['access_token']
+            self.admin_user_data = response['user']
+            print(f"   🔑 Admin token obtained")
+            print(f"   👤 Admin ID: {self.admin_user_data.get('id')}")
+            print(f"   🎭 Role: {self.admin_user_data.get('role')}")
+            return True, admin_bigo_id
+        return False, None
 
-    def test_login(self, bigo_id, password):
-        """Test user login"""
+    def test_register_host(self):
+        """Test host registration (no passcode)"""
+        host_bigo_id = f"host_{datetime.now().strftime('%H%M%S')}"
+        data = {
+            "bigo_id": host_bigo_id,
+            "password": "hostpass123",
+            "name": "Test Host",
+            "email": f"{host_bigo_id}@test.com",
+            "timezone": "UTC"
+        }
+        
         success, response = self.run_test(
-            f"Login User ({bigo_id})",
+            "Register Host User",
             "POST",
-            "auth/login",
-            200,
-            data={"bigo_id": bigo_id, "password": password}
-        )
-        
-        if success and 'access_token' in response:
-            self.token = response['access_token']
-            self.user_data = response['user']
-            print(f"   🔑 Token obtained for {bigo_id}")
-            return True
-        return False
-
-    def test_get_current_user(self):
-        """Test getting current user info"""
-        success, response = self.run_test(
-            "Get Current User",
-            "GET",
-            "auth/me",
-            200
-        )
-        
-        if success:
-            print(f"   👤 User: {response.get('name')} ({response.get('bigo_id')})")
-            print(f"   ⭐ Points: {response.get('total_points', 0)}")
-            print(f"   🎭 Role: {response.get('role')}")
-        
-        return success
-
-    def test_get_tasks(self):
-        """Test fetching tasks"""
-        success, response = self.run_test(
-            "Get Tasks",
-            "GET",
-            "tasks",
-            200
-        )
-        
-        if success:
-            tasks = response if isinstance(response, list) else []
-            print(f"   📋 Found {len(tasks)} tasks")
-            for i, task in enumerate(tasks[:3]):  # Show first 3 tasks
-                print(f"   Task {i+1}: {task.get('title')} (+{task.get('points')} pts)")
-        
-        return success, response if success else []
-
-    def test_submit_task(self, task_id, proof_url=None, note=None):
-        """Test task submission"""
-        data = {}
-        if proof_url:
-            data["proof_url"] = proof_url
-        if note:
-            data["note"] = note
-            
-        success, response = self.run_test(
-            f"Submit Task ({task_id[:8]}...)",
-            "POST",
-            f"tasks/{task_id}/submit",
+            "auth/register",
             200,
             data=data
         )
         
-        if success:
-            print(f"   📝 Submission ID: {response.get('id', 'N/A')}")
-            print(f"   📊 Status: {response.get('status', 'N/A')}")
-        
-        return success
+        if success and 'access_token' in response:
+            self.host_token = response['access_token']
+            self.host_user_data = response['user']
+            print(f"   🔑 Host token obtained")
+            print(f"   👤 Host ID: {self.host_user_data.get('id')}")
+            print(f"   🎭 Role: {self.host_user_data.get('role')}")
+            return True, host_bigo_id
+        return False, None
 
-    def test_get_rewards(self):
-        """Test fetching rewards"""
-        success, response = self.run_test(
-            "Get Rewards",
-            "GET",
-            "rewards",
-            200
-        )
+    def test_audition_upload_init(self):
+        """Test audition upload initialization with host token"""
+        self.current_token = self.host_token
+        data = {
+            "filename": "test.mp4",
+            "content_type": "video/mp4",
+            "total_chunks": 2,
+            "file_size": 1048576
+        }
         
-        if success:
-            rewards = response if isinstance(response, list) else []
-            print(f"   🎁 Found {len(rewards)} rewards")
-            for i, reward in enumerate(rewards[:3]):  # Show first 3 rewards
-                print(f"   Reward {i+1}: {reward.get('title')} ({reward.get('cost_points')} pts)")
-        
-        return success, response if success else []
-
-    def test_redeem_reward(self, reward_id):
-        """Test reward redemption"""
         success, response = self.run_test(
-            f"Redeem Reward ({reward_id[:8]}...)",
+            "Audition Upload Init",
             "POST",
-            f"rewards/{reward_id}/redeem",
-            200
+            "audition/upload/init",
+            200,
+            data=data
         )
         
-        if success:
-            print(f"   🎉 Redemption ID: {response.get('id', 'N/A')}")
-            print(f"   📊 Status: {response.get('status', 'N/A')}")
+        if success and 'upload_id' in response:
+            self.upload_id = response['upload_id']
+            self.submission_id = response['submission_id']
+            print(f"   📤 Upload ID: {self.upload_id}")
+            print(f"   📝 Submission ID: {self.submission_id}")
+            return True
+        return False
+
+    def test_audition_upload_chunk(self, chunk_index):
+        """Test audition chunk upload"""
+        self.current_token = self.host_token
+        
+        # Create a small test file
+        test_data = b"test video chunk data " * 100  # Small test data
+        files = {'chunk': ('chunk.mp4', io.BytesIO(test_data), 'video/mp4')}
+        params = {
+            'upload_id': self.upload_id,
+            'chunk_index': chunk_index
+        }
+        
+        success, response = self.run_test(
+            f"Audition Upload Chunk {chunk_index}",
+            "POST",
+            "audition/upload/chunk",
+            200,
+            files=files,
+            params=params
+        )
         
         return success
 
-    def test_get_announcements(self):
-        """Test fetching announcements"""
+    def test_audition_upload_complete(self):
+        """Test audition upload completion"""
+        self.current_token = self.host_token
+        params = {'upload_id': self.upload_id}
+        
         success, response = self.run_test(
-            "Get Announcements",
+            "Audition Upload Complete",
+            "POST",
+            "audition/upload/complete",
+            200,
+            params=params
+        )
+        
+        if success:
+            print(f"   ✅ Upload completed for submission: {self.submission_id}")
+        return success
+
+    def test_admin_list_auditions(self):
+        """Test admin audition listing"""
+        self.current_token = self.admin_token
+        
+        success, response = self.run_test(
+            "Admin List Auditions",
             "GET",
-            "announcements",
+            "admin/auditions",
             200
         )
         
         if success:
-            announcements = response if isinstance(response, list) else []
-            print(f"   📢 Found {len(announcements)} announcements")
-            for i, ann in enumerate(announcements[:3]):  # Show first 3 announcements
-                print(f"   Announcement {i+1}: {ann.get('title')}")
+            auditions = response if isinstance(response, list) else []
+            print(f"   📋 Found {len(auditions)} auditions")
+            if auditions:
+                print(f"   📝 Latest submission: {auditions[0].get('name')} - {auditions[0].get('status')}")
+        return success
+
+    def test_admin_stream_video(self):
+        """Test admin video streaming"""
+        self.current_token = self.admin_token
         
-        return success, response if success else []
+        success, response = self.run_test(
+            f"Admin Stream Video",
+            "GET",
+            f"admin/auditions/{self.submission_id}/video",
+            200
+        )
+        
+        return success
+
+    def test_admin_delete_audition(self):
+        """Test admin audition deletion"""
+        self.current_token = self.admin_token
+        
+        success, response = self.run_test(
+            f"Admin Delete Audition",
+            "DELETE",
+            f"admin/auditions/{self.submission_id}",
+            200
+        )
+        
+        return success
+
+    def test_public_audition_endpoints_unauthorized(self):
+        """Test that public audition endpoints return 401"""
+        self.current_token = None  # No token
+        
+        # Test INIT
+        success1, _ = self.run_test(
+            "Public Audition Init (Should be 401)",
+            "POST",
+            "public/audition/upload/init",
+            401
+        )
+        
+        # Test CHUNK
+        success2, _ = self.run_test(
+            "Public Audition Chunk (Should be 401)",
+            "POST",
+            "public/audition/upload/chunk",
+            401
+        )
+        
+        # Test COMPLETE
+        success3, _ = self.run_test(
+            "Public Audition Complete (Should be 401)",
+            "POST",
+            "public/audition/upload/complete",
+            401
+        )
+        
+        return success1 and success2 and success3
+
+    def test_create_event(self):
+        """Test event creation with host token"""
+        self.current_token = self.host_token
+        data = {
+            "title": "Test Event",
+            "description": "Test event description",
+            "event_type": "community",
+            "start_time": "2025-02-01T18:00:00Z",
+            "signup_form_link": "https://example.com/signup"
+        }
+        
+        success, response = self.run_test(
+            "Create Event",
+            "POST",
+            "events",
+            200,
+            data=data
+        )
+        
+        if success and 'id' in response:
+            self.event_id = response['id']
+            print(f"   📅 Event ID: {self.event_id}")
+            print(f"   🔗 Signup Link: {response.get('signup_form_link')}")
+            return True
+        return False
+
+    def test_rsvp_event(self):
+        """Test RSVP to event"""
+        self.current_token = self.host_token
+        data = {"status": "going"}
+        
+        success, response = self.run_test(
+            "RSVP to Event",
+            "POST",
+            f"events/{self.event_id}/rsvp",
+            200,
+            data=data
+        )
+        
+        return success
+
+    def test_get_attendees(self):
+        """Test getting event attendees"""
+        self.current_token = self.host_token
+        
+        success, response = self.run_test(
+            "Get Event Attendees",
+            "GET",
+            f"events/{self.event_id}/attendees",
+            200
+        )
+        
+        if success:
+            attendees = response if isinstance(response, list) else []
+            print(f"   👥 Found {len(attendees)} attendees")
+            if attendees:
+                print(f"   👤 Host present: {any(att.get('user', {}).get('id') == self.host_user_data.get('id') for att in attendees)}")
+        return success
+
+    def test_init_default_chat_channel(self):
+        """Test initializing default chat channel (admin only)"""
+        self.current_token = self.admin_token
+        
+        success, response = self.run_test(
+            "Init Default Chat Channel",
+            "POST",
+            "chat/channels/init-default",
+            200
+        )
+        
+        return success
+
+    def test_get_chat_channels(self):
+        """Test getting chat channels"""
+        self.current_token = self.host_token
+        
+        success, response = self.run_test(
+            "Get Chat Channels",
+            "GET",
+            "chat/channels",
+            200
+        )
+        
+        if success:
+            channels = response if isinstance(response, list) else []
+            print(f"   💬 Found {len(channels)} channels")
+            # Find agency-lounge channel
+            agency_channel = next((ch for ch in channels if ch.get('name') == 'agency-lounge'), None)
+            if agency_channel:
+                self.channel_id = agency_channel['id']
+                print(f"   🏢 Agency lounge ID: {self.channel_id}")
+                return True
+        return False
+
+    def test_post_chat_message(self):
+        """Test posting a chat message"""
+        self.current_token = self.host_token
+        data = {"body": "Hello from test!"}
+        
+        success, response = self.run_test(
+            "Post Chat Message",
+            "POST",
+            f"chat/channels/{self.channel_id}/messages",
+            200,
+            data=data
+        )
+        
+        return success
+
+    def test_get_chat_messages(self):
+        """Test getting chat messages"""
+        self.current_token = self.host_token
+        
+        success, response = self.run_test(
+            "Get Chat Messages",
+            "GET",
+            f"chat/channels/{self.channel_id}/messages",
+            200
+        )
+        
+        if success:
+            messages = response if isinstance(response, list) else []
+            print(f"   💬 Found {len(messages)} messages")
+            if messages:
+                print(f"   📝 Latest message: {messages[-1].get('body')}")
+        return success
 
 def main():
     print("🚀 Starting Level Up Agency API Tests")
