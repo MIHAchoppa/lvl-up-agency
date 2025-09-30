@@ -136,11 +136,14 @@
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added /api/events/{id}/rsvp and /api/events/{id}/attendees; everyone can see attendees; event has link field."
+      - working: true
+        agent: "testing"
+        comment: "Calendar RSVP system fully functional: Event creation with signup_form_link works, RSVP posting successful, attendees list correctly shows current user after RSVP. All endpoints working as expected."
   - task: "Group chat channel + DMs (no guests)"
     implemented: true
     working: true
