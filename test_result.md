@@ -194,11 +194,9 @@
 
 ## test_plan:
   current_focus:
-    - "Backend auditions upload flow (init/chunk/complete, stream, delete)"
-    - "Calendar RSVP + attendees list"
-    - "Chat channels + DMs auth enforcement"
+    - "Fix audition upload completion GridFS bug"
   stuck_tasks:
-    - "None"
+    - "Audition video upload via Mongo GridFS (init/chunk/complete, stream, delete)"
   test_all: false
   test_priority: "high_first"
 
