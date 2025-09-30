@@ -1020,7 +1020,7 @@ function GuestPreview() {
 function AuthPage({ onBack }) {
   const [bigoId, setBigoId] = useState('');
   const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
+  const [authTab, setAuthTab] = useState(localStorage.getItem('authTab') || 'login');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
