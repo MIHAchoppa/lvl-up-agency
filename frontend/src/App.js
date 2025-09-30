@@ -521,7 +521,7 @@ function LandingPage({ onGetStarted, user }) {
         <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gray-100">
           MAKE MONEY FROM YOUR PHONE
         </h1>
-        <h2 className="text-xl md:text-2xl text-gray-700 mb-8 max-w-4xl mx-auto">
+        <h2 className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto">
           Join LVLUP AGENCY - The #1 BIGO Live host network! Earn $500-$5000+ monthly with our proven system. 
           <span className="text-gold font-semibold"> No experience needed - Free training provided!</span>
         </h2>
