@@ -766,7 +766,8 @@ async def audition_upload_complete(upload_id: str = Query(...)):
             pass
 
     # Link to submission
-    final_url = f"gridfs://auditions/{str(final_id)}"
+    # Store URL by filename to avoid ObjectId usage
+    final_url = f"gridfs://auditions/byname/{gridfs_filename}"
     submission_id = upload_rec["submission_id"]
     await db.audition_submissions.update_one({"id": submission_id}, {"$set": {"video_url": final_url, "status": "submitted"}})
 
