@@ -779,7 +779,7 @@ async def audition_upload_complete(upload_id: str = Query(...)):
     # Notify admin in-app
     await db.admin_notifications.insert_one({
         "type": "new_audition",
-        "message": f"New audition submitted (upload completed)",
+        "message": "New audition submitted (upload completed)",
         "audition_id": submission_id,
         "created_at": datetime.now(timezone.utc)
     })
@@ -904,7 +904,7 @@ async def get_public_stats():
             "success_rate": 94.3,
             "avg_monthly_growth": 247
         }
-    except Exception as e:
+    except Exception:
         # Fallback statistics if database fails
         return {
             "total_hosts": 1247,
@@ -1109,7 +1109,7 @@ async def send_outreach_emails(outreach_data: dict, current_user: User = Depends
                 }
             )
             contacted_count += 1
-        except Exception as e:
+        except Exception:
             failed_count += 1
             continue
     
