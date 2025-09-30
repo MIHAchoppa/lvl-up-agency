@@ -508,7 +508,7 @@ function LandingPage({ onGetStarted, user }) {
           <img 
             src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/v5hjw882_IMG_6003.webp"
             alt="Agent Mihanna - LVLUP AGENCY"
-            className="w-32 h-32 mx-auto mb-6 rounded-full border-4 border-gold shadow-xl object-cover"
+            className="w-32 h-32 mx-auto mb-6 rounded-full border-4 border-gold shadow-xl object-cover" loading="lazy"
           />
           <h3 className="text-gold font-serif text-lg mb-2">Agent Mihanna Presents</h3>
         </div>
