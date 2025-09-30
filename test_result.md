@@ -203,15 +203,16 @@
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Moved upload routes to /api/audition/* with auth; deprecated public routes return 401; enforced one active submission per user."
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Auth-required audition endpoints working correctly. Public endpoints properly return 401. Single-active-submission rule enforced. Complete upload workflow functional."
 
-    - "Fix audition upload completion GridFS bug"
   stuck_tasks:
-    - "Audition video upload via Mongo GridFS (init/chunk/complete, stream, delete)"
   test_all: false
   test_priority: "high_first"
 
