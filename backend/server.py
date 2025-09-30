@@ -1065,7 +1065,7 @@ async def search_potential_hosts(search_data: dict, current_user: User = Depends
             
             await db.influencer_leads.insert_one(influencer.dict())
             saved_count += 1
-        except:
+        except Exception:
             continue
     
     return {
