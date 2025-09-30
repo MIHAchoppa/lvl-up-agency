@@ -1093,6 +1093,31 @@ async def send_outreach_emails(outreach_data: dict, current_user: User = Depends
                 continue
             
             # Generate personalized email
+            email_content = await create_outreach_email(lead)
+            if custom_message:
+                email_content = f"{custom_message}\n\n{email_content}"
+            
+            # TODO: Integrate actual email sender later (SendGrid/SMTP)
+            await db.influencer_leads.update_one(
+                {"id": lead_id},
+                {
+                    "$set": {
+                        "status": "contacted",
+                        "last_contacted": datetime.now(timezone.utc),
+                        "contact_attempts": lead.get("contact_attempts", 0) + 1
+                    }
+                }
+            )
+            contacted_count += 1
+        except Exception as e:
+            failed_count += 1
+            continue
+    
+    return {
+        "contacted_count": contacted_count,
+        "failed_count": failed_count,
+        "message": f"Outreach completed: {contacted_count} emails sent, {failed_count} failed"
+    }
 
 # Calendar RSVP and visibility
 @api_router.post("/events/{event_id}/rsvp")
@@ -1120,6 +1145,7 @@ async def list_attendees(event_id: str, current_user: User = Depends(get_current
             if u:
                 users_map[uid] = {"id": u["id"], "name": u.get("name"), "bigo_id": u.get("bigo_id")}
     attendees = [{"user": users_map.get(r["user_id"]) , "status": r.get("status")} for r in rsvps if r["user_id"] in users_map]
+    return attendees
 
 # Group chat (Agency Lounge) and DMs
 DEFAULT_AGENCY_CHANNEL_NAME = "agency-lounge"
@@ -1154,37 +1180,6 @@ async def post_channel_message(channel_id: str, body: dict, current_user: User =
 async def list_channel_messages(channel_id: str, current_user: User = Depends(get_current_user)):
     msgs = await db.messages.find({"channel_id": channel_id}).sort("created_at", 1).to_list(1000)
     return [Message(**m) for m in msgs]
-
-    return attendees
-
-            email_content = await create_outreach_email(lead)
-            if custom_message:
-                email_content = f"{custom_message}\n\n{email_content}"
-            
-            # Here you would send the actual email
-            # For now, just update the lead status
-            await db.influencer_leads.update_one(
-                {"id": lead_id},
-                {
-                    "$set": {
-                        "status": "contacted",
-                        "last_contacted": datetime.now(timezone.utc),
-                        "contact_attempts": lead.get("contact_attempts", 0) + 1
-                    }
-                }
-            )
-            
-            contacted_count += 1
-            
-        except Exception as e:
-            failed_count += 1
-            continue
-    
-    return {
-        "contacted_count": contacted_count,
-        "failed_count": failed_count,
-        "message": f"Outreach completed: {contacted_count} emails sent, {failed_count} failed"
-    }
 
 @api_router.get("/recruitment/export")
 async def export_leads_spreadsheet(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
