@@ -977,13 +977,15 @@ async def stream_audition_video(submission_id: str, current_user: User = Depends
 
     async def iterfile() -> AsyncGenerator[bytes, None]:
         try:
-            while True:
-                chunk = await stream.read(1024 * 1024)
-                if not chunk:
-                    break
-                yield chunk
+            if stream:
+                while True:
+                    chunk = await stream.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    yield chunk
         finally:
-            await stream.close()
+            if stream:
+                await stream.close()
 
     return StreamingResponse(iterfile(), media_type="video/mp4")
 
