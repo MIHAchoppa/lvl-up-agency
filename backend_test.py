@@ -20,28 +20,39 @@ class LevelUpAPITester:
         self.event_id = None
         self.channel_id = None
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, headers=None, files=None, params=None):
         """Run a single API test"""
         url = f"{self.api_url}/{endpoint}"
-        test_headers = {'Content-Type': 'application/json'}
+        test_headers = {}
         
-        if self.token:
-            test_headers['Authorization'] = f'Bearer {self.token}'
+        if self.current_token:
+            test_headers['Authorization'] = f'Bearer {self.current_token}'
         
         if headers:
             test_headers.update(headers)
+        
+        # Only add Content-Type for JSON requests
+        if not files and data is not None:
+            test_headers['Content-Type'] = 'application/json'
 
         self.tests_run += 1
         print(f"\n🔍 Testing {name}...")
         print(f"   URL: {url}")
+        if params:
+            print(f"   Params: {params}")
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=test_headers)
+                response = requests.get(url, headers=test_headers, params=params)
             elif method == 'POST':
-                response = requests.post(url, json=data, headers=test_headers)
+                if files:
+                    response = requests.post(url, headers={k:v for k,v in test_headers.items() if k != 'Content-Type'}, files=files, params=params)
+                else:
+                    response = requests.post(url, json=data, headers=test_headers, params=params)
             elif method == 'PUT':
-                response = requests.put(url, json=data, headers=test_headers)
+                response = requests.put(url, json=data, headers=test_headers, params=params)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=test_headers, params=params)
 
             success = response.status_code == expected_status
             if success:
