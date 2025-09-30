@@ -698,7 +698,12 @@ async def audition_upload_chunk(upload_id: str = Query(...), chunk_index: int = 
                 "chunk_index": chunk_index,
                 "type": "chunk"
             })
-        await db.audition_uploads.update_one({"id": upload_id}, {"$inc": {"received_bytes": chunk.spool_max_size if hasattr(chunk, 'spool_max_size') else 0}})
+        # increment received bytes based on actual chunk file size
+        try:
+            size = os.path.getsize(tmp_path)
+        except Exception:
+            size = 0
+        await db.audition_uploads.update_one({"id": upload_id}, {"$inc": {"received_bytes": size}})
     finally:
         try:
             os.remove(tmp_path)
