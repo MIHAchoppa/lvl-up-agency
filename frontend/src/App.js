@@ -497,7 +497,7 @@ function LandingPage({ onGetStarted, user }) {
                 Login
               </Button>
               <Button 
-                onClick={() => setShowAudition(true)}
+                onClick={onGetStarted}
                 className="bg-gold hover:bg-gold/90 text-white font-bold px-6"
               >
                 Start Audition
