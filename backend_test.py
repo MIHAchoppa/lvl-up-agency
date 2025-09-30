@@ -1,16 +1,24 @@
 import requests
 import sys
 import json
+import io
 from datetime import datetime
 
 class LevelUpAPITester:
     def __init__(self, base_url="https://host-dashboard-8.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
-        self.token = None
-        self.user_data = None
+        self.admin_token = None
+        self.host_token = None
+        self.current_token = None
+        self.admin_user_data = None
+        self.host_user_data = None
         self.tests_run = 0
         self.tests_passed = 0
+        self.upload_id = None
+        self.submission_id = None
+        self.event_id = None
+        self.channel_id = None
 
     def run_test(self, name, method, endpoint, expected_status, data=None, headers=None):
         """Run a single API test"""
