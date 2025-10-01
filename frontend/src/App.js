@@ -1284,7 +1284,7 @@ function App() {
   }
 
   // If user is logged in, show dashboard
-  if (user) {
+  if (user && !forceLanding) {
     return (
       <div className="App">
         <Dashboard />
