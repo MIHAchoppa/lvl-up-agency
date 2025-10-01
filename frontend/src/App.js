@@ -1420,8 +1420,7 @@ function Dashboard() {
       </div>
     </div>
   );
-STRAY DUPLICATE JSX END */
-}
+STRAY DUPLICATE JSX END */ /* removed stray brace */
 
 // Main App Component
 function App() {
