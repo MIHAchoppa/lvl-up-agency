@@ -482,7 +482,7 @@ function LandingPage({ onGetStarted, user }) {
         <div className="flex items-center space-x-4">
           {user ? (
             <Button 
-              onClick={() => window.location.reload()}
+              onClick={() => { window.location.href = '/dashboard'; }}
               className="bg-gold hover:bg-gold/90 text-white font-bold px-6"
             >
               Dashboard
