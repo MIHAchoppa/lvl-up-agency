@@ -1287,29 +1287,11 @@ function AuthPage({ onBack }) {
             </Button>
           </div>
         </CardContent>
-                  Access Dashboard
-                </Button>
-              </form>
-            </TabsContent>
+      </Card>
+    </div>
+  );
+}
 
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <Label htmlFor="admin-bigo-id">Admin BIGO ID</Label>
-                  <Input
-                    id="admin-bigo-id"
-                    type="text"
-                    placeholder="Admin"
-                    value={bigoId}
-                    onChange={(e) => setBigoId(e.target.value)}
-                    required
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="admin-password">Password</Label>
-                  <Input
-                    id="admin-password"
-                    type="password"
                     placeholder="admin333"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
