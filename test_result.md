@@ -75,9 +75,6 @@
 
 ## test_plan:
   current_focus:
-    - "Backend: Admin seeding + login (Admin/admin333)"
-    - "Backend: Audition auth-only flow (init/chunk/complete)"
-    - "Backend: TTS endpoints basic availability"
     - "Frontend: Landing visuals (dark theme, logo, images), auth gating for audition, Admin tab presence"
   stuck_tasks:
     - "None"
