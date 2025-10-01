@@ -475,11 +475,22 @@ class LevelUpAPITester:
             return False, None
 
 def main():
-    print("🚀 Starting Level Up Agency API Tests - Updated Specs")
+    print("🚀 Starting Level Up Agency API Tests - Demo Host Creation")
     print("=" * 60)
     
     tester = LevelUpAPITester()
     failed_tests = []
+    
+    # DEMO HOST CREATION (Primary Task)
+    print("\n" + "="*50)
+    print("🎭 DEMO HOST CREATION")
+    print("="*50)
+    
+    demo_success, demo_credentials = tester.create_demo_host()
+    if not demo_success:
+        failed_tests.append("Demo Host Creation")
+        print("❌ Demo host creation failed")
+        return 1
     
     # AUTH SETUP
     print("\n" + "="*50)
