@@ -696,6 +696,55 @@ function LandingPage({ onGetStarted, user }) {
             <Phone className="w-6 h-6 mr-2" />
             WhatsApp Us: 289-200-5372
           </Button>
+
+      {/* Footer */}
+      <footer className="bg-black/90 border-t border-gray-800 mt-20">
+        <div className="container mx-auto px-4 py-10">
+          <div className="grid md:grid-cols-3 gap-8 items-start">
+            {/* Brand */}
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gold flex items-center justify-center">
+                <img
+                  src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp"
+                  alt="LVLUP Logo"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <div>
+                <p className="text-lg font-serif font-bold text-gray-100 tracking-wide">LVLUP AGENCY</p>
+                <p className="text-xs text-gray-400">Elite BIGO Live Host Network</p>
+              </div>
+            </div>
+
+            {/* Links */}
+            <div className="text-sm">
+              <p className="uppercase text-gray-400 tracking-wider mb-3">Quick Links</p>
+              <ul className="space-y-2">
+                <li><button onClick={() => setShowAudition(true)} className="text-gray-200 hover:text-white transition-colors">Start Audition</button></li>
+                <li><button onClick={onGetStarted} className="text-gray-200 hover:text-white transition-colors">Login / Join</button></li>
+                <li><a href="/preview" className="text-gray-200 hover:text-white transition-colors">Guest Preview</a></li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div className="text-sm">
+              <p className="uppercase text-gray-400 tracking-wider mb-3">Contact</p>
+              <ul className="space-y-2 text-gray-200">
+                <li><a href="mailto:admin@lvlup.com" className="hover:text-white transition-colors">admin@lvlup.com</a></li>
+                <li><a href="https://wa.me/12892005372" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">WhatsApp: 289-200-5372</a></li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-gray-800 text-center text-xs text-gray-400">
+            <p>
+              © {new Date().getFullYear()} LVLUP AGENCY. All rights reserved. <span className="text-gray-300">Crafted for BIGO Live Hosts.</span>
+            </p>
+          </div>
+        </div>
+      </footer>
+
         </div>
       </section>
 
