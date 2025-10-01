@@ -248,6 +248,56 @@
       - working: true
         agent: "testing"
         comment: "Calendar RSVP system fully functional: Event creation with signup_form_link works, RSVP posting successful, attendees list correctly shows current user after RSVP. All endpoints working as expected."
+
+## frontend:
+  - task: "Landing page dark theme, LVL logo header, greeting bubble, images spread"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Smoke test landing visuals and interactions."
+  - task: "Auth screen tabs (Host, Join, Admin) and auto-redirect to /dashboard after login"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Verify admin login and redirect works."
+  - task: "Dashboard route /dashboard renders"
+    implemented: true
+    working: false
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Currently placeholder; smoke test presence. Full panels restoration pending."
+
+## test_plan:
+  current_focus:
+    - "Frontend smoke: Landing renders, LVL logo visible, greeting bubble visible"
+    - "Auth tabs render; Admin login works; redirect to /dashboard"
+    - "/dashboard renders basic shell"
+  stuck_tasks:
+    - "Full dashboard panels restoration (UI)"
+  test_all: false
+  test_priority: "high_first"
+
+## agent_communication:
+  - agent: "main"
+    message: "Run quick frontend smoke tests: landing visuals, admin login/redirect, dashboard page loads. Do not run long scenarios."
+
   - task: "Group chat channel + DMs (no guests)"
     implemented: true
     working: true
