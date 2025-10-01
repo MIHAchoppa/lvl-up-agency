@@ -1332,8 +1332,8 @@ function App() {
     );
   }
 
-  // If user is logged in, show dashboard
-  if (user && !forceLanding) {
+  // If user is logged in and explicitly visiting /dashboard, show dashboard; otherwise default to landing
+  if (user && window.location.pathname === '/dashboard') {
     return (
       <div className="App">
         <Dashboard />
