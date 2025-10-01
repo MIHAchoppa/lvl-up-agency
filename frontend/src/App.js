@@ -486,8 +486,8 @@ function LandingPage({ onGetStarted, user }) {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <DollarSign className="w-12 h-12 text-gold mb-4 mx-auto" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Top Earnings</h3>
-              <p className="text-gray-600">Earn $500-$5000+ monthly with our proven strategies</p>
+              <h3 className="text-xl font-bold text-white mb-2">Top Earnings</h3>
+              <p className="text-gray-200">Earn $500-$5000+ monthly with our proven strategies</p>
             </Card>
             <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <Users className="w-12 h-12 text-gold mb-4 mx-auto" />
