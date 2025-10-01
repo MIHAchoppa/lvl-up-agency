@@ -419,6 +419,61 @@ class LevelUpAPITester:
                 print(f"   📝 Latest message: {messages[-1].get('body')}")
         return success
 
+    def create_demo_host(self):
+        """Create a demo host via backend API and return credentials"""
+        # Generate unique BIGO ID like demo_host_{HHMMSS}
+        demo_bigo_id = f"demo_host_{datetime.now().strftime('%H%M%S')}"
+        demo_password = "host123"
+        demo_email = f"{demo_bigo_id}@lvlup.com"
+        
+        data = {
+            "bigo_id": demo_bigo_id,
+            "password": demo_password,
+            "name": "Demo Host",
+            "email": demo_email,
+            "timezone": "UTC"
+        }
+        
+        print(f"\n🎭 Creating Demo Host...")
+        print(f"   BIGO ID: {demo_bigo_id}")
+        print(f"   Password: {demo_password}")
+        print(f"   Email: {demo_email}")
+        
+        success, response = self.run_test(
+            "Create Demo Host",
+            "POST",
+            "auth/register",
+            200,
+            data=data
+        )
+        
+        if success and 'access_token' in response:
+            user_data = response.get('user', {})
+            access_token = response.get('access_token')
+            user_role = user_data.get('role')
+            
+            print(f"   ✅ Demo host created successfully!")
+            print(f"   🔑 Access Token: {access_token[:20]}...")
+            print(f"   👤 User ID: {user_data.get('id')}")
+            print(f"   🎭 Role: {user_role}")
+            
+            # Verify response contains access_token and user.role == "host"
+            if access_token and user_role == "host":
+                print(f"   ✅ Verification passed: access_token present and role is 'host'")
+                return True, {
+                    "bigo_id": demo_bigo_id,
+                    "password": demo_password,
+                    "email": demo_email,
+                    "access_token": access_token,
+                    "user_role": user_role
+                }
+            else:
+                print(f"   ❌ Verification failed: access_token={bool(access_token)}, role={user_role}")
+                return False, None
+        else:
+            print(f"   ❌ Demo host creation failed")
+            return False, None
+
 def main():
     print("🚀 Starting Level Up Agency API Tests - Updated Specs")
     print("=" * 60)
