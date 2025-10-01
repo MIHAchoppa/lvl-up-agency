@@ -9,11 +9,14 @@
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added startup hook to seed Admin (Admin/admin333/admin@lvlup.com)."
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Admin login successful with BIGO ID 'Admin' and password 'admin333'. Returns 200 status with admin role confirmed. Admin seeding working correctly on startup."
   - task: "Groq TTS endpoints (voices list + speak placeholder)"
     implemented: true
     working: true
