@@ -770,24 +770,202 @@ function AuthPage({ onBack }) {
   );
 }
 
-// Dashboard placeholder (replace with full panels next)
+// Dashboard (role-aware shell with panels)
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const [tab, setTab] = useState('ai');
+  const isAdmin = user?.role === 'admin' || user?.role === 'owner' || user?.role === 'coach';
+
+  const NavItem = ({ id, label, icon: Icon }) => (
+    <button
+      onClick={() => setTab(id)}
+      className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-left ${
+        tab === id ? 'bg-gold/20 text-gold' : 'text-gray-700 hover:bg-gray-100'
+      }`}
+    >
+      <Icon className="w-5 h-5" />
+      <span>{label}</span>
+    </button>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome to Your Dashboard, {user?.name}!</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Your full LVLUP AGENCY dashboard is being loaded...</p>
-            <div className="mt-4">
-              <Badge className="bg-gold text-white">Role: {user?.role}</Badge>
-              <Badge className="ml-2 bg-green-500 text-white">Points: {user?.total_points}</Badge>
+    <div className="min-h-screen bg-white">
+      {/* Topbar */}
+      <header className="border-b border-gray-200 px-6 py-4 bg-white sticky top-0 z-10">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gold rounded-full flex items-center justify-center"><Crown className="w-4 h-4 text-white" /></div>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">LVLUP AGENCY Dashboard</h1>
+              <p className="text-xs text-gray-500">Welcome, {user?.name} • <span className="capitalize">{user?.role}</span></p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge className="bg-gold text-white">Points: {user?.total_points ?? 0}</Badge>
+            <Button variant="outline" onClick={() => window.location.href = '/'}>Landing</Button>
+            <Button onClick={logout} className="bg-gray-900 hover:bg-black text-white">Logout</Button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="w-64 border-r border-gray-200 h-[calc(100vh-64px)] sticky top-16 p-4 bg-white">
+          <div className="space-y-2">
+            <NavItem id="calendar" label="Calendar" icon={CalendarDays} />
+            <NavItem id="messages" label="Messages" icon={MessageSquare} />
+            <NavItem id="academy" label="BIGO Academy" icon={BookOpen} />
+            <NavItem id="tasks" label="Tasks" icon={Target} />
+            <NavItem id="rewards" label="Rewards" icon={Gift} />
+            <NavItem id="quizzes" label="Quizzes" icon={FileText} />
+            <NavItem id="announcements" label="Announcements" icon={Bell} />
+            <NavItem id="quota" label="Beans / Quota" icon={Calculator} />
+            <NavItem id="pk" label="PK Sign-ups" icon={Trophy} />
+            <NavItem id="ai" label="AI Coach" icon={Bot} />
+
+            {isAdmin && (
+              <>
+                <div className="mt-4 text-xs uppercase tracking-wide text-gray-400">Admin</div>
+                <NavItem id="users" label="Users" icon={Users2} />
+                <NavItem id="content" label="Content Manager" icon={Settings} />
+                <NavItem id="auditions" label="Auditions" icon={Video} />
+                <NavItem id="leads" label="Leads / Recruiting" icon={Search} />
+                <NavItem id="adminAgent" label="Admin Agent" icon={Command} />
+              </>
+            )}
+          </div>
+        </aside>
+
+        {/* Content */}
+        <main className="flex-1 p-6 bg-gray-50 min-h-[calc(100vh-64px)]">
+          {/* Welcome card */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <Card className="bg-white border-gray-200 lg:col-span-2">
+              <CardHeader><CardTitle>Welcome back, {user?.name}</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-gray-700">Select a panel from the left to get started. Your role: <strong className="capitalize">{user?.role}</strong>.</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border-gray-200">
+              <CardContent className="p-6">
+                <p className="text-sm text-gray-600">Points</p>
+                <p className="text-3xl font-bold text-gold">{user?.total_points ?? 0}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Panels */}
+          {tab === 'calendar' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Community Calendar</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-gray-700">View events, RSVP, and see attendees. Admins can create events with links.</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {tab === 'messages' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Messages</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-gray-700">Agency Lounge group chat and Direct Messages with admins and hosts.</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {tab === 'academy' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>BIGO Academy</CardTitle></CardHeader>
+              <CardContent>
+                <p className="text-gray-700">Resources library and training modules.</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {tab === 'tasks' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Your assigned tasks and submissions.</p></CardContent>
+            </Card>
+          )}
+
+          {tab === 'rewards' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Rewards</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Redeem points for rewards.</p></CardContent>
+            </Card>
+          )}
+
+          {tab === 'quizzes' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Quizzes</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Test your knowledge and earn points.</p></CardContent>
+            </Card>
+          )}
+
+          {tab === 'announcements' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Announcements</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Latest updates from the agency.</p></CardContent>
+            </Card>
+          )}
+
+          {tab === 'quota' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Beans / Quota Calculator</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Plan your month and maximize earnings.</p></CardContent>
+            </Card>
+          )}
+
+          {tab === 'pk' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>PK Sign-ups</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Register for upcoming PK events.</p></CardContent>
+            </Card>
+          )}
+
+          {tab === 'ai' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>AI Coach</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Chat with your AI coach for growth strategies.</p></CardContent>
+            </Card>
+          )}
+
+          {isAdmin && tab === 'users' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Users</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Manage users and roles.</p></CardContent>
+            </Card>
+          )}
+
+          {isAdmin && tab === 'content' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Content Manager</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Create tasks, quizzes, rewards, and announcements.</p></CardContent>
+            </Card>
+          )}
+
+          {isAdmin && tab === 'auditions' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Auditions</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Review, stream, and manage audition submissions.</p></CardContent>
+            </Card>
+          )}
+
+          {isAdmin && tab === 'leads' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Leads / Recruiting</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Search influencers with Groq tools, export, and outreach.</p></CardContent>
+            </Card>
+          )}
+
+          {isAdmin && tab === 'adminAgent' && (
+            <Card className="bg-white border-gray-200">
+              <CardHeader><CardTitle>Admin Agent</CardTitle></CardHeader>
+              <CardContent><p className="text-gray-700">Use natural language to manage the site (e.g., "create event with link...").</p></CardContent>
+            </Card>
+          )}
+        </main>
       </div>
     </div>
   );
