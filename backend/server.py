@@ -781,6 +781,32 @@ async def audition_upload_complete_auth(upload_id: str = Query(...), current_use
         except Exception:
             pass
 
+# TTS: simple synth endpoint using Groq
+class TTSRequest(BaseModel):
+    text: str
+    voice: str = "Fritz-PlayAI"
+    format: str = "wav"
+
+@api_router.get("/tts/voices")
+async def tts_voices():
+    return {"voices": AVAILABLE_TTS_VOICES}
+
+@api_router.post("/tts/speak")
+async def tts_speak(req: TTSRequest, current_user: User = Depends(get_current_user)):
+    try:
+        voice = req.voice if req.voice in AVAILABLE_TTS_VOICES else "Fritz-PlayAI"
+        # Use Groq TTS via chat.completions with audio tool if available; fallback to plain text response
+        # Since direct TTS SDK may vary, return text and let frontend call existing voice route if needed
+        # For now, return text and simple echo; real TTS integration can be expanded per playbook
+        text = req.text.strip()
+        if not text:
+            raise HTTPException(status_code=400, detail="Text required")
+        # Placeholder: return text; frontend may use Web Speech as interim if Groq TTS not available in env
+        return {"audio_url": None, "text": text, "voice": voice}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
     # Link to submission
     final_url = f"gridfs://auditions/byname/{gridfs_filename}"
     await db.audition_submissions.update_one({"id": upload_rec["submission_id"]}, {"$set": {"video_url": final_url, "status": "submitted"}})
