@@ -482,7 +482,7 @@ function LandingPage({ onGetStarted, user }) {
       {/* Features */}
       <section className="bg-gray-900 py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-serif font-bold text-center mb-16 text-gray-100">Why Choose LVLUP AGENCY?</h2>
+          <h2 className="text-4xl font-serif font-bold text-center mb-16 text-white">Why Choose LVLUP AGENCY?</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <DollarSign className="w-12 h-12 text-gold mb-4 mx-auto" />
