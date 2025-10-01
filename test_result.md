@@ -23,11 +23,14 @@
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Added /api/tts/voices and /api/tts/speak (returns text now, audio_url None placeholder)."
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: TTS endpoints working correctly. GET /api/tts/voices returns 5 voices (Fritz-PlayAI, Arista-PlayAI, etc.). POST /api/tts/speak returns 200 with audio_url=null as expected (placeholder implementation)."
 
 ## frontend:
   - task: "Admin login tab added in Auth page"
