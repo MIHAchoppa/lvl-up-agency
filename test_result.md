@@ -31,6 +31,17 @@
       - working: true
         agent: "testing"
         comment: "VERIFIED: TTS endpoints working correctly. GET /api/tts/voices returns 5 voices (Fritz-PlayAI, Arista-PlayAI, etc.). POST /api/tts/speak returns 200 with audio_url=null as expected (placeholder implementation)."
+  - task: "Audition auth-only flow (init/chunk/complete + admin functions)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Complete audition auth-only workflow functional. Host registration/login works, POST /api/audition/upload/init returns upload_id+submission_id, chunk uploads successful, completion updates submission status to 'submitted' with video_url. Admin functions: list auditions includes submission, video streaming returns 200, deletion works. Public endpoints correctly return 401. Fixed syntax error in upload complete function."
 
 ## frontend:
   - task: "Admin login tab added in Auth page"
