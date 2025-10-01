@@ -129,9 +129,6 @@ AVAILABLE_TTS_VOICES = [
     "Fritz-PlayAI", "Arista-PlayAI", "Atlas-PlayAI", "Celeste-PlayAI", "Thunder-PlayAI"
 ]
 
-    success: bool = True
-    error_message: Optional[str] = None
-
 class VoiceRequest(BaseModel):
     text: str
     voice_type: str = "admin"  # admin, strategy_coach
