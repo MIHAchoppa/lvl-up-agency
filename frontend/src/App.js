@@ -504,6 +504,15 @@ function LandingPage({ onGetStarted, user }) {
               </Button>
             </>
           )}
+
+      {/* Greeting Agent Bubble */}
+      <div className="fixed bottom-6 right-6 z-50">
+        {/* Floating button with LVL logo */}
+        <div id="agent-launch" className="rounded-full border-2 border-gold shadow-lg overflow-hidden cursor-pointer" onClick={() => setShowAudition(true)}>
+          <img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="Agent" className="w-14 h-14 object-cover" />
+        </div>
+      </div>
+
         </div>
       </header>
 
