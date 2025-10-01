@@ -42,6 +42,17 @@
       - working: true
         agent: "testing"
         comment: "VERIFIED: Complete audition auth-only workflow functional. Host registration/login works, POST /api/audition/upload/init returns upload_id+submission_id, chunk uploads successful, completion updates submission status to 'submitted' with video_url. Admin functions: list auditions includes submission, video streaming returns 200, deletion works. Public endpoints correctly return 401. Fixed syntax error in upload complete function."
+  - task: "Demo host creation via API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Demo host creation successful. Generated unique BIGO ID 'demo_host_005233', registered with password 'host123' and email 'demo_host_005233@lvlup.com'. POST /api/auth/register returned 200 status with access_token and user.role='host' confirmed. All verification criteria met."
 
 ## frontend:
   - task: "Admin login tab added in Auth page"
