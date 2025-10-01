@@ -722,6 +722,22 @@ async def audition_upload_chunk_auth(upload_id: str = Query(...), chunk_index: i
         try:
             os.remove(tmp_path)
         except Exception:
+
+# Helper to create admin user if not exists
+@app.on_event("startup")
+async def ensure_admin_user():
+    try:
+        admin = await db.users.find_one({"bigo_id": "Admin"})
+        if not admin:
+            hashed = hash_password("admin333")
+            user = User(bigo_id="Admin", email="admin@lvlup.com", name="admin", role=UserRole.ADMIN)
+            doc = user.dict()
+            doc["password"] = hashed
+            await db.users.insert_one(doc)
+            logger.info("Seeded default Admin user")
+    except Exception as e:
+        logger.error(f"Failed to seed admin: {e}")
+
             pass
     return {"message": "Chunk received"}
 
