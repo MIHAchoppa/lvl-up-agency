@@ -496,8 +496,8 @@ function LandingPage({ onGetStarted, user }) {
             </Card>
             <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <Clock className="w-12 h-12 text-gold mb-4 mx-auto" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Flexible Schedule</h3>
-              <p className="text-gray-600">Work when you want - set your own streaming hours</p>
+              <h3 className="text-xl font-bold text-white mb-2">Flexible Schedule</h3>
+              <p className="text-gray-200">Work when you want - set your own streaming hours</p>
             </Card>
             <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <Trophy className="w-12 h-12 text-gold mb-4 mx-auto" />
