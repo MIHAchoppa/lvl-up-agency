@@ -459,8 +459,8 @@ function LandingPage({ onGetStarted, user }) {
         </div>
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto mb-24">
           <div className="order-2 md:order-1">
-            <h3 className="text-3xl font-bold text-gray-100 mb-3">Wellness & Lifestyle</h3>
-            <p className="text-gray-300 mb-6">Share your wellness journey and inspire others while earning.</p>
+            <h3 className="text-3xl font-bold text-white mb-3">Wellness & Lifestyle</h3>
+            <p className="text-gray-100 mb-6">Share your wellness journey and inspire others while earning.</p>
             <Button onClick={onGetStarted} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
           </div>
           <div className="order-1 md:order-2">
