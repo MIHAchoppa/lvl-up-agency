@@ -460,7 +460,7 @@ function LandingPage({ onGetStarted, user }) {
   const [showAudition, setShowAudition] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-gray-100 relative">
       <SEOMeta />
       
       {/* Header */}
