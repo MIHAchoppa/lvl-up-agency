@@ -1308,11 +1308,6 @@ function AuthPage({ onBack }) {
               </form>
             </TabsContent>
 
-                  Access Dashboard
-                </Button>
-              </form>
-            </TabsContent>
-            
             <TabsContent value="register">
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
