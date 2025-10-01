@@ -1254,6 +1254,7 @@ function AuthPage({ onBack }) {
                 <div>
                   <Label htmlFor="passcode">Agency Code (if provided)</Label>
                   <Input
+          <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" replace />} />
                     id="passcode"
                     type="password"
                     placeholder="Enter agency code if provided"
