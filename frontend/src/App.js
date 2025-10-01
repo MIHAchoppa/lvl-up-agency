@@ -1420,6 +1420,7 @@ function Dashboard() {
       </div>
     </div>
   );
+STRAY DUPLICATE JSX END */
 }
 
 // Main App Component
