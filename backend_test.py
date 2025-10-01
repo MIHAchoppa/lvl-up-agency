@@ -589,6 +589,14 @@ def main():
     print(f"Tests Passed: {tester.tests_passed}")
     print(f"Tests Failed: {len(failed_tests)}")
     
+    # Display demo host credentials if created successfully
+    if demo_success and demo_credentials:
+        print("\n🎭 DEMO HOST CREDENTIALS:")
+        print(f"   BIGO ID: {demo_credentials['bigo_id']}")
+        print(f"   Password: {demo_credentials['password']}")
+        print(f"   Email: {demo_credentials['email']}")
+        print(f"   Role: {demo_credentials['user_role']}")
+    
     if failed_tests:
         print("\n❌ FAILED TESTS:")
         for test in failed_tests:
