@@ -154,6 +154,8 @@ function AuthProvider({ children }) {
       localStorage.setItem('token', access_token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       toast.success(`Welcome back, ${userData.name}!`);
+      // Auto-redirect to dashboard after login
+      setTimeout(() => { window.location.href = '/dashboard'; }, 300);
       return true;
     } catch (error) {
       console.error('Login error:', error);
