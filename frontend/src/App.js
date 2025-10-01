@@ -1159,6 +1159,11 @@ function AuthPage({ onBack }) {
                 </div>
                 <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white font-semibold">
             <TabsContent value="admin">
+                  Access Dashboard
+                </Button>
+              </form>
+            </TabsContent>
+
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <Label htmlFor="admin-bigo-id">Admin BIGO ID</Label>
