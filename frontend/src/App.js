@@ -1421,7 +1421,7 @@ function Dashboard() {
       </div>
     </div>
   );
-STRAY DUPLICATE JSX END */ /* removed stray brace */
+/* cleaned stray marker */
 
 // Main App Component
 function App() {
