@@ -1399,6 +1399,7 @@ function AuthPage({ onBack }) {
   );
 }
 
+*/
 // Dashboard placeholder (existing dashboard would go here)
 function Dashboard() {
   const { user } = useAuth();
