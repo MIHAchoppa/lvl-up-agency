@@ -1441,17 +1441,13 @@ function App() {
     );
   }
 
-  // If user is logged in and explicitly visiting /dashboard, show dashboard; otherwise default to landing
-  if (user && window.location.pathname === '/dashboard') {
-    return (
-      <div className="App">
-        <Dashboard />
-        <Toaster position="top-right" />
-      </div>
-    );
+  // Always render with Router; protect dashboard route
+  function RequireAuth({ children }) {
+    const { user } = useAuth();
+    if (!user) return <Navigate to="/" replace />;
+    return children;
   }
 
-  // For non-logged in users
   return (
     <div className="App">
       <BrowserRouter>
@@ -1465,6 +1461,7 @@ function App() {
               <GuestPreview />
             )
           } />
+          <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/preview" element={<GuestPreview />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
