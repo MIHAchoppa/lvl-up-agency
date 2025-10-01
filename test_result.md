@@ -87,6 +87,8 @@
 ## agent_communication:
   - agent: "main"
     message: "Please run backend tests first for admin login, auditions, TTS endpoints; then run frontend tests to validate landing page visuals and auth flows."
+  - agent: "testing"
+    message: "BACKEND TESTING COMPLETE: All focused tests passed (14/14). Admin login with Admin/admin333 working correctly with admin role. Complete audition auth-only workflow functional (init/chunk/complete + admin list/stream/delete). TTS endpoints operational with placeholder implementation. Fixed critical syntax error in audition upload complete function. Ready for frontend testing."
 
 # START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
