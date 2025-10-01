@@ -501,8 +501,8 @@ function LandingPage({ onGetStarted, user }) {
             </Card>
             <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <Trophy className="w-12 h-12 text-gold mb-4 mx-auto" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Proven Success</h3>
-              <p className="text-gray-600">Join 1000+ successful hosts in our elite network</p>
+              <h3 className="text-xl font-bold text-white mb-2">Proven Success</h3>
+              <p className="text-gray-200">Join 1000+ successful hosts in our elite network</p>
             </Card>
           </div>
         </div>
