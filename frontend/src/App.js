@@ -431,7 +431,7 @@ function LandingPage({ onGetStarted, user }) {
           <h3 className="text-gold font-serif text-lg mb-2">Agent Mihanna Presents</h3>
         </div>
         <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-gray-100">MAKE MONEY FROM YOUR PHONE</h1>
-        <h2 className="text-xl md:text-2xl text-gray-300 mb-8 max-w-4xl mx-auto">Join LVLUP AGENCY - The #1 BIGO Live host network! Earn $500-$5000+ monthly with our proven system. <span className="text-gold font-semibold"> No experience needed - Free training provided!</span></h2>
+        <h2 className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto">Join LVLUP AGENCY - The #1 BIGO Live host network! Earn $500-$5000+ monthly with our proven system. <span className="text-gold font-semibold"> No experience needed - Free training provided!</span></h2>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
           <Button onClick={() => setShowAudition(true)} size="lg" className="bg-gold hover:bg-gold/90 text-white font-bold text-xl px-12 py-6 shadow-lg"><Video className="w-6 h-6 mr-2" /> START VIDEO AUDITION</Button>
           <Button onClick={() => window.open('https://wa.me/12892005372', '_blank')} variant="outline" size="lg" className="border-green-500 text-green-400 hover:bg-green-900/20 text-lg px-8 py-6"><Phone className="w-5 h-5 mr-2" /> WhatsApp: 289-200-5372</Button>
