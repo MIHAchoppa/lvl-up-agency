@@ -436,7 +436,7 @@ function LandingPage({ onGetStarted, user }) {
           <Button onClick={() => setShowAudition(true)} size="lg" className="bg-gold hover:bg-gold/90 text-white font-bold text-xl px-12 py-6 shadow-lg"><Video className="w-6 h-6 mr-2" /> START VIDEO AUDITION</Button>
           <Button onClick={() => window.open('https://wa.me/12892005372', '_blank')} variant="outline" size="lg" className="border-green-500 text-green-400 hover:bg-green-900/20 text-lg px-8 py-6"><Phone className="w-5 h-5 mr-2" /> WhatsApp: 289-200-5372</Button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto text-sm text-gray-200">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto text-sm text-gray-100">
           <div className="flex items-center justify-center text-green-600"><CheckCircle className="w-4 h-4 mr-2" />Free Training</div>
           <div className="flex items-center justify-center text-green-600"><CheckCircle className="w-4 h-4 mr-2" />Work From Home</div>
           <div className="flex items-center justify-center text-green-600"><CheckCircle className="w-4 h-4 mr-2" />Set Your Schedule</div>
