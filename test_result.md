@@ -1,4 +1,76 @@
 #====================================================================================================
+
+## user_problem_statement: Ensure full platform stability after recent changes (auth-only auditions, admin seeding/login, dark landing, images spread, greeting agent bubble). Run backend first, then frontend tests to verify main flows.
+
+## backend:
+  - task: "Admin seeding + Admin login with default credentials"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added startup hook to seed Admin (Admin/admin333/admin@lvlup.com)."
+  - task: "Groq TTS endpoints (voices list + speak placeholder)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added /api/tts/voices and /api/tts/speak (returns text now, audio_url None placeholder)."
+
+## frontend:
+  - task: "Admin login tab added in Auth page"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added Admin tab (BIGO ID Admin + password admin333)."
+  - task: "Landing page dark theme + images spread + LVL logo header + greeting agent button"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Dark landing, alternating image/text sections, LVL logo in header, floating agent bubble added."
+
+## metadata:
+  created_by: "main_agent"
+  version: "1.1"
+  test_sequence: 2
+  run_ui: true
+
+## test_plan:
+  current_focus:
+    - "Backend: Admin seeding + login (Admin/admin333)"
+    - "Backend: Audition auth-only flow (init/chunk/complete)"
+    - "Backend: TTS endpoints basic availability"
+    - "Frontend: Landing visuals (dark theme, logo, images), auth gating for audition, Admin tab presence"
+  stuck_tasks:
+    - "None"
+  test_all: false
+  test_priority: "high_first"
+
+## agent_communication:
+  - agent: "main"
+    message: "Please run backend tests first for admin login, auditions, TTS endpoints; then run frontend tests to validate landing page visuals and auth flows."
+
 # START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
 
