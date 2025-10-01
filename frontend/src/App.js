@@ -472,8 +472,8 @@ function LandingPage({ onGetStarted, user }) {
             <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/6louc2s4_IMG_6008.webp" alt="Entertainment Hosts - LVLUP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
           </div>
           <div>
-            <h3 className="text-3xl font-bold text-gray-100 mb-3">Entertainment & Fun</h3>
-            <p className="text-gray-300 mb-6">Bring joy and entertainment while building your income stream.</p>
+            <h3 className="text-3xl font-bold text-white mb-3">Entertainment & Fun</h3>
+            <p className="text-gray-100 mb-6">Bring joy and entertainment while building your income stream.</p>
             <Button onClick={onGetStarted} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
           </div>
         </div>
