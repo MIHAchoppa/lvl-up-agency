@@ -792,6 +792,20 @@ async def audition_upload_complete_auth(upload_id: str = Query(...), current_use
         except Exception:
             pass
 
+    # Link to submission
+    final_url = f"gridfs://auditions/byname/{gridfs_filename}"
+    await db.audition_submissions.update_one({"id": upload_rec["submission_id"]}, {"$set": {"video_url": final_url, "status": "submitted"}})
+
+    # Notify admins
+    await db.admin_notifications.insert_one({
+        "type": "new_audition",
+        "message": f"New audition submitted (upload completed)",
+        "audition_id": upload_rec["submission_id"],
+        "created_at": datetime.now(timezone.utc)
+    })
+
+    return {"message": "Upload completed", "submission_id": upload_rec["submission_id"]}
+
 # TTS: simple synth endpoint using Groq
 class TTSRequest(BaseModel):
     text: str
@@ -816,21 +830,6 @@ async def tts_speak(req: TTSRequest, current_user: User = Depends(get_current_us
         return {"audio_url": None, "text": text, "voice": voice}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
-    # Link to submission
-    final_url = f"gridfs://auditions/byname/{gridfs_filename}"
-    await db.audition_submissions.update_one({"id": upload_rec["submission_id"]}, {"$set": {"video_url": final_url, "status": "submitted"}})
-
-    # Notify admins
-    await db.admin_notifications.insert_one({
-        "type": "new_audition",
-        "message": f"New audition submitted (upload completed)",
-        "audition_id": upload_rec["submission_id"],
-        "created_at": datetime.now(timezone.utc)
-    })
-
-    return {"message": "Upload completed", "submission_id": upload_rec["submission_id"]}
 
 # DEPRECATE old public endpoints (force auth)
 @api_router.post("/public/audition/upload/init")
