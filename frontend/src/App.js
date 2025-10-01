@@ -1214,6 +1214,10 @@ function AuthPage({ onBack }) {
                   />
                   <p className="text-xs text-gray-500 mt-1">Get special access with agency code</p>
                 </div>
+  // Allow preview/guest override to show landing page even if logged in
+  const params = new URLSearchParams(window.location.search);
+  const forceLanding = params.get('guest') === '1' || params.get('preview') === '1' || window.location.pathname === '/landing';
+
                 
                 <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white font-semibold">
                   Create Host Account
