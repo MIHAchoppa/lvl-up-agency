@@ -736,9 +736,6 @@ async def ensure_admin_user():
     except Exception as e:
         logger.error(f"Failed to seed admin: {e}")
 
-            pass
-    return {"message": "Chunk received"}
-
 @api_router.post("/audition/upload/complete")
 async def audition_upload_complete_auth(upload_id: str = Query(...), current_user: User = Depends(get_current_user)):
     upload_rec = await db.audition_uploads.find_one({"id": upload_id, "user_id": current_user.id})
