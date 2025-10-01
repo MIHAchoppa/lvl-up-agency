@@ -1130,7 +1130,8 @@ function AuthPage({ onBack }) {
               <TabsTrigger value="register">Join Agency</TabsTrigger>
               <TabsTrigger value="admin">Admin Login</TabsTrigger>
             </TabsList>
-            
+
+            {/* Host Login */}
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
@@ -1158,6 +1159,134 @@ function AuthPage({ onBack }) {
                   />
                 </div>
                 <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white font-semibold">
+                  Access Dashboard
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* Admin Login */}
+            <TabsContent value="admin">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <Label htmlFor="admin-bigo-id">Admin BIGO ID</Label>
+                  <Input
+                    id="admin-bigo-id"
+                    type="text"
+                    placeholder="Admin"
+                    value={bigoId}
+                    onChange={(e) => setBigoId(e.target.value)}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="admin-password">Password</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    placeholder="admin333"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Tip: Create an admin by registering with passcode <span className="font-semibold">ADMIN2025</span>. Then log in here using your BIGO ID.
+                </p>
+                <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white font-semibold">
+                  Admin Access
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* Register */}
+            <TabsContent value="register">
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="reg-bigo-id">BIGO ID *</Label>
+                    <Input
+                      id="reg-bigo-id"
+                      type="text"
+                      placeholder="Your BIGO ID"
+                      value={bigoId}
+                      onChange={(e) => setBigoId(e.target.value)}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="name">Display Name *</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Your name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="reg-password">Password *</Label>
+                  <Input
+                    id="reg-password"
+                    type="password"
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="passcode">Agency Code (if provided)</Label>
+                  <Input
+                    id="passcode"
+                    type="password"
+                    placeholder="Enter agency code if provided"
+                    value={formData.passcode}
+                    onChange={(e) => setFormData({...formData, passcode: e.target.value})}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Get special access with agency code</p>
+                </div>
+                
+                <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white font-semibold">
+                  Create Host Account
+                </Button>
+              </form>
+            </TabsContent>
+
+          </Tabs>
+          
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+            <Button 
+              variant="ghost" 
+              onClick={onBack}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              ← Back to Home
+            </Button>
+          </div>
+        </CardContent>
                   Access Dashboard
                 </Button>
               </form>
