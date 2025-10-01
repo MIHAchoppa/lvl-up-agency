@@ -123,6 +123,12 @@ class AdminAction(BaseModel):
     action_type: str  # create_event, update_category, manage_user, etc.
     action_data: Dict[str, Any]
     executed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Groq TTS voices (PlayAI)
+AVAILABLE_TTS_VOICES = [
+    "Fritz-PlayAI", "Arista-PlayAI", "Atlas-PlayAI", "Celeste-PlayAI", "Thunder-PlayAI"
+]
+
     success: bool = True
     error_message: Optional[str] = None
 
