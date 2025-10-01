@@ -719,6 +719,7 @@ async def audition_upload_chunk_auth(upload_id: str = Query(...), chunk_index: i
         try:
             os.remove(tmp_path)
         except Exception:
+            pass
 
 # Helper to create admin user if not exists
 @app.on_event("startup")
