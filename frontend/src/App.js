@@ -968,6 +968,42 @@ function Dashboard() {
   const [messageInput, setMessageInput] = useState('');
   const [messagesLoading, setMessagesLoading] = useState(false);
 
+  // Load messages on mount
+  useEffect(() => {
+    if (tab === 'messages') {
+      loadMessages();
+    }
+  }, [tab]);
+
+  const loadMessages = async () => {
+    try {
+      const res = await axios.get(`${API}/messages`);
+      setMessages(res.data);
+    } catch (e) {
+      console.error('Failed to load messages');
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!messageInput.trim()) return;
+    setMessagesLoading(true);
+    try {
+      await axios.post(`${API}/messages`, { content: messageInput.trim() });
+      setMessageInput('');
+      loadMessages(); // Refresh messages
+    } catch (e) {
+      console.error('Failed to send message');
+    }
+    setMessagesLoading(false);
+  };
+
+  const handleMessageKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
   // AI Coach functions
   const sendAiMessage = async () => {
     if (!aiInput.trim()) return;
