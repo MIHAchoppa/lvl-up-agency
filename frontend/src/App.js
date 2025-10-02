@@ -293,12 +293,13 @@ function LandingPage({ onGetStarted, user }) {
   const greetingAudioRef = useRef(null);
   const [showPlayGreeting, setShowPlayGreeting] = useState(false);
 
-  // Try to play TTS via backend; fallback to Web Speech
+  // Try to play TTS via backend (base64) then Web Speech fallback
   const playTTS = async (text) => {
     try {
       const { data } = await axios.post(`${API}/tts/speak`, { text, voice: 'Fritz-PlayAI', format: 'wav' });
-      if (data?.audio_url) {
-        const audio = new Audio(data.audio_url);
+      if (data?.audio_base64) {
+        const src = `data:${data?.mime || 'audio/wav'};base64,${data.audio_base64}`;
+        const audio = new Audio(src);
         greetingAudioRef.current = audio;
         await audio.play();
         setShowPlayGreeting(false);
