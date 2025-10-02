@@ -310,8 +310,11 @@ function LandingPage({ onGetStarted, user }) {
     const timer = setTimeout(() => {
       if (!greeted) {
         setShowAgent(true);
-        setAgentMessages([{ role: 'assistant', content: `Hey! I’m ${aliasRef.current}, your LVLUP onboarding coach. Want help auditioning or learning how much you could earn?` }]);
+        const greeting = `Hey! I’m ${aliasRef.current}, your LVLUP onboarding agent. Want help auditioning or learning how much you could earn?`;
+        setAgentMessages([{ role: 'assistant', content: greeting }]);
         sessionStorage.setItem('agent_greeted', '1');
+        // Attempt TTS greeting
+        playTTS(greeting);
       }
     }, 2000);
     return () => clearTimeout(timer);
