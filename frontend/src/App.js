@@ -659,89 +659,91 @@ function Dashboard() {
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
-        <Tabs value={tab} onValueChange={setTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 xl:grid-cols-14 mb-8">
-            <TabsTrigger value="calendar">Calendar</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
-            <TabsTrigger value="academy">Academy</TabsTrigger>
-            <TabsTrigger value="tasks">Tasks</TabsTrigger>
-            <TabsTrigger value="rewards">Rewards</TabsTrigger>
-            <TabsTrigger value="announcements">Announcements</TabsTrigger>
-            <TabsTrigger value="quota">Quota</TabsTrigger>
-            <TabsTrigger value="pk">PK</TabsTrigger>
-            <TabsTrigger value="ai-coach">AI Coach</TabsTrigger>
-            {isAdmin && <TabsTrigger value="users">Users</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="content-manager">Content</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="auditions">Auditions</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="leads">Leads</TabsTrigger>}
-            {isAdmin && <TabsTrigger value="admin-agent">Admin Agent</TabsTrigger>}
+        <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="flex gap-8">
+          <TabsList className="flex flex-col w-48 space-y-1 bg-muted p-1 rounded-lg">
+            <TabsTrigger value="calendar" className="w-full justify-start">Calendar</TabsTrigger>
+            <TabsTrigger value="messages" className="w-full justify-start">Messages</TabsTrigger>
+            <TabsTrigger value="academy" className="w-full justify-start">Academy</TabsTrigger>
+            <TabsTrigger value="tasks" className="w-full justify-start">Tasks</TabsTrigger>
+            <TabsTrigger value="rewards" className="w-full justify-start">Rewards</TabsTrigger>
+            <TabsTrigger value="announcements" className="w-full justify-start">Announcements</TabsTrigger>
+            <TabsTrigger value="quota" className="w-full justify-start">Quota</TabsTrigger>
+            <TabsTrigger value="pk" className="w-full justify-start">PK</TabsTrigger>
+            <TabsTrigger value="ai-coach" className="w-full justify-start">AI Coach</TabsTrigger>
+            {isAdmin && <TabsTrigger value="users" className="w-full justify-start">Users</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="content-manager" className="w-full justify-start">Content</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="auditions" className="w-full justify-start">Auditions</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="leads" className="w-full justify-start">Leads</TabsTrigger>}
+            {isAdmin && <TabsTrigger value="admin-agent" className="w-full justify-start">Admin Agent</TabsTrigger>}
           </TabsList>
 
-          <TabsContent value="calendar">
-            <CalendarPanel />
-          </TabsContent>
-
-          <TabsContent value="messages">
-            <MessagesPanel />
-          </TabsContent>
-
-          <TabsContent value="academy">
-            <AcademyPanel />
-          </TabsContent>
-
-          <TabsContent value="tasks">
-            <TasksPanel user={user} />
-          </TabsContent>
-
-          <TabsContent value="rewards">
-            <RewardsPanel user={user} />
-          </TabsContent>
-
-          <TabsContent value="announcements">
-            <AnnouncementsPanel />
-          </TabsContent>
-
-          <TabsContent value="quota">
-            <QuotaPanel />
-          </TabsContent>
-
-          <TabsContent value="pk">
-            <PKPanel />
-          </TabsContent>
-
-          <TabsContent value="ai-coach">
-            <AICoachPanel />
-          </TabsContent>
-
-          {isAdmin && (
-            <TabsContent value="users">
-              <UsersPanel />
+          <div className="flex-1">
+            <TabsContent value="calendar">
+              <CalendarPanel />
             </TabsContent>
-          )}
 
-          {isAdmin && (
-            <TabsContent value="content-manager">
-              <ContentManagerPanel />
+            <TabsContent value="messages">
+              <MessagesPanel />
             </TabsContent>
-          )}
 
-          {isAdmin && (
-            <TabsContent value="auditions">
-              <AuditionsPanel />
+            <TabsContent value="academy">
+              <AcademyPanel />
             </TabsContent>
-          )}
 
-          {isAdmin && (
-            <TabsContent value="leads">
-              <LeadsPanel />
+            <TabsContent value="tasks">
+              <TasksPanel user={user} />
             </TabsContent>
-          )}
 
-          {isAdmin && (
-            <TabsContent value="admin-agent">
-              <AdminAgentPanel />
+            <TabsContent value="rewards">
+              <RewardsPanel user={user} />
             </TabsContent>
-          )}
+
+            <TabsContent value="announcements">
+              <AnnouncementsPanel />
+            </TabsContent>
+
+            <TabsContent value="quota">
+              <QuotaPanel />
+            </TabsContent>
+
+            <TabsContent value="pk">
+              <PKPanel />
+            </TabsContent>
+
+            <TabsContent value="ai-coach">
+              <AICoachPanel />
+            </TabsContent>
+
+            {isAdmin && (
+              <TabsContent value="users">
+                <UsersPanel />
+              </TabsContent>
+            )}
+
+            {isAdmin && (
+              <TabsContent value="content-manager">
+                <ContentManagerPanel />
+              </TabsContent>
+            )}
+
+            {isAdmin && (
+              <TabsContent value="auditions">
+                <AuditionsPanel />
+              </TabsContent>
+            )}
+
+            {isAdmin && (
+              <TabsContent value="leads">
+                <LeadsPanel />
+              </TabsContent>
+            )}
+
+            {isAdmin && (
+              <TabsContent value="admin-agent">
+                <AdminAgentPanel />
+              </TabsContent>
+            )}
+          </div>
         </Tabs>
       </div>
     </div>

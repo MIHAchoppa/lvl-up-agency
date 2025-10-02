@@ -818,6 +818,48 @@ class TTSRequest(BaseModel):
     voice: str = "Fritz-PlayAI"
     format: str = "wav"
 
+
+# Public onboarding chat (no auth) for landing agent – recruitment focused
+class OnboardingChatRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+@api_router.post("/public/ai/onboarding-chat")
+async def public_onboarding_chat(req: OnboardingChatRequest):
+    msg = (req.message or "").strip()
+    if not msg:
+        raise HTTPException(status_code=400, detail="Message required")
+    system_prompt = (
+        "You are Lvl-Up, the LVL-UP onboarding agent for a BIGO Live agency. "
+        "Your only goal is to warmly recruit visitors to become paid BIGO Live broadcasters. "
+        "Be concise, persuasive, and helpful. Offer next steps like starting a video audition, learning earnings, schedule tips, and WhatsApp contact. "
+        "Avoid making promises; emphasize coaching, community, and realistic earnings ranges based on effort."
+    )
+    try:
+        comp = await groq_client.chat.completions.create(
+            model="groq/compound-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": msg}
+            ],
+            temperature=0.6,
+            max_tokens=500
+        )
+        text = comp.choices[0].message.content
+        # Store lightweight transcript (best-effort)
+        try:
+            await db.public_onboarding_chats.insert_one({
+                "session_id": req.session_id or str(uuid.uuid4()),
+                "message": msg,
+                "response": text,
+                "created_at": datetime.now(timezone.utc)
+            })
+        except Exception:
+            pass
+        return {"response": text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/tts/voices")
 async def tts_voices():
     return {"voices": AVAILABLE_TTS_VOICES}
