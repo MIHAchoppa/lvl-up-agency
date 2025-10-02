@@ -486,11 +486,6 @@ function VideoAuditionModal({ isOpen, onClose, onSuccess }) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendAgentMessage();
-                    <Button onClick={resetRecording} variant="outline" className="flex-1">
-                      <Camera className="w-4 h-4 mr-2" />
-                      Record Again
-                    </Button>
-
     }
   };
 
