@@ -69,7 +69,7 @@ const API = `${BACKEND_URL}/api`;
 // SEO meta helper
 function SEOMeta() {
   useEffect(() => {
-    document.title = 'LVLUP AGENCY – Become a BIGO Host';
+    document.title = 'LVL-UP AGENCY – Become a BIGO Host';
   }, []);
   return null;
 }
@@ -124,7 +124,7 @@ function AuthProvider({ children }) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setToken(access_token);
       setUser(u);
-      toast.success(`Welcome to LVLUP, ${u.name}!`);
+      toast.success(`Welcome to LVL-UP, ${u.name}!`);
       setTimeout(() => { window.location.href = '/dashboard'; }, 300);
     } catch (e) {
       toast.error('Registration failed');
@@ -217,7 +217,7 @@ function VideoAuditionModal({ isOpen, onClose, onSuccess }) {
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl bg-white">
         <CardHeader>
-          <CardTitle className="flex items-center"><Video className="w-5 h-5 mr-2 text-gold" />LVLUP Audition</CardTitle>
+          <CardTitle className="flex items-center"><Video className="w-5 h-5 mr-2 text-gold" />LVL-UP Audition</CardTitle>
           <CardDescription>Record a 30–45 second audition following the instructions</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -265,7 +265,7 @@ function VideoAuditionModal({ isOpen, onClose, onSuccess }) {
                 <ul className="text-sm text-blue-900 space-y-1 list-disc list-inside">
                   <li>Good lighting, clear audio</li>
                   <li>State full name, BIGO ID, date/time</li>
-                  <li>Say you are auditioning for LVLUP AGENCY</li>
+                  <li>Say you are auditioning for LVL-UP AGENCY</li>
                 </ul>
               </div>
               <div className="bg-yellow-50 p-4 rounded border border-yellow-200">
@@ -326,7 +326,7 @@ function LandingPage({ onGetStarted, user }) {
     const timer = setTimeout(() => {
       if (!greeted) {
         setShowAgent(true);
-        const greeting = `Hey! I’m ${aliasRef.current}, your LVLUP onboarding agent. Want help auditioning or learning how much you could earn?`;
+        const greeting = `Hey! I’m ${aliasRef.current}, your LVL-UP onboarding agent. Want help auditioning or learning how much you could earn?`;
         setAgentMessages([{ role: 'assistant', content: greeting }]);
         sessionStorage.setItem('agent_greeted', '1');
         // Attempt TTS greeting
@@ -368,10 +368,10 @@ function LandingPage({ onGetStarted, user }) {
       <header className="container mx-auto px-4 py-6 flex justify-between items-center border-b border-gray-800">
         <div className="flex items-center space-x-4">
           <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center border-2 border-gold overflow-hidden">
-            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="LVLUP Logo" className="w-full h-full object-cover" loading="lazy" />
+            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="LVL-UP Logo" className="w-full h-full object-cover" loading="lazy" />
           </div>
           <div>
-            <h1 className="text-2xl font-serif font-bold text-gray-100">LVLUP AGENCY</h1>
+            <h1 className="text-2xl font-serif font-bold text-gray-100">LVL-UP AGENCY</h1>
             <p className="text-gold text-sm">Elite BIGO Live Host Network</p>
           </div>
         </div>
@@ -390,7 +390,7 @@ function LandingPage({ onGetStarted, user }) {
       {/* Hero */}
       <section className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 text-white">MAKE MONEY FROM YOUR PHONE</h1>
-        <h2 className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto">Join LVLUP AGENCY – The #1 BIGO Live host network. Earn $500–$5000+ monthly. Free training included.</h2>
+        <h2 className="text-xl md:text-2xl text-gray-200 mb-8 max-w-4xl mx-auto">Join LVL-UP AGENCY – The #1 BIGO Live host network. Earn $500–$5000+ monthly. Free training included.</h2>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
           <Button onClick={() => setShowAudition(true)} size="lg" className="bg-gold hover:bg-gold/90 text-white font-bold text-xl px-10 py-5"><Video className="w-6 h-6 mr-2" /> START VIDEO AUDITION</Button>
           <Button onClick={() => window.open('https://wa.me/12892005372', '_blank')} variant="outline" size="lg" className="border-green-500 text-green-400 hover:bg-green-900/20 text-lg px-8 py-5"><Phone className="w-5 h-5 mr-2" /> WhatsApp: 289-200-5372</Button>
@@ -403,7 +403,7 @@ function LandingPage({ onGetStarted, user }) {
         {/* Artists & Creatives */}
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto mb-24">
           <div>
-            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/btd98w68_IMG_6006.webp" alt="Artists Go Live & Earn - LVLUP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
+            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/btd98w68_IMG_6006.webp" alt="Artists Go Live & Earn - LVL-UP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
           </div>
           <div>
             <h3 className="text-3xl font-bold text-white mb-3">Artists & Creatives</h3>
@@ -419,13 +419,13 @@ function LandingPage({ onGetStarted, user }) {
             <Button onClick={() => setShowAudition(true)} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
           </div>
           <div className="order-1 md:order-2">
-            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/hn7bkjkl_IMG_6007.webp" alt="Wellness & Lifestyle Hosts - LVLUP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
+            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/hn7bkjkl_IMG_6007.webp" alt="Wellness & Lifestyle Hosts - LVL-UP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
           </div>
         </div>
         {/* Entertainment & Fun */}
         <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
           <div>
-            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/6louc2s4_IMG_6008.webp" alt="Entertainment Hosts - LVLUP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
+            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/6louc2s4_IMG_6008.webp" alt="Entertainment Hosts - LVL-UP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
           </div>
           <div>
             <h3 className="text-3xl font-bold text-white mb-3">Entertainment & Fun</h3>
@@ -435,10 +435,10 @@ function LandingPage({ onGetStarted, user }) {
         </div>
       </section>
 
-      {/* Why Choose LVLUP */}
+      {/* Why Choose LVL-UP */}
       <section className="bg-gray-900 py-20">
         <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-serif font-bold text-center mb-16 text-white">Why Choose LVLUP AGENCY?</h2>
+          <h2 className="text-4xl font-serif font-bold text-center mb-16 text-white">Why Choose LVL-UP AGENCY?</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
               <DollarSign className="w-12 h-12 text-gold mb-4 mx-auto" />
@@ -467,10 +467,10 @@ function LandingPage({ onGetStarted, user }) {
       {/* Big CTA */}
       <section className="container mx-auto px-4 py-20 text-center">
         <h2 className="text-4xl font-serif font-bold mb-6 text-white">Ready to Start Earning from Your Phone?</h2>
-        <p className="text-xl text-gray-200 mb-8 max-w-3xl mx-auto">Join LVLUP AGENCY today and transform your BIGO Live experience. Our proven system helps hosts maximize earnings while building amazing communities. <strong>Start your audition now!</strong></p>
+        <p className="text-xl text-gray-200 mb-8 max-w-3xl mx-auto">Join LVL-UP AGENCY today and transform your BIGO Live experience. Our proven system helps hosts maximize earnings while building amazing communities. <strong>Start your audition now!</strong></p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button onClick={() => setShowAudition(true)} size="lg" className="bg-gold hover:bg-gold/90 text-white font-bold text-xl px-10 py-5"><Video className="w-6 h-6 mr-2" /> Start Video Audition</Button>
-          <Button onClick={() => window.open('https://wa.me/12892005372?text=Hi%20I%27m%20interested%20in%20joining%20LVLUP%20AGENCY', '_blank')} variant="outline" size="lg" className="border-green-500 text-green-400 hover:bg-green-900/20 text-xl px-10 py-5"><Phone className="w-6 h-6 mr-2" /> WhatsApp Us</Button>
+          <Button onClick={() => window.open('https://wa.me/12892005372?text=Hi%20I%27m%20interested%20in%20joining%20LVL-UP%20AGENCY', '_blank')} variant="outline" size="lg" className="border-green-500 text-green-400 hover:bg-green-900/20 text-xl px-10 py-5"><Phone className="w-6 h-6 mr-2" /> WhatsApp Us</Button>
         </div>
       </section>
 
@@ -486,7 +486,7 @@ function LandingPage({ onGetStarted, user }) {
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-gold"><img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="" className="w-full h-full object-cover" /></div>
                 <div>
                   <p className="text-sm font-semibold">{aliasRef.current || 'Coach'}</p>
-                  <p className="text-[11px] text-gray-300">LVLUP Onboarding Agent</p>
+                  <p className="text-[11px] text-gray-300">LVL-UP Onboarding Agent</p>
                 </div>
               </div>
               <button onClick={() => setShowAgent(false)} className="text-gray-300 hover:text-white"><X className="w-4 h-4" /></button>
@@ -519,7 +519,7 @@ function LandingPage({ onGetStarted, user }) {
       {/* Footer minimal */}
       <footer className="mt-24 border-t border-gray-800">
         <div className="container mx-auto px-4 py-10 text-center text-gray-300 text-sm">
-          © {new Date().getFullYear()} LVLUP AGENCY. All rights reserved.
+          © {new Date().getFullYear()} LVL-UP AGENCY. All rights reserved.
         </div>
       </footer>
 
@@ -551,7 +551,7 @@ function AuthPage({ onBack }) {
             <Crown className="w-8 h-8 text-white" />
           </div>
           <div>
-            <CardTitle className="text-3xl font-serif text-gray-900">LVLUP AGENCY</CardTitle>
+            <CardTitle className="text-3xl font-serif text-gray-900">LVL-UP AGENCY</CardTitle>
             <CardDescription className="text-gray-600">Elite BIGO Live Host Network</CardDescription>
           </div>
         </CardHeader>
@@ -640,10 +640,10 @@ function Dashboard() {
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center border-2 border-gold overflow-hidden">
-              <img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="LVLUP Logo" className="w-full h-full object-cover" loading="lazy" />
+              <img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="LVL-UP Logo" className="w-full h-full object-cover" loading="lazy" />
             </div>
             <div>
-              <h1 className="text-xl font-serif font-bold text-gray-900">LVLUP AGENCY</h1>
+              <h1 className="text-xl font-serif font-bold text-gray-900">LVL-UP AGENCY</h1>
               <p className="text-gold text-sm">Dashboard</p>
             </div>
           </div>
@@ -756,7 +756,7 @@ function App() {
     return (
       <div className="min-h-screen grid place-items-center bg-gray-50">
         <SEOMeta />
-        <div className="text-center text-gray-600">Loading LVLUP AGENCY…</div>
+        <div className="text-center text-gray-600">Loading LVL-UP AGENCY…</div>
       </div>
     );
   }
