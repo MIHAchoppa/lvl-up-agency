@@ -440,6 +440,55 @@ function VideoAuditionModal({ isOpen, onClose, onSuccess }) {
       e.preventDefault();
       sendAgentMessage();
     }
+  // Onboarding Agent state/hooks
+  const [showAgent, setShowAgent] = useState(false);
+  const [agentMessages, setAgentMessages] = useState([]);
+  const [agentInput, setAgentInput] = useState('');
+  const aliasRef = useRef(null);
+
+  useEffect(() => {
+    if (!aliasRef.current) {
+      const names = ["EchoRae", "NovaLyric", "ShadowWave", "StarMint", "VibeMuse", "LunaVerse"];
+      aliasRef.current = names[Math.floor(Math.random() * names.length)];
+    }
+    const greeted = sessionStorage.getItem('agent_greeted');
+    const timer = setTimeout(() => {
+      if (!greeted) {
+        setShowAgent(true);
+        setAgentMessages([
+          { role: 'assistant', content: `Hey! I’m ${aliasRef.current}, your LVLUP onboarding coach. Want help auditioning or learning how much you could earn?` }
+        ]);
+        sessionStorage.setItem('agent_greeted', '1');
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const sendAgentMessage = async () => {
+    if (!agentInput.trim()) return;
+    const msg = agentInput.trim();
+    setAgentMessages(prev => [...prev, { role: 'user', content: msg }]);
+    setAgentInput('');
+    if (!user) {
+      setAgentMessages(prev => [...prev, { role: 'assistant', content: 'Please login to chat with the coach. Tap Login above to continue.' }]);
+      return;
+    }
+    try {
+      const res = await axios.post(`${API}/ai/chat`, { message: msg, chat_type: 'onboarding', use_research: false });
+      const text = res.data?.response || 'Got it.';
+      setAgentMessages(prev => [...prev, { role: 'assistant', content: text }]);
+    } catch (e) {
+      setAgentMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I had trouble responding. Try again.' }]);
+    }
+  };
+
+  const handleAgentKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendAgentMessage();
+    }
+  };
+
   };
                       Record Again
                     </Button>
