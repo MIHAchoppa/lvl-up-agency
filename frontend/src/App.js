@@ -353,6 +353,83 @@ function LandingPage({ onGetStarted, user }) {
         </div>
       </section>
 
+      {/* Category Highlights */}
+      <section className="container mx-auto px-4 py-20">
+        <h2 className="text-4xl font-serif font-bold text-center mb-16 text-white">Join Our Elite Network of Successful Hosts</h2>
+        {/* Artists & Creatives */}
+        <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto mb-24">
+          <div>
+            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/btd98w68_IMG_6006.webp" alt="Artists Go Live & Earn - LVLUP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
+          </div>
+          <div>
+            <h3 className="text-3xl font-bold text-white mb-3">Artists & Creatives</h3>
+            <p className="text-gray-100 mb-6">Share your talent and monetize your art on BIGO Live.</p>
+            <Button onClick={() => setShowAudition(true)} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
+          </div>
+        </div>
+        {/* Wellness & Lifestyle */}
+        <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto mb-24">
+          <div className="order-2 md:order-1">
+            <h3 className="text-3xl font-bold text-white mb-3">Wellness & Lifestyle</h3>
+            <p className="text-gray-100 mb-6">Share your wellness journey and inspire others while earning.</p>
+            <Button onClick={() => setShowAudition(true)} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
+          </div>
+          <div className="order-1 md:order-2">
+            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/hn7bkjkl_IMG_6007.webp" alt="Wellness & Lifestyle Hosts - LVLUP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
+          </div>
+        </div>
+        {/* Entertainment & Fun */}
+        <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+          <div>
+            <img src="https://customer-assets.emergentagent.com/job_host-dashboard-6/artifacts/6louc2s4_IMG_6008.webp" alt="Entertainment Hosts - LVLUP AGENCY" className="w-full rounded-xl shadow-2xl border border-gold/20" loading="lazy" />
+          </div>
+          <div>
+            <h3 className="text-3xl font-bold text-white mb-3">Entertainment & Fun</h3>
+            <p className="text-gray-100 mb-6">Bring joy and entertainment while building your income stream.</p>
+            <Button onClick={() => setShowAudition(true)} className="bg-gold hover:bg-gold/90 text-white">Apply Now</Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose LVLUP */}
+      <section className="bg-gray-900 py-20">
+        <div className="container mx-auto px-4">
+          <h2 className="text-4xl font-serif font-bold text-center mb-16 text-white">Why Choose LVLUP AGENCY?</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
+              <DollarSign className="w-12 h-12 text-gold mb-4 mx-auto" />
+              <h3 className="text-xl font-bold text-white mb-2">Top Earnings</h3>
+              <p className="text-gray-200">Earn $500–$5000+ monthly with our proven strategies.</p>
+            </Card>
+            <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
+              <Users className="w-12 h-12 text-gold mb-4 mx-auto" />
+              <h3 className="text-xl font-bold text-white mb-2">Expert Coaching</h3>
+              <p className="text-gray-200">Get personalized training from top BIGO Live experts.</p>
+            </Card>
+            <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
+              <Clock className="w-12 h-12 text-gold mb-4 mx-auto" />
+              <h3 className="text-xl font-bold text-white mb-2">Flexible Schedule</h3>
+              <p className="text-gray-200">Work when you want – set your own streaming hours.</p>
+            </Card>
+            <Card className="bg-black/40 border border-gold/20 hover:shadow-lg transition-shadow text-center p-6">
+              <Trophy className="w-12 h-12 text-gold mb-4 mx-auto" />
+              <h3 className="text-xl font-bold text-white mb-2">Proven Success</h3>
+              <p className="text-gray-200">Join 1000+ successful hosts in our elite network.</p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Big CTA */}
+      <section className="container mx-auto px-4 py-20 text-center">
+        <h2 className="text-4xl font-serif font-bold mb-6 text-white">Ready to Start Earning from Your Phone?</h2>
+        <p className="text-xl text-gray-200 mb-8 max-w-3xl mx-auto">Join LVLUP AGENCY today and transform your BIGO Live experience. Our proven system helps hosts maximize earnings while building amazing communities. <strong>Start your audition now!</strong></p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <Button onClick={() => setShowAudition(true)} size="lg" className="bg-gold hover:bg-gold/90 text-white font-bold text-xl px-10 py-5"><Video className="w-6 h-6 mr-2" /> Start Video Audition</Button>
+          <Button onClick={() => window.open('https://wa.me/12892005372?text=Hi%20I%27m%20interested%20in%20joining%20LVLUP%20AGENCY', '_blank')} variant="outline" size="lg" className="border-green-500 text-green-400 hover:bg-green-900/20 text-xl px-10 py-5"><Phone className="w-6 h-6 mr-2" /> WhatsApp Us</Button>
+        </div>
+      </section>
+
       {/* Onboarding Agent Bubble + Panel */}
       <div className="fixed bottom-6 right-6 z-50">
         <div id="agent-launch" className="rounded-full border-2 border-gold shadow-lg overflow-hidden cursor-pointer" onClick={() => setShowAgent(true)}>
