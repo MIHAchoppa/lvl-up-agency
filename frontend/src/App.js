@@ -464,9 +464,9 @@ function LandingPage({ onGetStarted, user }) {
                 <Button size="sm" className="bg-gold hover:bg-gold/90" onClick={sendAgentMessage}>Send</Button>
               </div>
               <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                <Button variant="outline" size="sm" onClick={() => setAgentInput('How do I audition?')}>How do I audition?</Button>
-                <Button variant="outline" size="sm" onClick={() => setAgentInput('How much can I earn?')}>How much can I earn?</Button>
-                <Button variant="outline" size="sm" onClick={() => setAgentInput('What is the schedule like?')}>What is the schedule like?</Button>
+                <Button variant="outline" size="sm" className="text-gray-800 border-gray-300 hover:bg-gray-100" onClick={() => setAgentInput('How do I audition?')}>How do I audition?</Button>
+                <Button variant="outline" size="sm" className="text-gray-800 border-gray-300 hover:bg-gray-100" onClick={() => setAgentInput('How much can I earn?')}>How much can I earn?</Button>
+                <Button variant="outline" size="sm" className="text-gray-800 border-gray-300 hover:bg-gray-100" onClick={() => setAgentInput('What is the schedule like?')}>What is the schedule like?</Button>
               </div>
             </div>
           </div>
