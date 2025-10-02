@@ -298,6 +298,24 @@
   - agent: "main"
     message: "Run quick frontend smoke tests: landing visuals, admin login/redirect, dashboard page loads. Do not run long scenarios."
 
+
+## run_cycle_3
+- intent: "Run all key backend + frontend smoke tasks quickly"
+- backend_focus:
+  - auth: admin login, host login
+  - auditions: init/chunk/complete, admin list/stream/delete
+  - events: create, rsvp, attendees
+  - chat: basic /api/ai/chat response (host), 403 research for non-admin
+  - tts: /api/tts/voices, /api/tts/speak placeholder
+  - stt: /api/stt accepts webm
+  - admin-only: /api/recruitment/* requires admin
+- frontend_focus:
+  - landing loads (dark), LVL logo visible, footer readable
+  - greeting bubble present
+  - auth tabs show Host/Login/Admin; admin login redirects to /dashboard
+  - /dashboard route renders shell with panels list
+- note: keep runs short (<2 min)
+
   - task: "Group chat channel + DMs (no guests)"
     implemented: true
     working: true
