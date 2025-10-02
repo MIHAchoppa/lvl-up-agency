@@ -1766,12 +1766,55 @@ async def get_personal_events(current_user: User = Depends(get_current_user)):
 # Rewards Routes
 @api_router.get("/rewards")
 async def get_rewards(category: Optional[str] = None, current_user: User = Depends(get_current_user)):
-    filter_query = {"active": True}
+    # Dynamic bean-tier rewards driven by monthly beans and tier system
+    # Respectable threshold to start rewards
+    try:
+        beans = getattr(current_user, 'current_month_beans', None)
+        if beans is None:
+            # fallback to user record from DB
+            urec = await db.users.find_one({"id": current_user.id})
+            beans = (urec or {}).get("current_month_beans", 0)
+    except Exception:
+        beans = 0
+
+    START_THRESHOLD = 100_000  # respectable but not too high
+    dynamic = []
+    # Map approximate tiers by local_bean_target in BIGO_TIER_SYSTEM
+    # Build tier thresholds sorted by target
+    try:
+        tiers = []
+        for tname, tdata in BIGO_TIER_SYSTEM.items():
+            tiers.append({"tier": tname, "target": int(tdata.get("local_bean_target", 0))})
+        tiers = sorted(tiers, key=lambda x: x["target"])
+    except Exception:
+        tiers = []
+
+    # Define dynamic rewards at progressive bean targets
+    milestones = [100_000, 250_000, 500_000, 1_000_000, 1_500_000]
+    labels = [
+        (100_000, "Bronze Bean Achiever", "Profile review + shoutout in Lounge"),
+        (250_000, "Silver Bean Achiever", "Small promo + schedule audit"),
+        (500_000, "Gold Bean Achiever", "1:1 coaching session + featured post"),
+        (1_000_000, "Platinum Bean Achiever", "Homepage feature + PK priority"),
+        (1_500_000, "Diamond Bean Achiever", "Agency showcase + custom promo kit"),
+    ]
+    for target, title, desc in labels:
+        unlocked = beans >= target and beans >= START_THRESHOLD
+        dynamic.append({
+            "id": f"bean_{target}",
+            "title": title,
+            "description": desc,
+            "category": "bean_tier",
+            "min_beans": target,
+            "unlocked": unlocked,
+            "locked_reason": None if unlocked else f"Requires {target:,} beans this month",
+        })
+
+    # If a category is specified, filter dynamic by it
     if category:
-        filter_query["category"] = category
-    
-    rewards = await db.rewards.find(filter_query).to_list(1000)
-    return [Reward(**reward) for reward in rewards]
+        dynamic = [r for r in dynamic if r.get("category") == category]
+
+    return dynamic
 
 @api_router.post("/rewards/{reward_id}/redeem")
 async def redeem_reward(reward_id: str, current_user: User = Depends(get_current_user)):
