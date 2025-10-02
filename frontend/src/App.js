@@ -465,11 +465,47 @@ function LandingPage({ onGetStarted, user }) {
               <Button onClick={onGetStarted} className="bg-gold hover:bg-gold/90 text-white font-bold px-6">Start Audition</Button>
             </>
           )}
-          {/* Greeting Agent Bubble */}
+          {/* Onboarding Agent Bubble + Panel */}
           <div className="fixed bottom-6 right-6 z-50">
-            <div id="agent-launch" className="rounded-full border-2 border-gold shadow-lg overflow-hidden cursor-pointer" onClick={() => setShowAudition(true)}>
+            {/* Floating button with LVL logo */}
+            <div id="agent-launch" className="rounded-full border-2 border-gold shadow-lg overflow-hidden cursor-pointer" onClick={() => setShowAgent(true)}>
               <img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="Agent" className="w-14 h-14 object-cover" />
             </div>
+            {showAgent && (
+              <div className="absolute bottom-16 right-0 w-[360px] max-w-[90vw] bg-white rounded-xl shadow-2xl border border-gold/30 overflow-hidden">
+                <div className="bg-black text-white px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full overflow-hidden border border-gold"><img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="" className="w-full h-full object-cover" /></div>
+                    <div>
+                      <p className="text-sm font-semibold">{aliasRef.current || 'Coach'}</p>
+                      <p className="text-[11px] text-gray-300">LVLUP Onboarding Coach</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowAgent(false)} className="text-gray-300 hover:text-white"><X className="w-4 h-4" /></button>
+                </div>
+                <div className="h-64 overflow-y-auto p-3 space-y-2 bg-gray-50">
+                  {agentMessages.map((m, i) => (
+                    <div key={i} className={`text-sm ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
+                      <div className={`inline-block px-3 py-2 rounded-lg ${m.role === 'user' ? 'bg-gold text-white' : 'bg-white border border-gray-200 text-gray-800'}`}>{m.content}</div>
+                    </div>
+                  ))}
+                  {!user && (
+                    <div className="text-xs text-gray-600">Tip: Login to chat and get personalized help.</div>
+                  )}
+                </div>
+                <div className="border-t p-2 bg-white">
+                  <div className="flex items-center space-x-2">
+                    <input value={agentInput} onChange={(e) => setAgentInput(e.target.value)} onKeyDown={handleAgentKey} placeholder={user ? 'Type your question…' : 'Login to chat'} className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+                    <Button size="sm" className="bg-gold hover:bg-gold/90" onClick={sendAgentMessage}>Send</Button>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                    <Button variant="outline" size="sm" onClick={() => setAgentInput('How do I audition?')}>How do I audition?</Button>
+                    <Button variant="outline" size="sm" onClick={() => setAgentInput('How much can I earn?')}>How much can I earn?</Button>
+                    <Button variant="outline" size="sm" onClick={() => setAgentInput('What is the schedule like?')}>What is the schedule like?</Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
