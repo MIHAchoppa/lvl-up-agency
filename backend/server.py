@@ -1190,18 +1190,23 @@ async def get_me(current_user: User = Depends(get_current_user)):
 async def ai_chat(chat_data: dict, current_user: User = Depends(get_current_user)):
     message = chat_data.get("message", "")
     chat_type = chat_data.get("chat_type", "strategy_coach")
-    
+    use_research = bool(chat_data.get("use_research", False))
+
+    # Enforce admin-only research tools
+    if use_research and current_user.role not in [UserRole.OWNER, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Research mode requires admin")
+
     ai_response = await get_groq_response(message, chat_type)
-    
+
     chat_record = AIChat(
         user_id=current_user.id,
         message=message,
         ai_response=ai_response,
         chat_type=chat_type
     )
-    
+
     await db.ai_chats.insert_one(chat_record.dict())
-    
+
     return {"response": ai_response, "chat_type": chat_type}
 
 @api_router.get("/ai/chat/history")
