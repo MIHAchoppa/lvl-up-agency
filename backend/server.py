@@ -1100,6 +1100,14 @@ async def get_public_stats():
         points_result = await db.point_ledger.aggregate(points_pipeline).to_list(1)
         total_points = points_result[0]["total_points"] if points_result else 0
 
+        return {
+            "total_users": total_users,
+            "active_hosts": active_hosts,
+            "total_points_earned": total_points
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch stats: {str(e)}")
+
 
 # Auth Routes
 @api_router.post("/auth/register")
@@ -1166,7 +1174,7 @@ async def ai_chat(chat_data: dict, current_user: User = Depends(get_current_user
     use_research = bool(chat_data.get("use_research", False))
 
     # Enforce admin-only research tools
-    if use_research and current_user.role not in [UserRole.OWNER, UserRole.ADMIN]:
+    if use_research and current_user.role not in ["owner", "admin"]:
         raise HTTPException(status_code=403, detail="Research mode requires admin")
 
     ai_response = await get_groq_response(message, chat_type)

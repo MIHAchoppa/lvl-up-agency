@@ -318,7 +318,7 @@ function LandingPage({ onGetStarted, user }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from.black via-gray-900 to-black text-gray-100 relative">
+    <div className="min-h-screen bg-gradient-to-b from-black via-gray-900 to-black text-gray-100 relative">
       <SEOMeta />
       {/* Header */}
       <header className="container mx-auto px-4 py-6 flex justify-between items-center border-b border-gray-800">
