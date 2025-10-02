@@ -282,15 +282,18 @@
         comment: "Verify admin login and redirect works."
   - task: "Dashboard route /dashboard renders"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Currently placeholder; smoke test presence. Full panels restoration pending."
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Dashboard route renders successfully after admin login. All 10 required sidebar items present: Calendar, Messages, BIGO Academy, Tasks, Rewards, Quizzes, Announcements, Beans/Quota, PK Sign-ups, AI Coach. Dashboard shows welcome message with user role (Admin). Minor: Panel content switching needs improvement - panels show placeholder content but basic structure is functional."
 
 ## test_plan:
   current_focus:
