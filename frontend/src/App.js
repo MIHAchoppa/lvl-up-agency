@@ -296,7 +296,7 @@ function LandingPage({ onGetStarted, user }) {
   // Try to play TTS via backend (base64) then Web Speech fallback
   const playTTS = async (text) => {
     try {
-      const { data } = await axios.post(`${API}/tts/speak`, { text, voice: 'Fritz-PlayAI', format: 'wav' });
+      const { data } = await axios.post(`${API}/tts/speak`, { text, voice: 'Gail-PlayAI', format: 'wav' });
       if (data?.audio_base64) {
         const src = `data:${data?.mime || 'audio/wav'};base64,${data.audio_base64}`;
         const audio = new Audio(src);
@@ -491,11 +491,18 @@ function LandingPage({ onGetStarted, user }) {
               <button onClick={() => setShowAgent(false)} className="text-gray-300 hover:text-white"><X className="w-4 h-4" /></button>
             </div>
             <div className="h-64 overflow-y-auto p-3 space-y-2 bg-gray-50">
-              {agentMessages.map((m, i) => (
-                <div key={i} className={`text-sm ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
-                  <div className={`inline-block px-3 py-2 rounded-lg ${m.role === 'user' ? 'bg-gold text-white' : 'bg-white border border-gray-200 text-gray-800'}`}>{m.content}</div>
-                </div>
-              ))}
+              {agentMessages.map((m, i) => {
+                const looksHtml = typeof m.content === 'string' && /<\/?(table|thead|tbody|tr|td|th|h\d|p|ul|li|strong|em|br)/i.test(m.content);
+                return (
+                  <div key={i} className={`text-sm ${m.role === 'user' ? 'text-right' : 'text-left'}`}>
+                    {m.role === 'assistant' && looksHtml ? (
+                      <div className="bg-white border border-gold/30 rounded-lg p-3 text-left overflow-x-auto" dangerouslySetInnerHTML={{ __html: sanitizeAgentHtml(m.content) }} />
+                    ) : (
+                      <div className={`inline-block px-3 py-2 rounded-lg ${m.role === 'user' ? 'bg-gold text-white' : 'bg-white border border-gray-200 text-gray-800'}`}>{m.content}</div>
+                    )}
+                  </div>
+                );
+              })}
               {!user && (
                 <div className="text-xs text-gray-600">Tip: Login to chat and get personalized help.</div>
               )}
@@ -672,7 +679,7 @@ function Dashboard() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="flex gap-8">
-          <TabsList className="flex flex-col w-48 space-y-1 bg-muted p-1 rounded-lg overflow-y-auto z-20">
+          <TabsList className="flex flex-col w-48 space-y-1 bg-muted p-1 rounded-lg overflow-y-auto z-20 h-[80vh]">
             <TabsTrigger value="calendar" className="w-full justify-start">Calendar</TabsTrigger>
             <TabsTrigger value="messages" className="w-full justify-start">Messages</TabsTrigger>
             <TabsTrigger value="academy" className="w-full justify-start">Academy</TabsTrigger>

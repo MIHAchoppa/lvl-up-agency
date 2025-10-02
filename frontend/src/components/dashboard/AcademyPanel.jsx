@@ -13,7 +13,7 @@ const API = `${BACKEND_URL}/api`;
 function AcademyPanel() {
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState('all');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -23,7 +23,7 @@ function AcademyPanel() {
   const fetchResources = async () => {
     try {
       const params = {};
-      if (category) params.category = category;
+      if (category && category !== 'all') params.category = category;
       const { data } = await axios.get(`${API}/resources`, { params });
       setResources(data);
     } catch (e) {
@@ -65,7 +65,7 @@ function AcademyPanel() {
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="getting_started">Getting Started</SelectItem>
                 <SelectItem value="strategy">Strategy</SelectItem>
                 <SelectItem value="pk">PK Battles</SelectItem>

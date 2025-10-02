@@ -815,7 +815,7 @@ async def audition_upload_complete_auth(upload_id: str = Query(...), current_use
 # TTS: simple synth endpoint using Groq
 class TTSRequest(BaseModel):
     text: str
-    voice: str = "Fritz-PlayAI"
+    voice: str = "Gail-PlayAI"
     format: str = "wav"
 
 
