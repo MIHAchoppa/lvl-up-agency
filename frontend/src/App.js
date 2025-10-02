@@ -515,6 +515,19 @@ function LandingPage({ onGetStarted, user }) {
         )}
       </div>
 
+      {/* Emergent referral ribbon (landing only) */}
+      <div className="fixed left-2 md:left-4 top-1/2 -translate-y-1/2 z-40">
+        <a
+          href="https://app.emergent.sh/register?ref=jess321791"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 bg-white/95 text-gray-900 border border-gray-300 rounded-full px-3 py-1 shadow hover:shadow-md"
+          aria-label="Made with Emergent (referral)"
+        >
+          <span className="text-xs font-medium">Made with Emergent</span>
+        </a>
+      </div>
+
       {/* Footer minimal */}
       <footer className="mt-24 border-t border-gray-800">
         <div className="container mx-auto px-4 py-10 text-center text-gray-300 text-sm">
