@@ -273,14 +273,38 @@ function LandingPage({ onGetStarted, user }) {
   const [showAgent, setShowAgent] = useState(false);
   const [agentMessages, setAgentMessages] = useState([]);
   const [agentInput, setAgentInput] = useState('');
-  const aliasRef = useRef(null);
+  const aliasRef = useRef('Lvl-Up');
+  const greetingAudioRef = useRef(null);
+  const [showPlayGreeting, setShowPlayGreeting] = useState(false);
+
+  // Try to play TTS via backend; fallback to Web Speech
+  const playTTS = async (text) => {
+    try {
+      const { data } = await axios.post(`${API}/tts/speak`, { text, voice: 'Fritz-PlayAI', format: 'wav' });
+      if (data?.audio_url) {
+        const audio = new Audio(data.audio_url);
+        greetingAudioRef.current = audio;
+        await audio.play();
+        setShowPlayGreeting(false);
+        return true;
+      }
+      // Fallback to Web Speech API
+      if ('speechSynthesis' in window) {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.rate = 1.0; utter.pitch = 1.0; utter.volume = 1.0;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utter);
+        setShowPlayGreeting(false);
+        return true;
+      }
+    } catch (e) {}
+    setShowPlayGreeting(true);
+    return false;
+  };
 
   useEffect(() => {
-    // random alias once
-    if (!aliasRef.current) {
-      const names = ['EchoRae', 'NovaLyric', 'ShadowWave', 'StarMint', 'VibeMuse', 'LunaVerse'];
-      aliasRef.current = names[Math.floor(Math.random() * names.length)];
-    }
+    // fixed alias
+    if (!aliasRef.current) aliasRef.current = 'Lvl-Up';
     // auto-open once per session after 2s
     const greeted = sessionStorage.getItem('agent_greeted');
     const timer = setTimeout(() => {
