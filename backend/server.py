@@ -1224,6 +1224,9 @@ async def generate_voice(voice_request: VoiceRequest, current_user: User = Depen
     voice_result = await generate_voice_response(ai_response, voice_request.voice_type)
     
     return {
+        "response": ai_response,
+        "voice_result": voice_result
+    }
 
 # STT endpoint (Whisper-like processing)
 @api_router.post("/stt")
@@ -1236,6 +1239,7 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
     if not content:
         raise HTTPException(status_code=400, detail="Empty audio")
     # Return placeholder transcription
+    return {"transcription": "This is a placeholder transcription. Audio received successfully."}
 
 # ===== Quizzes Models =====
 class QuizQuestion(BaseModel):
