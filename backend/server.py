@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
         admin = await db.users.find_one({"bigo_id": "Admin"})
         if not admin:
             hashed = hash_password("admin333")
-            user = User(bigo_id="Admin", email="admin@lvlup.com", name="admin", role=UserRole.ADMIN)
+            user = User(bigo_id="Admin", email="admin@lvlup.ca", name="admin", role=UserRole.ADMIN)
             doc = user.dict()
             doc["password"] = hashed
             await db.users.insert_one(doc)
