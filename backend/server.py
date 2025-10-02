@@ -1397,13 +1397,6 @@ async def submit_quiz(quiz_id: str, body: dict, current_user: User = Depends(get
     await db.quiz_submissions.insert_one(sub.dict())
     return {"message": "Submitted", "score": percent}
 
-    return {"transcription": "Transcription placeholder", "confidence": 0.0}
-
-        "text_response": ai_response,
-        "voice_response": voice_result,
-        "voice_type": voice_request.voice_type
-    }
-
 # Advanced Admin Routes
 @api_router.post("/admin/execute")
 async def execute_admin_command(action_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
