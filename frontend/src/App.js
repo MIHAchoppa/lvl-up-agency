@@ -659,7 +659,7 @@ function Dashboard() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs value={tab} onValueChange={setTab} orientation="vertical" className="flex gap-8">
-          <TabsList className="flex flex-col w-48 space-y-1 bg-muted p-1 rounded-lg">
+          <TabsList className="flex flex-col w-48 space-y-1 bg-muted p-1 rounded-lg overflow-y-auto z-20">
             <TabsTrigger value="calendar" className="w-full justify-start">Calendar</TabsTrigger>
             <TabsTrigger value="messages" className="w-full justify-start">Messages</TabsTrigger>
             <TabsTrigger value="academy" className="w-full justify-start">Academy</TabsTrigger>
