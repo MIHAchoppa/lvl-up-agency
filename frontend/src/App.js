@@ -493,8 +493,6 @@ function VideoAuditionModal({ isOpen, onClose, onSuccess }) {
                       <Camera className="w-4 h-4 mr-2" />
                       Record Again
                     </Button>
-
-                    </Button>
                     <Button onClick={submitAudition} disabled={isUploading} className="flex-1 bg-green-500 hover:bg-green-600">
                       {isUploading ? (<div className="w-4 h-4 animate-spin border-2 border-white border-t-transparent rounded-full mr-2" />) : (<Upload className="w-4 h-4 mr-2" />)}
                       Submit Audition
