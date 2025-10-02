@@ -108,6 +108,29 @@ function AuthProvider({ children }) {
       localStorage.setItem('token', access_token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setToken(access_token);
+// very small HTML sanitizer to avoid script/style injection in agent output
+function sanitizeAgentHtml(html) {
+  try {
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    // remove scripts and styles
+    div.querySelectorAll('script, style, iframe, link, meta').forEach(n => n.remove());
+    // ensure tables render nicely
+    div.querySelectorAll('table').forEach(t => {
+      t.classList.add('min-w-full','text-left','text-sm');
+    });
+    div.querySelectorAll('th').forEach(th => {
+      th.classList.add('font-semibold','p-2','border-b');
+    });
+    div.querySelectorAll('td').forEach(td => {
+      td.classList.add('p-2','border-b');
+    });
+    return div.innerHTML;
+  } catch (e) {
+    return html;
+  }
+}
+
       setUser(u);
       toast.success(`Welcome back, ${u.name}!`);
       setTimeout(() => { window.location.href = '/dashboard'; }, 300);
