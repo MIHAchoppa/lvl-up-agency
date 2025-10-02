@@ -341,12 +341,10 @@ function LandingPage({ onGetStarted, user }) {
     const msg = agentInput.trim();
     setAgentMessages((prev) => [...prev, { role: 'user', content: msg }]);
     setAgentInput('');
-    if (!user) {
-      setAgentMessages((prev) => [...prev, { role: 'assistant', content: 'Please login to chat with the coach. Tap Login above to continue.' }]);
-      return;
-    }
     try {
-      const { data } = await axios.post(`${API}/ai/chat`, { message: msg, chat_type: 'onboarding', use_research: false });
+      const endpoint = user ? `${API}/ai/chat` : `${API}/public/ai/onboarding-chat`;
+      const payload = user ? { message: msg, chat_type: 'onboarding', use_research: false } : { message: msg };
+      const { data } = await axios.post(endpoint, payload);
       const text = data?.response || 'Got it.';
       setAgentMessages((prev) => [...prev, { role: 'assistant', content: text }]);
     } catch (e) {
