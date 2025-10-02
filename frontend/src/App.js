@@ -35,6 +35,7 @@ import {
   Calculator,
   Video,
   Phone,
+  Clock,
 } from 'lucide-react';
 
 // UI components
@@ -442,7 +443,7 @@ function LandingPage({ onGetStarted, user }) {
                 <div className="w-8 h-8 rounded-full overflow-hidden border border-gold"><img src="https://customer-assets.emergentagent.com/job_host-dashboard-8/artifacts/tphzssiq_IMG_6004.webp" alt="" className="w-full h-full object-cover" /></div>
                 <div>
                   <p className="text-sm font-semibold">{aliasRef.current || 'Coach'}</p>
-                  <p className="text-[11px] text-gray-300">LVLUP Onboarding Coach</p>
+                  <p className="text-[11px] text-gray-300">LVLUP Onboarding Agent</p>
                 </div>
               </div>
               <button onClick={() => setShowAgent(false)} className="text-gray-300 hover:text-white"><X className="w-4 h-4" /></button>

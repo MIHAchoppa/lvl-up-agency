@@ -21,6 +21,7 @@ import aiofiles
 import openpyxl
 from groq import AsyncGroq
 import re
+from contextlib import asynccontextmanager
 # Email imports removed - not used in current implementation
 
 ROOT_DIR = Path(__file__).parent
@@ -31,8 +32,27 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup code
+    try:
+        admin = await db.users.find_one({"bigo_id": "Admin"})
+        if not admin:
+            hashed = hash_password("admin333")
+            user = User(bigo_id="Admin", email="admin@lvlup.com", name="admin", role=UserRole.ADMIN)
+            doc = user.dict()
+            doc["password"] = hashed
+            await db.users.insert_one(doc)
+            logging.getLogger(__name__).info("Seeded default Admin user")
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Failed to seed admin: {e}")
+    yield
+    # shutdown code
+    client.close()
+
 # Create the main app without a prefix
 app = FastAPI(
+    lifespan=lifespan,
     title="Level Up Agency - Ultimate BIGO Live Host Recruitment & Management Platform",
     description="The Most Advanced BIGO Live Host Success Platform with AI Agents, Voice Coaching & Automated Recruitment!",
     version="2.0.0"
@@ -721,20 +741,6 @@ async def audition_upload_chunk_auth(upload_id: str = Query(...), chunk_index: i
         except Exception:
             pass
 
-# Helper to create admin user if not exists
-@app.on_event("startup")
-async def ensure_admin_user():
-    try:
-        admin = await db.users.find_one({"bigo_id": "Admin"})
-        if not admin:
-            hashed = hash_password("admin333")
-            user = User(bigo_id="Admin", email="admin@lvlup.com", name="admin", role=UserRole.ADMIN)
-            doc = user.dict()
-            doc["password"] = hashed
-            await db.users.insert_one(doc)
-            logger.info("Seeded default Admin user")
-    except Exception as e:
-        logger.error(f"Failed to seed admin: {e}")
 
 @api_router.post("/audition/upload/complete")
 async def audition_upload_complete_auth(upload_id: str = Query(...), current_user: User = Depends(get_current_user)):
@@ -1929,6 +1935,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+# Removed redundant shutdown event since lifespan context manager handles client close
+# @app.on_event("shutdown")
+# async def shutdown_db_client():
+#     client.close()
