@@ -1236,6 +1236,163 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
     if not content:
         raise HTTPException(status_code=400, detail="Empty audio")
     # Return placeholder transcription
+
+# ===== Quizzes Models =====
+class QuizQuestion(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    qtype: str  # mcq | tf | short
+    question: str
+    options: Optional[List[str]] = None
+    correct_answer: Optional[str] = None
+    explanation: Optional[str] = None
+
+class Quiz(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    title: str
+    topic: str
+    difficulty: str = "medium"
+    audience: str = "all"  # all | cohort
+    questions: List[QuizQuestion]
+    created_by: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    published: bool = False
+
+class QuizSubmission(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    quiz_id: str
+    user_id: str
+    answers: List[dict]
+    score: Optional[float] = 0.0
+    submitted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class QuizGenRequest(BaseModel):
+    topic: str
+    difficulty: str = "medium"
+    count: int = 10
+    audience: str = "all"
+    tone: Optional[str] = "motivational"
+    types: Optional[List[str]] = ["mcq", "tf", "short"]
+
+# ===== Quiz Endpoints =====
+@api_router.post("/admin/quizzes/generate")
+async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH, UserRole.OWNER]))):
+    # Use Groq to generate questions in a simple JSON-friendly format
+    prompt = (
+        f"Generate {req.count} {req.difficulty} questions about {req.topic} for BIGO hosts."
+        f" Types allowed: {', '.join(req.types or [])}."
+        f" Include for MCQ: 4 options and one correct answer. For TF: correct answer true/false."
+        f" Provide a brief explanation per question. Return JSON list with fields: qtype, question, options, correct_answer, explanation."
+    )
+    try:
+        groq_resp = await groq_client.chat.completions.create(
+            model="groq/compound-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5,
+            max_tokens=1200
+        )
+        content = groq_resp.choices[0].message.content
+        # Try to parse JSON; fallback to simple splitter if needed
+        try:
+            data = json.loads(content)
+            items = data if isinstance(data, list) else data.get("questions", [])
+        except Exception:
+            # Fallback: simplistic parsing - create template questions
+            items = []
+            for i in range(req.count):
+                qtype = (req.types or ["mcq"])[i % len(req.types or ["mcq"])]
+                if qtype == "mcq":
+                    items.append({
+                        "qtype": "mcq",
+                        "question": f"Sample question {i+1} about {req.topic}?",
+                        "options": ["A", "B", "C", "D"],
+                        "correct_answer": "A",
+                        "explanation": "Sample explanation"
+                    })
+                elif qtype == "tf":
+                    items.append({
+                        "qtype": "tf",
+                        "question": f"True or False: {req.topic} matters (sample) ",
+                        "correct_answer": "true",
+                        "explanation": "Sample explanation"
+                    })
+                else:
+                    items.append({
+                        "qtype": "short",
+                        "question": f"Briefly explain: {req.topic} (sample)",
+                        "explanation": "Sample guidance"
+                    })
+        questions = [QuizQuestion(**{
+            "qtype": it.get("qtype", "mcq"),
+            "question": it.get("question", ""),
+            "options": it.get("options"),
+            "correct_answer": it.get("correct_answer"),
+            "explanation": it.get("explanation")
+        }) for it in items]
+        title = f"{req.topic.title()} – {req.difficulty.title()}"
+        quiz = Quiz(
+            title=title,
+            topic=req.topic,
+            difficulty=req.difficulty,
+            audience=req.audience,
+            questions=questions,
+            created_by=current_user.id,
+            published=False
+        )
+        return quiz
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/admin/quizzes")
+async def save_quiz(body: dict, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH, UserRole.OWNER]))):
+    try:
+        quiz = Quiz(**body)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid quiz payload: {e}")
+    await db.quizzes.insert_one(quiz.dict())
+    publish = body.get("published") or body.get("publish_all")
+    # publish flag already on quiz; if publish_all true, leave published True
+    if publish:
+        await db.quizzes.update_one({"id": quiz.id}, {"$set": {"published": True}})
+    return {"message": "Quiz saved", "id": quiz.id}
+
+@api_router.get("/quizzes")
+async def list_quizzes(current_user: User = Depends(get_current_user)):
+    items = await db.quizzes.find({"published": True}).sort("created_at", -1).to_list(100)
+    return [Quiz(**x) for x in items]
+
+@api_router.get("/quizzes/{quiz_id}")
+async def get_quiz(quiz_id: str, current_user: User = Depends(get_current_user)):
+    q = await db.quizzes.find_one({"id": quiz_id})
+    if not q:
+        raise HTTPException(status_code=404, detail="Not found")
+    return Quiz(**q)
+
+@api_router.post("/quizzes/{quiz_id}/submit")
+async def submit_quiz(quiz_id: str, body: dict, current_user: User = Depends(get_current_user)):
+    q = await db.quizzes.find_one({"id": quiz_id})
+    if not q:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    answers = body.get("answers", [])
+    # score MCQ/TF; short answers not auto-scored
+    score = 0
+    total_scored = 0
+    for ans in answers:
+        qid = ans.get("question_id")
+        given = str(ans.get("answer", "")).strip().lower()
+        match = next((qq for qq in q.get("questions", []) if qq.get("id") == qid), None)
+        if not match:
+            continue
+        qtype = match.get("qtype")
+        correct = str(match.get("correct_answer", "")).strip().lower()
+        if qtype in ("mcq", "tf"):
+            total_scored += 1
+            if given == correct:
+                score += 1
+    percent = (score / total_scored * 100.0) if total_scored else 0.0
+    sub = QuizSubmission(quiz_id=quiz_id, user_id=current_user.id, answers=answers, score=percent)
+    await db.quiz_submissions.insert_one(sub.dict())
+    return {"message": "Submitted", "score": percent}
+
     return {"transcription": "Transcription placeholder", "confidence": 0.0}
 
         "text_response": ai_response,
