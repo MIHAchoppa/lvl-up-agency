@@ -1224,6 +1224,20 @@ async def generate_voice(voice_request: VoiceRequest, current_user: User = Depen
     voice_result = await generate_voice_response(ai_response, voice_request.voice_type)
     
     return {
+
+# STT endpoint (Whisper-like processing)
+@api_router.post("/stt")
+async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    # Accept audio/webm or audio/wav and return dummy transcription for now
+    if file.content_type not in ("audio/webm", "audio/wav", "audio/x-wav"):
+        raise HTTPException(status_code=400, detail="Unsupported audio format")
+    # For production, integrate real Whisper transcription here. Placeholder returns fixed string.
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty audio")
+    # Return placeholder transcription
+    return {"transcription": "Transcription placeholder", "confidence": 0.0}
+
         "text_response": ai_response,
         "voice_response": voice_result,
         "voice_type": voice_request.voice_type
