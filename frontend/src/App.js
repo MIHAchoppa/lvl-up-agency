@@ -347,6 +347,50 @@ function VideoAuditionModal({ isOpen, onClose, onSuccess }) {
                   <>
                     <Button onClick={resetRecording} variant="outline" className="flex-1">
                       <Camera className="w-4 h-4 mr-2" />
+                      Record Again
+                    </Button>
+                    <Button onClick={submitAudition} disabled={isUploading} className="flex-1 bg-green-500 hover:bg-green-600">
+                      {isUploading ? (<div className="w-4 h-4 animate-spin border-2 border-white border-t-transparent rounded-full mr-2" />) : (<Upload className="w-4 h-4 mr-2" />)}
+                      Submit Audition
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-2">💡 Pro Tips</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Good lighting on your face</li>
+                  <li>• Speak clearly and confidently</li>
+                  <li>• Look directly at the camera</li>
+                  <li>• Quiet background</li>
+                  <li>• Smile and be yourself!</li>
+                </ul>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-green-900 mb-2">🎯 Example Script</h4>
+                <p className="text-sm text-green-800 italic">"Hi! My name is [Your Name], my BIGO ID is [Your ID]. I'm auditioning for LVLUP AGENCY. Today is [Date] at [Time]. I plan to [stream dancing/singing/chatting/etc.] on BIGO Live and build an amazing community!"</p>
+              </div>
+              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <h4 className="font-semibold text-yellow-900 mb-2">⏱️ Time Limit</h4>
+                <p className="text-sm text-yellow-800">Keep your audition between <strong>30-45 seconds</strong>. Recording will auto-stop at 45 seconds.</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Onboarding Agent state/hooks moved to top of LandingPage below
+
   const [showAgent, setShowAgent] = useState(false);
   const [agentMessages, setAgentMessages] = useState([]);
   const [agentInput, setAgentInput] = useState('');
