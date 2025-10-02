@@ -963,6 +963,11 @@ function Dashboard() {
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
 
+  // Messages state
+  const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState('');
+  const [messagesLoading, setMessagesLoading] = useState(false);
+
   // AI Coach functions
   const sendAiMessage = async () => {
     if (!aiInput.trim()) return;
