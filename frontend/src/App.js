@@ -489,6 +489,22 @@ function VideoAuditionModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
+                    <Button onClick={resetRecording} variant="outline" className="flex-1">
+                      <Camera className="w-4 h-4 mr-2" />
+                      Record Again
+                    </Button>
+
+                    </Button>
+                    <Button onClick={submitAudition} disabled={isUploading} className="flex-1 bg-green-500 hover:bg-green-600">
+                      {isUploading ? (<div className="w-4 h-4 animate-spin border-2 border-white border-t-transparent rounded-full mr-2" />) : (<Upload className="w-4 h-4 mr-2" />)}
+                      Submit Audition
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Instructions */}
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h4 className="font-semibold text-blue-900 mb-2">💡 Pro Tips</h4>
@@ -1102,9 +1118,69 @@ function Dashboard() {
 
           {tab === 'messages' && (
             <Card className="bg-white border-gray-200">
-              <CardHeader><CardTitle>Messages</CardTitle></CardHeader>
-              <CardContent>
-                <p className="text-gray-700">Agency Lounge group chat and Direct Messages with admins and hosts.</p>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MessageSquare className="w-6 h-6 mr-2 text-gold" />
+                  Agency Lounge
+                </CardTitle>
+                <p className="text-sm text-gray-600">Group chat and direct messages with admins and fellow hosts</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Messages List */}
+                <div className="h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
+                  {messages.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gold" />
+                      <p className="text-lg font-semibold mb-2">Welcome to Agency Lounge!</p>
+                      <p className="text-sm">This is where you can chat with admins and other hosts. Start a conversation!</p>
+                    </div>
+                  ) : (
+                    messages.map((msg, i) => (
+                      <div key={i} className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                          msg.sender_id === user.id
+                            ? 'bg-gold text-white'
+                            : 'bg-white border border-gray-200 text-gray-800'
+                        }`}>
+                          <div className="text-xs text-gray-500 mb-1">
+                            {msg.sender_name} • {new Date(msg.created_at).toLocaleString()}
+                          </div>
+                          {msg.content}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Input */}
+                <div className="flex space-x-2">
+                  <Input
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={handleMessageKey}
+                    placeholder="Type your message..."
+                    className="flex-1"
+                    disabled={messagesLoading}
+                  />
+                  <Button onClick={sendMessage} disabled={messagesLoading || !messageInput.trim()} className="bg-gold hover:bg-gold/90">
+                    {messagesLoading ? (
+                      <div className="w-4 h-4 animate-spin border-2 border-white border-t-transparent rounded-full"></div>
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+
+                {/* Guidelines */}
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-blue-900 mb-1">💬 Chat Guidelines</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Be respectful to all members</li>
+                    <li>• Share streaming tips and strategies</li>
+                    <li>• Ask admins for help when needed</li>
+                    <li>• Keep discussions professional</li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
           )}
