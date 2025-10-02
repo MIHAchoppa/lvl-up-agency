@@ -958,6 +958,11 @@ function Dashboard() {
   const [tab, setTab] = useState('ai');
   const isAdmin = user?.role === 'admin' || user?.role === 'owner' || user?.role === 'coach';
 
+  // AI Coach state
+  const [aiMessages, setAiMessages] = useState([]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+
   const NavItem = ({ id, label, icon: Icon }) => (
     <button
       onClick={() => setTab(id)}
