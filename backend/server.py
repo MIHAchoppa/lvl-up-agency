@@ -1091,7 +1091,7 @@ async def get_public_stats():
         # Real statistics from database
         total_users = await db.users.count_documents({})
         active_hosts = await db.users.count_documents({"status": "active", "role": "host"})
-        
+
         # Calculate total points earned (proxy for earnings)
         points_pipeline = [
             {"$match": {"delta": {"$gt": 0}}},
@@ -1099,34 +1099,7 @@ async def get_public_stats():
         ]
         points_result = await db.point_ledger.aggregate(points_pipeline).to_list(1)
         total_points = points_result[0]["total_points"] if points_result else 0
-        
-        # Estimate earnings (210 beans = $1, approximate bean to point ratio)
-        estimated_earnings = int((total_points * 5) / 210) if total_points > 0 else 0
-        
-        # Average monthly earnings calculation
-        if active_hosts > 0:
-            avg_monthly = estimated_earnings // active_hosts
-        else:
-            avg_monthly = 0
-            
-        return {
-            "total_hosts": max(total_users, 1247),  # Minimum baseline for credibility
-            "active_hosts": max(active_hosts, 892),
-            "total_earnings": f"${max(estimated_earnings, 2847593):,}",
-            "avg_monthly_earning": f"${max(avg_monthly, 3247):,}",
-            "success_rate": 94.3,
-            "avg_monthly_growth": 247
-        }
-    except Exception:
-        # Fallback statistics if database fails
-        return {
-            "total_hosts": 1247,
-            "active_hosts": 892, 
-            "total_earnings": "$2,847,593",
-            "avg_monthly_earning": "$3,247",
-            "success_rate": 94.3,
-            "avg_monthly_growth": 247
-        }
+
 
 # Auth Routes
 @api_router.post("/auth/register")
