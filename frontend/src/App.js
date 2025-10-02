@@ -963,6 +963,30 @@ function Dashboard() {
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
 
+  // AI Coach functions
+  const sendAiMessage = async () => {
+    if (!aiInput.trim()) return;
+    const msg = aiInput.trim();
+    setAiMessages(prev => [...prev, { role: 'user', content: msg }]);
+    setAiInput('');
+    setAiLoading(true);
+    try {
+      const res = await axios.post(`${API}/ai/chat`, { message: msg, chat_type: 'strategy_coach' });
+      const text = res.data?.response || 'Got it.';
+      setAiMessages(prev => [...prev, { role: 'assistant', content: text }]);
+    } catch (e) {
+      setAiMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I had trouble responding. Try again.' }]);
+    }
+    setAiLoading(false);
+  };
+
+  const handleAiKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendAiMessage();
+    }
+  };
+
   const NavItem = ({ id, label, icon: Icon }) => (
     <button
       onClick={() => setTab(id)}
@@ -1113,8 +1137,98 @@ function Dashboard() {
 
           {tab === 'ai' && (
             <Card className="bg-white border-gray-200">
-              <CardHeader><CardTitle>AI Coach</CardTitle></CardHeader>
-              <CardContent><p className="text-gray-700">Chat with your AI coach for growth strategies.</p></CardContent>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Bot className="w-6 h-6 mr-2 text-gold" />
+                  AI Strategy Coach
+                </CardTitle>
+                <p className="text-sm text-gray-600">Get personalized BIGO Live growth strategies and coaching</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Chat Messages */}
+                <div className="h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3">
+                  {aiMessages.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      <Bot className="w-12 h-12 mx-auto mb-4 text-gold" />
+                      <p className="text-lg font-semibold mb-2">Welcome to your AI Strategy Coach!</p>
+                      <p className="text-sm">Ask me anything about growing your BIGO Live career, earning more beans, or improving your streams.</p>
+                    </div>
+                  ) : (
+                    aiMessages.map((msg, i) => (
+                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                          msg.role === 'user' 
+                            ? 'bg-gold text-white' 
+                            : 'bg-white border border-gray-200 text-gray-800'
+                        }`}>
+                          {msg.content}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {aiLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white border border-gray-200 px-4 py-2 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-4 h-4 animate-spin border-2 border-gold border-t-transparent rounded-full"></div>
+                          <span className="text-gray-600">Thinking...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Input */}
+                <div className="flex space-x-2">
+                  <Input
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    onKeyDown={handleAiKey}
+                    placeholder="Ask your AI coach a question..."
+                    className="flex-1"
+                    disabled={aiLoading}
+                  />
+                  <Button onClick={sendAiMessage} disabled={aiLoading || !aiInput.trim()} className="bg-gold hover:bg-gold/90">
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Suggested Prompts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setAiInput('How can I increase my bean earnings?')}
+                    className="text-left justify-start h-auto py-2 px-3"
+                  >
+                    💰 How to earn more beans?
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setAiInput('What PK strategies work best?')}
+                    className="text-left justify-start h-auto py-2 px-3"
+                  >
+                    🏆 PK battle tips
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setAiInput('How to grow my fanbase?')}
+                    className="text-left justify-start h-auto py-2 px-3"
+                  >
+                    👥 Fan growth strategies
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setAiInput('Best times to stream?')}
+                    className="text-left justify-start h-auto py-2 px-3"
+                  >
+                    ⏰ Optimal streaming times
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
           )}
 
