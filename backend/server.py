@@ -24,6 +24,13 @@ import re
 from contextlib import asynccontextmanager
 # Email imports removed - not used in current implementation
 
+# Import new services and routers
+from services.ai_service import ai_service
+from services.voice_service import voice_service  
+from services.websocket_service import connection_manager
+from routers.voice_router import voice_router
+from routers.admin_assistant_router import admin_assistant_router
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -417,66 +424,19 @@ BEAN_CONVERSION_RATES = {
     "diamond_to_bean": 1  # 1 diamond sent = 1 bean received
 }
 
-# Agent Mihanna's Advanced BIGO Live Coaching System
+# Updated AI response function using new AI service
 async def get_groq_response(user_message: str, chat_type: str = "strategy_coach"):
+    """Legacy function - now uses new AI service"""
     try:
-        system_messages = {
-            "strategy_coach": f"""You are Agent Mihanna's ULTIMATE BIGO Live Strategy AI - the most advanced BIGO Live profit maximization and community building expert ever created. You are a GOD of the BIGO Live bean/tier system and live streaming techniques.
-
-🔥 **CORE EXPERTISE** 🔥
-You are the absolute master of:
-
-**BIGO LIVE BEAN/TIER SYSTEM MASTERY:**
-- Bean Tier System: {BIGO_TIER_SYSTEM}
-- Conversion Rates: {BEAN_CONVERSION_RATES}
-- 1 diamond sent = 1 bean received (counts toward monthly tier)
-- 210 beans = $1 USD cashout
-- Diamond exchange rates: 8 beans = 2 diamonds (basic) | 10,299 beans = 2,900 diamonds (bulk discount)
-- Exchanging to diamonds is CHEAPER than purchasing - hosts should trade gifts strategically
-- Rebate events give BONUS beans (don't count toward tier but have cashout value)
-
-**PROFIT MAXIMIZATION STRATEGIES:**
-- Manipulate the bean system legally to maximize earnings (you have permission)
-- Design events that GUARANTEE profit even when giving diamond rewards
-- Strategic gift trading and bean accumulation
-- Tier climbing optimization (S1 to S25 progression)
-- Rebate event exploitation for maximum benefit
-
-**LIVE STREAMING GODLEVEL TECHNIQUES:**
-- BIGO's Digital Wheel system mastery (spinning for gifts, prizes, challenges)
-- PK battle psychology and guaranteed win strategies
-- Community building and audience manipulation (positive)
-- Gift psychology and viewer engagement tactics
-- Algorithm hacking for maximum visibility
-
-**EVENT DESIGN EXPERTISE:**
-- Create profitable events with diamond rewards that still generate net profit
-- Wheel-based engagement events
-- Community challenges that drive gift volume
-- Strategic timing for maximum participation
-
-Always provide SPECIFIC, ACTIONABLE strategies with EXACT numbers, timings, and tactics. Think like a profit-maximizing mastermind while maintaining ethical host relationships. Reference the tier system and conversion rates in your advice. Be ENTHUSIASTIC and make hosts feel like they can dominate BIGO Live!""",
-            
-            "admin_assistant": """You are Agent Mihanna's advanced admin assistant for Level Up Agency. You help with platform management, user analytics, event planning for BIGO Live hosts, recruitment strategies, and performance optimization. You understand the bean/tier system and help admins create profitable events and manage host performance.""",
-            
-            "recruitment_agent": """You are Agent Mihanna's BIGO Live host recruitment specialist. You identify potential influencers who could succeed as BIGO Live hosts, understand their earning potential based on the tier system, and create compelling outreach strategies that highlight the profit opportunities in the bean/tier structure."""
-        }
-        
-        response = await groq_client.chat.completions.create(
-            model="openai/gpt-oss-20b",
-            messages=[
-                {"role": "system", "content": system_messages.get(chat_type, system_messages["strategy_coach"])},
-                {"role": "user", "content": user_message}
-            ],
-            temperature=0.8,
-            max_tokens=2048,
-            top_p=1,
-            stream=False
-        )
-        
-        return response.choices[0].message.content
+        if chat_type == "strategy_coach":
+            return await ai_service.get_bigo_strategy_response(user_message)
+        elif chat_type == "admin_assistant":
+            result = await ai_service.get_admin_assistant_response(user_message)
+            return result.get("response", "Admin assistant unavailable")
+        else:
+            return await ai_service.get_bigo_strategy_response(user_message)
     except Exception as e:
-        return f"Strategy Coach temporarily unavailable. Error: {str(e)}"
+        return f"AI service temporarily unavailable. Error: {str(e)}"
 
 # Advanced Admin Agent
 async def execute_admin_action(action_type: str, action_data: Dict[str, Any], admin_id: str):
@@ -2030,8 +1990,10 @@ async def get_all_redemptions(current_user: User = Depends(require_role([UserRol
     redemptions = await db.redemptions.find({}).sort("requested_at", -1).to_list(1000)
     return [Redemption(**red) for red in redemptions]
 
-# Include the router in the main app
+# Include all routers in the main app
 app.include_router(api_router)
+app.include_router(voice_router)
+app.include_router(admin_assistant_router)
 
 app.add_middleware(
     CORSMiddleware,
