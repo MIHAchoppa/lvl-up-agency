@@ -2263,6 +2263,238 @@ async def ai_assist_endpoint(req: AIAssistRequest, current_user: User = Depends(
         logger.error(f"AI assist error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============================================
+# BEANGENIE ENDPOINTS
+# ============================================
+
+class BeanGenieStrategy(BaseModel):
+    type: str  # 'organic' or 'bigo'
+    content: str
+    timestamp: str
+
+class BeanGenieRaffle(BaseModel):
+    name: str
+    tickets: int
+    dateAdded: str
+
+class BeanGenieDebt(BaseModel):
+    name: str
+    amount: float
+    dueDate: str
+    dateAdded: str
+
+@api_router.get("/beangenie/data")
+async def get_beangenie_data(current_user: User = Depends(get_current_user)):
+    """Get all BeanGenie data for current user"""
+    try:
+        # Get all user's BeanGenie data
+        strategies = await db.beangenie_strategies.find({"user_id": current_user.id}).to_list(100)
+        raffles = await db.beangenie_raffles.find({"user_id": current_user.id}).to_list(100)
+        debts = await db.beangenie_debts.find({"user_id": current_user.id}).to_list(100)
+        notes_doc = await db.beangenie_notes.find_one({"user_id": current_user.id})
+        
+        organic = [s for s in strategies if s.get("type") == "organic"]
+        bigo = [s for s in strategies if s.get("type") == "bigo"]
+        
+        return {
+            "organicStrategies": organic,
+            "bigoWheelStrategies": bigo,
+            "raffles": raffles,
+            "debts": debts,
+            "notes": notes_doc.get("content", "") if notes_doc else ""
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/beangenie/chat")
+async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_current_user)):
+    """BeanGenie AI chat with specialized system prompt"""
+    message = chat_data.get("message", "").strip()
+    session_id = chat_data.get("session_id", str(uuid.uuid4()))
+    
+    if not message:
+        raise HTTPException(status_code=400, detail="Message required")
+    
+    try:
+        # BeanGenie specialized system prompt
+        system_prompt = """You are BeanGenie™, a master assistant for BIGO Live strategy operations. You specialize in:
+
+1. ORGANIC STRATEGIES - Natural growth methods, audience building, engagement tactics
+2. DIGITAL BIGO WHEEL - Strategic spinning, timing, probability optimization, wheel tactics
+3. RAFFLES & CONTESTS - Entry management, prize distribution, fairness strategies
+4. FINANCIAL TRACKING - Debt management, payment tracking, financial planning
+
+When providing advice, be specific and actionable. Use keywords to help categorize:
+- For organic growth advice, mention "organic strategy" or "natural growth"
+- For wheel tactics, mention "bigo wheel" or "spinning strategy"
+- For raffle management, mention "raffle" or "contest"
+- For financial matters, mention "debt" or "financial"
+
+Be concise, powerful, and strategic in your recommendations. Address the user as "Master"."""
+
+        # Get memory context
+        memory = await ai_service.get_memory_context(current_user.id, session_id)
+        
+        # Build messages with memory
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        if memory.get("long_term_summary"):
+            messages.append({
+                "role": "system",
+                "content": f"User background: {memory['long_term_summary']}"
+            })
+        
+        if memory.get("summary"):
+            messages.append({
+                "role": "system",
+                "content": f"Previous conversation: {memory['summary']}"
+            })
+        
+        for msg in memory.get("messages", []):
+            messages.append({
+                "role": msg["role"],
+                "content": msg["content"]
+            })
+        
+        messages.append({"role": "user", "content": message})
+        
+        # Get AI response
+        result = await ai_service.chat_completion(messages=messages, temperature=0.8)
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "AI error"))
+        
+        ai_text = result.get("content", "")
+        
+        # Save conversation turn
+        await ai_service.save_conversation_turn(current_user.id, session_id, message, ai_text)
+        
+        return {
+            "response": ai_text,
+            "session_id": session_id
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"BeanGenie chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/beangenie/tts")
+async def beangenie_tts(tts_data: dict, current_user: User = Depends(get_current_user)):
+    """Text-to-speech for BeanGenie"""
+    text = tts_data.get("text", "").strip()
+    
+    if not text:
+        raise HTTPException(status_code=400, detail="Text required")
+    
+    try:
+        result = await ai_service.tts_generate(text, voice="Fritz-PlayAI")
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "TTS failed"))
+        
+        return {
+            "audio_base64": result.get("audio_base64"),
+            "mime": result.get("mime")
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"BeanGenie TTS error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/beangenie/strategy")
+async def save_beangenie_strategy(strategy: BeanGenieStrategy, current_user: User = Depends(get_current_user)):
+    """Save a strategy to BeanGenie"""
+    try:
+        doc = {
+            "user_id": current_user.id,
+            "type": strategy.type,
+            "content": strategy.content,
+            "timestamp": strategy.timestamp
+        }
+        result = await db.beangenie_strategies.insert_one(doc)
+        doc["id"] = str(result.inserted_id)
+        return doc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/beangenie/raffle")
+async def add_beangenie_raffle(raffle: BeanGenieRaffle, current_user: User = Depends(get_current_user)):
+    """Add raffle entry"""
+    try:
+        doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "name": raffle.name,
+            "tickets": raffle.tickets,
+            "dateAdded": raffle.dateAdded
+        }
+        await db.beangenie_raffles.insert_one(doc)
+        return doc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/beangenie/raffle/{raffle_id}")
+async def delete_beangenie_raffle(raffle_id: str, current_user: User = Depends(get_current_user)):
+    """Delete raffle entry"""
+    try:
+        result = await db.beangenie_raffles.delete_one({"id": raffle_id, "user_id": current_user.id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Raffle not found")
+        return {"success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/beangenie/debt")
+async def add_beangenie_debt(debt: BeanGenieDebt, current_user: User = Depends(get_current_user)):
+    """Add debt entry"""
+    try:
+        doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "name": debt.name,
+            "amount": debt.amount,
+            "dueDate": debt.dueDate,
+            "dateAdded": debt.dateAdded
+        }
+        await db.beangenie_debts.insert_one(doc)
+        return doc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/beangenie/debt/{debt_id}")
+async def delete_beangenie_debt(debt_id: str, current_user: User = Depends(get_current_user)):
+    """Delete debt entry"""
+    try:
+        result = await db.beangenie_debts.delete_one({"id": debt_id, "user_id": current_user.id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Debt not found")
+        return {"success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/beangenie/notes")
+async def save_beangenie_notes(notes_data: dict, current_user: User = Depends(get_current_user)):
+    """Save BeanGenie notes"""
+    try:
+        content = notes_data.get("content", "")
+        await db.beangenie_notes.update_one(
+            {"user_id": current_user.id},
+            {"$set": {
+                "content": content,
+                "lastSaved": datetime.now(timezone.utc)
+            }},
+            upsert=True
+        )
+        return {"success": True}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include all routers in the main app
 app.include_router(api_router)
 # app.include_router(voice_router)
