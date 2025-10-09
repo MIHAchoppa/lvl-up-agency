@@ -1,6 +1,7 @@
 """
 Centralized AI Service using Groq API
 Handles Chat, TTS, Transcriptions, and Models via REST
+With Dynamic API Key Management
 """
 
 import aiohttp
@@ -13,7 +14,6 @@ import os
 logger = logging.getLogger(__name__)
 
 GROQ_BASE = "https://api.groq.com/openai/v1"
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 
 class AIService:
     def __init__(self):
@@ -21,18 +21,64 @@ class AIService:
         self.tts_url = f"{GROQ_BASE}/audio/speech"
         self.stt_url = f"{GROQ_BASE}/audio/transcriptions"
         self.models_url = f"{GROQ_BASE}/models"
-        self.headers_json = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json",
-        }
-        self.headers_auth_only = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-        }
         # Default models
         self.default_chat_model = "llama-3.3-70b-versatile"
         self.default_tts_model = "playai-tts"
         self.default_tts_voice = "Fritz-PlayAI"
         self.default_stt_model = "whisper-large-v3"
+        # DB reference will be set externally
+        self.db = None
+        self._api_key_cache = None
+        self._cache_time = None
+    
+    def set_db(self, db):
+        """Set database reference for dynamic key loading"""
+        self.db = db
+    
+    async def get_api_key(self) -> str:
+        """Get API key from DB with fallback to env, with 60s cache"""
+        # Check cache (60 second TTL)
+        import time
+        now = time.time()
+        if self._api_key_cache and self._cache_time and (now - self._cache_time < 60):
+            return self._api_key_cache
+        
+        # Try to get from database first
+        if self.db is not None:
+            try:
+                settings_doc = await self.db.settings.find_one({"key": "groq_api_key"})
+                if settings_doc and settings_doc.get("value"):
+                    self._api_key_cache = settings_doc["value"]
+                    self._cache_time = now
+                    return self._api_key_cache
+            except Exception as e:
+                logger.warning(f"Failed to load API key from DB: {e}")
+        
+        # Fallback to environment variable
+        env_key = os.environ.get("GROQ_API_KEY", "")
+        self._api_key_cache = env_key
+        self._cache_time = now
+        return env_key
+    
+    def clear_key_cache(self):
+        """Clear API key cache to force reload"""
+        self._api_key_cache = None
+        self._cache_time = None
+    
+    async def get_headers_json(self) -> Dict[str, str]:
+        """Get headers with current API key"""
+        api_key = await self.get_api_key()
+        return {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+    
+    async def get_headers_auth_only(self) -> Dict[str, str]:
+        """Get auth-only headers with current API key"""
+        api_key = await self.get_api_key()
+        return {
+            "Authorization": f"Bearer {api_key}",
+        }
 
     async def chat_completion(
         self,
