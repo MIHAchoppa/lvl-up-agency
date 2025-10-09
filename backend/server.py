@@ -1338,13 +1338,12 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
         f" Provide a brief explanation per question. Return JSON list with fields: qtype, question, options, correct_answer, explanation."
     )
     try:
-        # groq_resp = await groq_client.chat.completions.create(
-            model="groq/compound-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.5,
-            max_tokens=1200
-        )
-        content = groq_resp.choices[0].message.content
+                ai = await ai_service.chat_completion([
+            {"role": "user", "content": prompt}
+        ], temperature=0.5, max_completion_tokens=1200)
+        if not ai.get("success"):
+            raise HTTPException(status_code=500, detail=ai.get("error","AI error"))
+        content = ai.get("content","")
         # Try to parse JSON; fallback to simple splitter if needed
         try:
             data = json.loads(content)
