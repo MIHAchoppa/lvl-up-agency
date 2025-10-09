@@ -526,20 +526,13 @@ async def search_influencers(platform: str, keywords: List[str], min_followers: 
         search_query = f"Find {platform} influencers with keywords: {', '.join(keywords)} minimum {min_followers} followers contact information email"
         
         # migrated to ai_service.chat_completion
-        # response = await groq_client.chat.completions.create(
-            model="openai/gpt-oss-20b", 
-            messages=[
-                {"role": "system", "content": "You are an expert at finding social media influencers with public contact information. Extract names, usernames, follower counts, emails, and profile URLs."},
-                {"role": "user", "content": search_query}
-            ],
-            temperature=0.3,
-            max_tokens=2048,
-            tools=[{"type": "browser_search"}],
-            tool_choice="required"
-        )
-        
-        # Parse the response to extract influencer data
-        content = response.choices[0].message.content
+                ai = await ai_service.chat_completion([
+            {"role": "system", "content": "You are an expert at finding social media influencers with public contact information. Extract names, usernames, follower counts, emails, and profile URLs."},
+            {"role": "user", "content": search_query}
+        ], temperature=0.3, max_completion_tokens=1200)
+        if not ai.get("success"):
+            return []
+        content = ai.get("content", "")
         
         # Extract structured data (simplified - would need more robust parsing)
         influencers = []
