@@ -73,7 +73,6 @@ function Dashboard() {
             <TabsTrigger value="rewards" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🏆 Rewards</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="ai-coach"><AICoachPanel /></TabsContent>
           <TabsContent value="beangenie"><BeanGeniePanel /></TabsContent>
           <TabsContent value="voice-assistant"><VoiceAssistantPanel /></TabsContent>
           {(user?.role === 'admin' || user?.role === 'owner') && (
