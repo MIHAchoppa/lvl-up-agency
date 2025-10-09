@@ -52,6 +52,7 @@ function Dashboard() {
               <>
                 <TabsTrigger value="admin-assistant" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🤖 Admin AI</TabsTrigger>
                 <TabsTrigger value="models" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🧩 Models</TabsTrigger>
+                <TabsTrigger value="settings" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">⚙️ Settings</TabsTrigger>
               </>
             )}
             <TabsTrigger value="calendar" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">📅 Calendar</TabsTrigger>
