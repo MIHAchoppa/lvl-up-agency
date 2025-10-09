@@ -28,8 +28,8 @@ from contextlib import asynccontextmanager
 from services.ai_service import ai_service
 from services.voice_service import voice_service  
 from services.websocket_service import connection_manager
-from routers.voice_router import voice_router
-from routers.admin_assistant_router import admin_assistant_router
+# from routers.voice_router import voice_router
+# from routers.admin_assistant_router import admin_assistant_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
