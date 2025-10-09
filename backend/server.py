@@ -2669,7 +2669,7 @@ Return ONLY valid JSON array, no other text."""
         if json_match:
             try:
                 categories = json.loads(json_match.group(0))
-            except:
+            except Exception:
                 # If JSON parsing fails, use AI to generate simple category
                 categories = [{
                     "category_key": "ai_insights",
