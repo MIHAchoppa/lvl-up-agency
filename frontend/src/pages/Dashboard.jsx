@@ -17,6 +17,7 @@ import RewardsPanel from '../components/dashboard/RewardsPanel';
 import AdminModelsPanel from '../components/dashboard/AdminModelsPanel';
 import SettingsPanel from '../components/dashboard/SettingsPanel';
 import BeanGeniePanel from '../components/dashboard/BeanGeniePanel';
+import BigoAcademyPanel from '../components/dashboard/BigoAcademyPanel';
 
 import QuotaPanel from '../components/dashboard/QuotaPanel';
 
