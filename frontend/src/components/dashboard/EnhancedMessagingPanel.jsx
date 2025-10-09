@@ -420,6 +420,12 @@ function EnhancedMessagingPanel() {
                           disabled={loading}
                           className="flex-1"
                         />
+                        <AIAssistButton
+                          fieldName="Chat Message"
+                          currentValue={newMessage}
+                          onSuggest={(text) => setNewMessage(text)}
+                          context={{ channel: selectedChannel?.name }}
+                        />
                         <Button 
                           onClick={sendMessage} 
                           disabled={loading || !newMessage.trim()}
