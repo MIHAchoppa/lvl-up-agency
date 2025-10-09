@@ -183,7 +183,7 @@ class AIService:
     
     async def get_memory_context(self, user_id: str, session_id: Optional[str] = None) -> Dict[str, Any]:
         """Get conversation memory for context - token efficient"""
-        if not self.db:
+        if self.db is None:
             return {"messages": [], "summary": None}
         
         try:
