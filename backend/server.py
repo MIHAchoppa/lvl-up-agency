@@ -476,8 +476,27 @@ async def get_groq_response(user_message: str, chat_type: str = "strategy_coach"
         if chat_type == "strategy_coach":
             return await ai_service.get_bigo_strategy_response(user_message)
         elif chat_type == "admin_assistant":
-            result = await ai_service.get_admin_assistant_response(user_message)
-            return result.get("response", "Admin assistant unavailable")
+            admin_prompt = f"""You are an Admin Assistant for Level Up Agency BIGO Live platform.
+
+User Query: {user_message}
+
+Provide helpful admin-focused responses about:
+- User management
+- Analytics and metrics
+- Platform operations
+- Strategy recommendations
+
+Be concise and actionable."""
+
+            result = await ai_service.chat_completion(
+                messages=[{"role": "user", "content": admin_prompt}],
+                temperature=0.7,
+                max_completion_tokens=500
+            )
+            if result.get("success"):
+                return result.get("content", "Admin assistant unavailable")
+            else:
+                return "Admin assistant unavailable"
         else:
             return await ai_service.get_bigo_strategy_response(user_message)
     except Exception as e:
