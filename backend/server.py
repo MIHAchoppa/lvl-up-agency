@@ -248,7 +248,7 @@ class Event(BaseModel):
     active: bool = True
     category: str = "general"
 
-class QuizModel(BaseModel):
+class QuizModelDuplicate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     description: str
@@ -1299,7 +1299,7 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
 # ===== Quizzes Models (continue) =====
 # Keeping single definitions above; remove stray fields
 
-class QuizModel(BaseModel):
+class QuizModelDuplicate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     topic: str
