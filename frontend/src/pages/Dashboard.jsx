@@ -15,6 +15,7 @@ import LeadsPanel from '../components/dashboard/LeadsPanel';
 import AuditionsPanel from '../components/dashboard/AuditionsPanel';
 import RewardsPanel from '../components/dashboard/RewardsPanel';
 import AdminModelsPanel from '../components/dashboard/AdminModelsPanel';
+import SettingsPanel from '../components/dashboard/SettingsPanel';
 
 import QuotaPanel from '../components/dashboard/QuotaPanel';
 
