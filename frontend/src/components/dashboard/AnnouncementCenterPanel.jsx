@@ -274,11 +274,20 @@ function AnnouncementCenterPanel() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Title*</label>
-                        <Input
-                          value={announcementForm.title}
-                          onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})}
-                          placeholder="Announcement title"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            value={announcementForm.title}
+                            onChange={(e) => setAnnouncementForm({...announcementForm, title: e.target.value})}
+                            placeholder="Announcement title"
+                            className="flex-1"
+                          />
+                          <AIAssistButton
+                            fieldName="Announcement Title"
+                            currentValue={announcementForm.title}
+                            onSuggest={(text) => setAnnouncementForm({...announcementForm, title: text})}
+                            context={{ type: announcementForm.type, tone: announcementForm.tone }}
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="text-sm font-medium">Type</label>
@@ -309,12 +318,27 @@ function AnnouncementCenterPanel() {
                           🤖 Generate AI Content
                         </Button>
                       </div>
-                      <Textarea
-                        value={announcementForm.body}
-                        onChange={(e) => setAnnouncementForm({...announcementForm, body: e.target.value})}
-                        placeholder="Announcement content"
-                        rows={5}
-                      />
+                      <div className="flex gap-2">
+                        <Textarea
+                          value={announcementForm.body}
+                          onChange={(e) => setAnnouncementForm({...announcementForm, body: e.target.value})}
+                          placeholder="Announcement content"
+                          rows={5}
+                          className="flex-1"
+                        />
+                        <AIAssistButton
+                          fieldName="Announcement Content"
+                          currentValue={announcementForm.body}
+                          onSuggest={(text) => setAnnouncementForm({...announcementForm, body: text})}
+                          context={{ 
+                            type: announcementForm.type, 
+                            tone: announcementForm.tone,
+                            title: announcementForm.title,
+                            audience: announcementForm.audience
+                          }}
+                          className="self-start"
+                        />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
