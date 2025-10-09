@@ -264,6 +264,16 @@ function VoiceRecruiter({ onClose }) {
 
           {/* Quick Actions */}
           <div className="flex gap-2 flex-wrap">
+            {messages.length === 1 && (
+              <Button
+                size="sm"
+                onClick={() => speakText(messages[0].content)}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                disabled={isSpeaking}
+              >
+                🔊 Hear Greeting
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={() => sendMessage("I'm a new user interested in becoming a host")}
