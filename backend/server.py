@@ -57,6 +57,31 @@ async def lifespan(app: FastAPI):
     # shutdown code
     client.close()
 
+# Admins collection sync and rebuild
+async def sync_admins_collection(rebuild: bool = False):
+    try:
+        if rebuild:
+            await db.admins.delete_many({})
+        cursor = db.users.find({"role": {"$in": ["admin", "owner"]}})
+        async for u in cursor:
+            admin_doc = {
+                "id": u.get("admin_id") or str(uuid.uuid4()),
+                "user_id": u["id"],
+                "bigo_id": u.get("bigo_id"),
+                "email": u.get("email"),
+                "name": u.get("name"),
+                "role": u.get("role"),
+                "permissions": u.get("permissions") or [
+                    "manage_users", "manage_events", "manage_announcements", "view_analytics"
+                ],
+                "created_at": u.get("created_at") or datetime.now(timezone.utc)
+            }
+            await db.admins.update_one({"user_id": u["id"]}, {"$set": admin_doc}, upsert=True)
+        logging.getLogger(__name__).info("Admins collection synced")
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Admins sync failed: {e}")
+
+
 # Create the main app without a prefix
 app = FastAPI(
     lifespan=lifespan,
