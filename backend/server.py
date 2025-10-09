@@ -522,38 +522,29 @@ async def execute_admin_action(action_type: str, action_data: Dict[str, Any], ad
 # Influencer Search and Auto-Outreach System
 async def search_influencers(platform: str, keywords: List[str], min_followers: int = 1000):
     try:
-        # Use Groq's browser search to find influencers
-        search_query = f"Find {platform} influencers with keywords: {', '.join(keywords)} minimum {min_followers} followers contact information email"
-        
-        # migrated to ai_service.chat_completion
-                ai = await ai_service.chat_completion([
+        search_query = (
+            f"Find {platform} influencers with keywords: {', '.join(keywords)} minimum {min_followers} followers contact information email"
+        )
+        ai = await ai_service.chat_completion([
             {"role": "system", "content": "You are an expert at finding social media influencers with public contact information. Extract names, usernames, follower counts, emails, and profile URLs."},
             {"role": "user", "content": search_query}
         ], temperature=0.3, max_completion_tokens=1200)
         if not ai.get("success"):
             return []
         content = ai.get("content", "")
-        
-        # Extract structured data (simplified - would need more robust parsing)
         influencers = []
         lines = content.split('\n')
-        
         current_influencer = {}
         for line in lines:
             line = line.strip()
             if '@' in line and 'http' in line:
-                # Found a profile, process current influencer if exists
                 if current_influencer.get('name'):
                     influencers.append(current_influencer)
                 current_influencer = {"platform": platform}
-                
-            # Extract email if found  
             email_match = re.search(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', line)
             if email_match:
                 current_influencer['email'] = email_match.group()
-                
         return influencers
-        
     except Exception as e:
         print(f"Influencer search error: {e}")
         return []
