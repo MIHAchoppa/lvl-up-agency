@@ -5,7 +5,7 @@ import io
 from datetime import datetime
 
 def test_audition_flow():
-    base_url = "https://bugzapper-beans.preview.emergentagent.com/api"
+    base_url = "https://admin-key-updater.preview.emergentagent.com/api"
     
     # Register host user
     host_bigo_id = f"testhost_{datetime.now().strftime('%H%M%S')}"
