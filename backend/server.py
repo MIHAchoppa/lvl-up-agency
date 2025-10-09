@@ -1296,8 +1296,8 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
     # Return placeholder transcription
     return {"transcription": "This is a placeholder transcription. Audio received successfully."}
 
-# ===== Quizzes Models =====
-class QuizQuestionDuplicate(BaseModel):
+# ===== Quizzes Models (duplicate block removed) =====
+# Removed duplicate QuizQuestion definition to avoid redefinition errors
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     qtype: str  # mcq | tf | short
     question: str
