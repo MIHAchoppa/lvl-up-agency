@@ -41,6 +41,9 @@ db = client[os.environ['DB_NAME']]
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup code
+    # Set database reference for AI service
+    ai_service.set_db(db)
+    
     try:
         admin = await db.users.find_one({"bigo_id": "Admin"})
         if not admin:
