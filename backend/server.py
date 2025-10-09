@@ -1197,11 +1197,6 @@ async def register(user_data: UserCreate):
     
     hashed_password = hash_password(user_data.password)
 
-@api_router.post("/auth/register/admin/rebuild")
-async def rebuild_admins(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
-    await sync_admins_collection(rebuild=True)
-    return {"message": "Admins collection rebuilt"}
-
     user = User(
         bigo_id=user_data.bigo_id,
         email=user_data.email,
@@ -1218,7 +1213,15 @@ async def rebuild_admins(current_user: User = Depends(require_role([UserRole.OWN
     
     access_token = create_access_token(data={"sub": user.id})
     
+    # sync admins table after inserting user (covers admin/owner)
+    await sync_admins_collection(rebuild=False)
+
     return {"access_token": access_token, "token_type": "bearer", "user": user}
+
+@api_router.post("/auth/register/admin/rebuild")
+async def rebuild_admins(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    await sync_admins_collection(rebuild=True)
+    return {"message": "Admins collection rebuilt"}
 
 @api_router.post("/auth/login")
 async def login(login_data: UserLogin):
