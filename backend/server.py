@@ -2749,6 +2749,92 @@ async def mark_spin_fulfilled(wheel_id: str, spin_id: str, current_user: User = 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============================================
+# VOICE RECRUITER ENDPOINT
+# ============================================
+
+@api_router.post("/recruiter/chat")
+async def recruiter_chat(chat_data: dict):
+    """AI recruiter chatbot for landing page"""
+    message = chat_data.get("message", "").strip()
+    
+    if not message:
+        raise HTTPException(status_code=400, detail="Message required")
+    
+    try:
+        # Recruiter system prompt
+        system_prompt = """You are an enthusiastic AI recruiter for Level Up Agency, a BIGO Live talent agency. 
+
+YOUR MISSION: Recruit new BIGO Live hosts and onboard existing hosts.
+
+CONVERSATION FLOW:
+1. Greet warmly and ask if they're NEW or EXISTING host
+2. For NEW users:
+   - Explain: "We help you become a successful BIGO Live streamer!"
+   - Benefits: "Training, support, guaranteed income, community"
+   - Next step: "Ready to audition? I'll send you to our audition page!"
+   - Action: audition
+3. For EXISTING hosts:
+   - Ask: "What's your BIGO ID?"
+   - Explain: "Join our agency for better support and earnings!"
+   - Next step: "Let's get you registered!"
+   - Action: register
+
+PAY TIERS (mention when relevant):
+- 🥉 Bronze: $500-1000/month (Part-time, 20hrs/week)
+- 🥈 Silver: $1000-2000/month (Full-time, 40hrs/week)
+- 🥇 Gold: $2000-5000/month (Pro, 60hrs/week)
+- 💎 Diamond: $5000+/month (Elite, 80hrs/week)
+
+Earnings depend on: streaming hours, engagement, gifts received, consistency.
+
+RESPONSE STYLE:
+- Enthusiastic but professional
+- Use emojis sparingly
+- Keep responses concise (2-3 sentences)
+- Ask ONE question at a time
+- Build excitement about opportunities
+
+IMPORTANT: End with either:
+- "Ready for audition?" → action: audition
+- "Let's register!" → action: register
+
+Be the recruiter who converts visitors to hosts!"""
+
+        result = await ai_service.chat_completion(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            temperature=0.8,
+            max_completion_tokens=200
+        )
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail="AI error")
+        
+        response = result.get("content", "")
+        
+        # Detect intent for navigation
+        action = None
+        lower_response = response.lower()
+        
+        if any(phrase in lower_response for phrase in ['audition page', 'ready to audition', 'start audition', "let's audition"]):
+            action = 'audition'
+        elif any(phrase in lower_response for phrase in ['register', 'sign up', 'create account', "let's get you registered"]):
+            action = 'register'
+        
+        return {
+            "response": response,
+            "action": action
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Recruiter chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include all routers in the main app
 app.include_router(api_router)
 # app.include_router(voice_router)
