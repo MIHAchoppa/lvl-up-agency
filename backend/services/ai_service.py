@@ -209,7 +209,7 @@ class AIService:
     
     async def save_conversation_turn(self, user_id: str, session_id: str, user_msg: str, ai_msg: str):
         """Save conversation turn and compress if needed"""
-        if not self.db:
+        if self.db is None:
             return
         
         try:
