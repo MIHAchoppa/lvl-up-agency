@@ -107,7 +107,7 @@ fi
 
 # Test 8: Channels List
 echo -e "${YELLOW}[8] Testing Channels List...${NC}"
-CHANNELS=$(curl -s $BASE_URL/channels \
+CHANNELS=$(curl -s $BASE_URL/chat/channels \
   -H "Authorization: Bearer $ADMIN_TOKEN")
 
 if echo "$CHANNELS" | grep -q "\["; then
