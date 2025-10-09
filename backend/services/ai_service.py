@@ -152,11 +152,12 @@ class AIService:
 
     async def stt_transcribe_file(self, file_path: str, model: Optional[str] = None) -> Dict[str, Any]:
         try:
+            headers = await self.get_headers_auth_only()
             form = aiohttp.FormData()
             form.add_field("file", open(file_path, "rb"), filename=os.path.basename(file_path))
             form.add_field("model", model or self.default_stt_model)
             async with aiohttp.ClientSession() as session:
-                async with session.post(self.stt_url, headers=self.headers_auth_only, data=form) as r:
+                async with session.post(self.stt_url, headers=headers, data=form) as r:
                     if r.status != 200:
                         detail = await r.text()
                         logger.error(f"Groq STT error {r.status}: {detail}")
@@ -168,8 +169,9 @@ class AIService:
 
     async def list_models(self) -> Dict[str, Any]:
         try:
+            headers = await self.get_headers_auth_only()
             async with aiohttp.ClientSession() as session:
-                async with session.get(self.models_url, headers=self.headers_auth_only) as r:
+                async with session.get(self.models_url, headers=headers) as r:
                     if r.status != 200:
                         detail = await r.text()
                         logger.error(f"Groq models error {r.status}: {detail}")
