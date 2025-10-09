@@ -1754,7 +1754,7 @@ async def get_quizzes(category: Optional[str] = None, current_user: User = Depen
 @api_router.get("/quizzes/{quiz_id}/questions")
 async def get_quiz_questions(quiz_id: str, current_user: User = Depends(get_current_user)):
     questions = await db.quiz_questions.find({"quiz_id": quiz_id}).to_list(1000)
-    return [QuizQuestion(**q) for q in questions]
+    return [QuizQuestionDuplicate(**q) for q in questions]
 
 @api_router.post("/quizzes/{quiz_id}/attempt")
 async def attempt_quiz(quiz_id: str, answers: List[int], current_user: User = Depends(get_current_user)):
