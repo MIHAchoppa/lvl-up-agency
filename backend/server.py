@@ -1992,8 +1992,8 @@ async def get_all_redemptions(current_user: User = Depends(require_role([UserRol
 
 # Include all routers in the main app
 app.include_router(api_router)
-app.include_router(voice_router)
-app.include_router(admin_assistant_router)
+# app.include_router(voice_router)
+# app.include_router(admin_assistant_router)
 
 app.add_middleware(
     CORSMiddleware,
