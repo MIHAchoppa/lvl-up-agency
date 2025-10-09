@@ -8,8 +8,19 @@ function LandingPage() {
       <header className="border-b border-yellow-500/20 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 shadow-[0_0_40px_rgba(245,197,24,0.35)] flex items-center justify-center font-extrabold text-black">LVL</div>
+            <img 
+              src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+              alt="Level Up Agency" 
+              className="h-10 w-10 object-contain"
+            />
             <span className="font-semibold">Level Up Agency</span>
+            <span className="text-yellow-500/50">|</span>
+            <img 
+              src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
+              alt="BeanGenie" 
+              className="h-8 w-8 object-contain"
+            />
+            <span className="text-sm text-yellow-500/70">Powered by BeanGenie™</span>
           </div>
           <nav className="flex items-center gap-4 text-sm">
             <a href="#features" className="text-gray-300 hover:text-yellow-400">Features</a>
