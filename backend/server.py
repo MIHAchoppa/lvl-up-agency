@@ -1232,6 +1232,14 @@ async def ai_chat(chat_data: dict, current_user: User = Depends(get_current_user
     if use_research and current_user.role not in ["owner", "admin"]:
         raise HTTPException(status_code=403, detail="Research mode requires admin")
 
+@api_router.get("/ai/models")
+async def list_groq_models(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.OWNER]))):
+    res = await ai_service.list_models()
+    if not res.get("success"):
+        raise HTTPException(status_code=500, detail=res.get("error","Failed to list models"))
+    return res.get("data", [])
+
+
     ai_response = await get_groq_response(message, chat_type)
 
     chat_record = AIChat(
