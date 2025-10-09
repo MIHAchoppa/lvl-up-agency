@@ -517,7 +517,7 @@ function EnhancedMessagingPanel() {
                                   )}
                                 </div>
                                 <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">
-                                  {message.body}
+                                  {renderMessageWithMentions(message.body)}
                                 </p>
                               </div>
                             </div>
