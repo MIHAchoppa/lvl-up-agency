@@ -258,7 +258,7 @@ class Quiz(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
 
-class QuizQuestion(BaseModel):
+class QuizQuestionDuplicate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     quiz_id: str
     prompt: str
@@ -1297,7 +1297,7 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
     return {"transcription": "This is a placeholder transcription. Audio received successfully."}
 
 # ===== Quizzes Models =====
-class QuizQuestion(BaseModel):
+class QuizQuestionDuplicate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     qtype: str  # mcq | tf | short
     question: str
