@@ -676,16 +676,20 @@ function BeanGeniePanel() {
               </CardHeader>
               <CardContent className="p-4 space-y-3">
                 <div className="flex justify-between text-yellow-400">
-                  <span>Total Raffle Entries:</span>
+                  <span>Active Panels:</span>
+                  <span className="font-bold">{analytics.activePanels || 0}</span>
+                </div>
+                <div className="flex justify-between text-yellow-400">
+                  <span>Total Items:</span>
+                  <span className="font-bold">{analytics.activeStrategies}</span>
+                </div>
+                <div className="flex justify-between text-yellow-400">
+                  <span>Raffle Tickets:</span>
                   <span className="font-bold">{analytics.totalRaffles}</span>
                 </div>
                 <div className="flex justify-between text-yellow-400">
                   <span>Outstanding Debts:</span>
                   <span className="font-bold">${analytics.totalDebts.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-yellow-400">
-                  <span>Active Strategies:</span>
-                  <span className="font-bold">{analytics.activeStrategies}</span>
                 </div>
               </CardContent>
             </Card>
