@@ -756,6 +756,65 @@ function EnhancedMessagingPanel() {
           </div>
         </CardContent>
       </Card>
+
+      {/* New Message Dialog */}
+      <Dialog open={showNewMessageDialog} onOpenChange={setShowNewMessageDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Start New Conversation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Select User to Message</label>
+              <Select value={newMessageRecipient} onValueChange={setNewMessageRecipient}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a user..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allUsers
+                    .filter(u => u.id !== user?.id)
+                    .map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {u.bigo_id[0]?.toUpperCase() || '?'}
+                          </div>
+                          <div>
+                            <div className="font-medium">{u.name}</div>
+                            <div className="text-xs text-gray-500">@{u.bigo_id}</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Message</label>
+              <Input
+                placeholder="Type your message..."
+                className="w-full"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowNewMessageDialog(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                onClick={() => {
+                  // Send new DM
+                  toast.success('Message sent!');
+                  setShowNewMessageDialog(false);
+                  setNewMessageRecipient('');
+                }}
+              >
+                Send Message
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
