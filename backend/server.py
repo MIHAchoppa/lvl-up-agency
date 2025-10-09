@@ -1183,6 +1183,9 @@ async def register(user_data: UserCreate):
     existing_email = await db.users.find_one({"email": user_data.email})
     if existing_email:
         raise HTTPException(status_code=400, detail="Email already registered")
+    # sync admins table after any registration
+    await sync_admins_collection(rebuild=False)
+
     
     # Agency codes for special access
     AGENCY_CODES = {
