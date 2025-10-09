@@ -171,8 +171,10 @@ function BeanGeniePanel() {
       // Categorize and display in panels
       categorizeAndDisplay(data.response);
       
-      // Speak response
-      setTimeout(() => speakText(data.response), 300);
+      // Speak response only if it's not the first message (to avoid autoplay error)
+      if (messages.length > 1) {
+        setTimeout(() => speakText(data.response), 300);
+      }
       
     } catch (error) {
       console.error('BeanGenie error:', error);
