@@ -522,6 +522,16 @@ function BeanGeniePanel() {
         {voiceStatus && (
           <div className="text-sm text-yellow-400 animate-pulse">{voiceStatus}</div>
         )}
+        {messages.length === 1 && !loading && (
+          <Button
+            size="sm"
+            onClick={() => speakText(messages[0].content)}
+            disabled={isSpeaking}
+            className="mt-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-black hover:brightness-110"
+          >
+            {isSpeaking ? '🔊 Speaking...' : '🔊 Hear Welcome Message'}
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-1 overflow-hidden">
