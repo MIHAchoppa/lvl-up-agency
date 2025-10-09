@@ -130,6 +130,7 @@ class AIService:
 
     async def tts_generate(self, text: str, voice: Optional[str] = None, response_format: str = "wav") -> Dict[str, Any]:
         try:
+            headers = await self.get_headers_json()
             payload = {
                 "model": self.default_tts_model,
                 "input": text,
@@ -137,7 +138,7 @@ class AIService:
                 "response_format": response_format,
             }
             async with aiohttp.ClientSession() as session:
-                async with session.post(self.tts_url, headers=self.headers_json, json=payload) as r:
+                async with session.post(self.tts_url, headers=headers, json=payload) as r:
                     if r.status != 200:
                         detail = await r.text()
                         logger.error(f"Groq TTS error {r.status}: {detail}")
