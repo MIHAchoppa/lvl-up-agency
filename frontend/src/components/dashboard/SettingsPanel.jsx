@@ -18,7 +18,7 @@ function SettingsPanel() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${backendUrl}/api/admin/settings/groq_api_key`, {
         headers: {
           'Authorization': `Bearer ${token}`
