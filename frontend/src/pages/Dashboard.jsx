@@ -32,8 +32,18 @@ function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-yellow-500 to-amber-600 shadow-[0_0_25px_rgba(245,197,24,0.35)]" />
+              <img 
+                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+                alt="Level Up Agency" 
+                className="h-8 w-8 object-contain"
+              />
               <h1 className="text-xl font-bold text-white">Level Up Agency</h1>
+              <span className="text-yellow-500/30">•</span>
+              <img 
+                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
+                alt="BeanGenie" 
+                className="h-6 w-6 object-contain"
+              />
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-300">Welcome, {user?.name} ({user?.role})</span>
