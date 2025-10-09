@@ -208,17 +208,34 @@ function AICoachPanel() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center flex-wrap gap-2">
             <CardTitle className="flex items-center gap-2">
               🧠 AI Strategy Coach
               <Badge variant="default">Enhanced</Badge>
+              {hasMemory && (
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                  🧠 Memory Active
+                </Badge>
+              )}
             </CardTitle>
-            <Tabs value={activeMode} onValueChange={setActiveMode}>
-              <TabsList>
-                <TabsTrigger value="text">💬 Text Chat</TabsTrigger>
-                <TabsTrigger value="voice">🎙️ Voice Chat</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center gap-2">
+              {hasMemory && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearMemory}
+                  className="text-xs"
+                >
+                  🗑️ Clear Memory
+                </Button>
+              )}
+              <Tabs value={activeMode} onValueChange={setActiveMode}>
+                <TabsList>
+                  <TabsTrigger value="text">💬 Text Chat</TabsTrigger>
+                  <TabsTrigger value="voice">🎙️ Voice Chat</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
