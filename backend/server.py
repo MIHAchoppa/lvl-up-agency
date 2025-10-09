@@ -1318,7 +1318,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
         f" Provide a brief explanation per question. Return JSON list with fields: qtype, question, options, correct_answer, explanation."
     )
     try:
-                ai = await ai_service.chat_completion([
+        ai = await ai_service.chat_completion([
             {"role": "user", "content": prompt}
         ], temperature=0.5, max_completion_tokens=1200)
         if not ai.get("success"):
