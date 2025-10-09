@@ -564,7 +564,7 @@ The email should:
 Keep it under 200 words and professional but exciting."""
 
         # migrated to ai_service.chat_completion
-                ai = await ai_service.chat_completion([
+        ai = await ai_service.chat_completion([
             {"role": "system", "content": "You are an expert email copywriter specializing in influencer recruitment for BIGO Live hosting."},
             {"role": "user", "content": prompt}
         ], temperature=0.7, max_completion_tokens=800)
