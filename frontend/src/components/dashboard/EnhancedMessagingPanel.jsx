@@ -68,12 +68,24 @@ function EnhancedMessagingPanel() {
       await Promise.all([
         fetchChannels(),
         fetchPrivateMessages(),
-        initializeDefaultChannel()
+        initializeDefaultChannel(),
+        fetchAllUsers()
       ]);
     } catch (error) {
       console.error('Failed to fetch initial data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      const { data } = await axios.get(`${API}/admin/users`);
+      setAllUsers(data);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      // Fallback to empty array
+      setAllUsers([]);
     }
   };
 
