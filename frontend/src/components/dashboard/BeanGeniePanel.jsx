@@ -39,6 +39,13 @@ function BeanGeniePanel() {
     activeStrategies: 0
   });
 
+  // Bigo Wheel states
+  const [activeWheel, setActiveWheel] = useState(null);
+  const [wheelPrizes, setWheelPrizes] = useState([]);
+  const [spinHistory, setSpinHistory] = useState([]);
+  const [showWheelConfig, setShowWheelConfig] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
   const currentAudioRef = useRef(null);
