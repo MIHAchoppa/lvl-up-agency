@@ -52,17 +52,6 @@ function VoiceRecruiter({ onClose }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const greetVisitor = async () => {
-    const greeting = {
-      role: 'assistant',
-      content: "👋 Hey there! Welcome to Level Up Agency! I'm your AI recruiter. Are you interested in becoming a BIGO Live host with us, or are you already a host looking to join?",
-      timestamp: new Date()
-    };
-    
-    setMessages([greeting]);
-    speakText(greeting.content);
-  };
-
   const sendMessage = async (messageText = null) => {
     const message = (messageText || input).trim();
     if (!message) return;
