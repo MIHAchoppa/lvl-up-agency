@@ -1227,10 +1227,26 @@ async def ai_chat(chat_data: dict, current_user: User = Depends(get_current_user
 
     # Route to specialized prompts
     if chat_type == "admin_assistant":
-        ai_res = await ai_service.get_admin_assistant_response(message)
+        admin_prompt = f"""You are an Admin Assistant for Level Up Agency BIGO Live platform.
+
+User Query: {message}
+
+Provide helpful admin-focused responses about:
+- User management
+- Analytics and metrics
+- Platform operations
+- Strategy recommendations
+
+Be concise and actionable."""
+
+        ai_res = await ai_service.chat_completion(
+            messages=[{"role": "user", "content": admin_prompt}],
+            temperature=0.7,
+            max_completion_tokens=500
+        )
         if not ai_res.get("success"):
-            raise HTTPException(status_code=500, detail=ai_res.get("response","AI error"))
-        ai_text = ai_res.get("response", "")
+            raise HTTPException(status_code=500, detail=ai_res.get("error","AI error"))
+        ai_text = ai_res.get("content", "")
     else:
         ai_text = await ai_service.get_bigo_strategy_response(message, user_context={
             "tier": getattr(current_user, "tier", None),
