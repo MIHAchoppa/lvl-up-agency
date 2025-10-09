@@ -248,7 +248,7 @@ class Event(BaseModel):
     active: bool = True
     category: str = "general"
 
-class Quiz(BaseModel):
+class QuizModel(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     description: str
@@ -1305,7 +1305,7 @@ class QuizQuestionDuplicate(BaseModel):
     correct_answer: Optional[str] = None
     explanation: Optional[str] = None
 
-class Quiz(BaseModel):
+class QuizModel(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     topic: str
