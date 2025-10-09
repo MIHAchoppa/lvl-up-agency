@@ -213,6 +213,117 @@ function EnhancedMessagingPanel() {
     }, 3000);
   };
 
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setNewMessage(value);
+    handleTyping();
+
+    // Check for @ mention
+    const cursorPosition = e.target.selectionStart;
+    const textBeforeCursor = value.substring(0, cursorPosition);
+    const lastAtSymbol = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtSymbol !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtSymbol + 1);
+      
+      // Check if we're in a mention (no space after @)
+      if (!textAfterAt.includes(' ') && textAfterAt.length >= 0) {
+        setMentionQuery(textAfterAt.toLowerCase());
+        
+        // Filter users by BIGO ID
+        const filtered = allUsers.filter(u => 
+          u.bigo_id.toLowerCase().includes(textAfterAt.toLowerCase())
+        ).slice(0, 5);
+        
+        setFilteredUsers(filtered);
+        setShowMentionDropdown(filtered.length > 0);
+        setSelectedMentionIndex(0);
+
+        // Calculate dropdown position
+        if (inputRef.current) {
+          const rect = inputRef.current.getBoundingClientRect();
+          setMentionPosition({
+            top: rect.top - 200, // Above the input
+            left: rect.left
+          });
+        }
+      } else {
+        setShowMentionDropdown(false);
+      }
+    } else {
+      setShowMentionDropdown(false);
+    }
+  };
+
+  const selectMention = (userBigoId) => {
+    const cursorPosition = inputRef.current.selectionStart;
+    const textBeforeCursor = newMessage.substring(0, cursorPosition);
+    const textAfterCursor = newMessage.substring(cursorPosition);
+    const lastAtSymbol = textBeforeCursor.lastIndexOf('@');
+
+    const beforeMention = newMessage.substring(0, lastAtSymbol);
+    const newText = beforeMention + `@${userBigoId} ` + textAfterCursor;
+
+    setNewMessage(newText);
+    setShowMentionDropdown(false);
+    
+    // Focus back on input
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        const newCursorPos = (beforeMention + `@${userBigoId} `).length;
+        inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+
+  const handleKeyDown = (e) => {
+    if (showMentionDropdown) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev => 
+          prev < filteredUsers.length - 1 ? prev + 1 : prev
+        );
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev => prev > 0 ? prev - 1 : 0);
+      } else if (e.key === 'Enter' && filteredUsers.length > 0) {
+        e.preventDefault();
+        selectMention(filteredUsers[selectedMentionIndex].bigo_id);
+      } else if (e.key === 'Escape') {
+        setShowMentionDropdown(false);
+      }
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const renderMessageWithMentions = (text) => {
+    // Match @mentions (@ followed by word characters)
+    const parts = text.split(/(@\w+)/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('@')) {
+        const mentionedBigoId = part.substring(1);
+        const mentionedUser = allUsers.find(u => u.bigo_id === mentionedBigoId);
+        
+        if (mentionedUser) {
+          return (
+            <span 
+              key={index} 
+              className="bg-blue-100 text-blue-800 px-1 rounded font-medium cursor-pointer hover:bg-blue-200"
+              title={`${mentionedUser.name} (${mentionedUser.bigo_id})`}
+            >
+              {part}
+            </span>
+          );
+        }
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
   const formatMessageTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
