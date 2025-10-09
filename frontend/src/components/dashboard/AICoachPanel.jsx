@@ -19,6 +19,8 @@ function AICoachPanel() {
   const [voiceLoading, setVoiceLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [currentAudio, setCurrentAudio] = useState(null);
+  const [sessionId, setSessionId] = useState(() => `session_${Date.now()}`);
+  const [hasMemory, setHasMemory] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
