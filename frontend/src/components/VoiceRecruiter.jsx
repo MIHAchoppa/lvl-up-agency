@@ -39,10 +39,13 @@ function VoiceRecruiter({ onClose }) {
       };
     }
 
-    // Auto-greet on mount
-    setTimeout(() => {
-      greetVisitor();
-    }, 1000);
+    // Show greeting text immediately (no auto-speak due to browser restrictions)
+    const greeting = {
+      role: 'assistant',
+      content: "👋 Hey there! Welcome to Level Up Agency! I'm your AI recruiter. Are you interested in becoming a BIGO Live host with us, or are you already a host looking to join?",
+      timestamp: new Date()
+    };
+    setMessages([greeting]);
   }, []);
 
   useEffect(() => {
