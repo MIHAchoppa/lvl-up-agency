@@ -56,9 +56,11 @@ function AICoachPanel() {
     setLoading(true);
     
     try {
-      const { data } = await axios.post(`${API}/ai/chat`, { 
+      // Use memory-enabled chat endpoint
+      const { data } = await axios.post(`${API}/ai/chat/with-memory`, { 
         message: userMessage, 
-        chat_type: 'strategy_coach' 
+        chat_type: 'strategy_coach',
+        session_id: sessionId
       });
       
       setMessages(prev => [...prev, { 
@@ -67,6 +69,8 @@ function AICoachPanel() {
         timestamp: new Date(),
         enhanced: true
       }]);
+      
+      setHasMemory(data.has_memory || false);
       
     } catch (e) {
       toast.error('Failed to get AI response');
@@ -78,6 +82,18 @@ function AICoachPanel() {
       }]);
     }
     setLoading(false);
+  };
+
+  const clearMemory = async () => {
+    try {
+      await axios.delete(`${API}/ai/chat/memory/${sessionId}`);
+      toast.success('Memory cleared! Starting fresh conversation.');
+      setSessionId(`session_${Date.now()}`);
+      setHasMemory(false);
+      setMessages([]);
+    } catch (e) {
+      toast.error('Failed to clear memory');
+    }
   };
 
   const sendVoiceMessage = async (text) => {
