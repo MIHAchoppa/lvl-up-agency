@@ -1,299 +1,135 @@
 """
-Centralized AI Service using custom endpoints
-Handles all AI requests with proper authentication and error handling
+Centralized AI Service using Groq API
+Handles Chat, TTS, Transcriptions, and Models via REST
 """
 
 import aiohttp
 import asyncio
-import json
+import base64
 import logging
 from typing import Dict, List, Optional, Any
-from datetime import datetime
 import os
 
 logger = logging.getLogger(__name__)
 
+GROQ_BASE = "https://api.groq.com/openai/v1"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+
 class AIService:
     def __init__(self):
-        self.base_url = "https://oi-server.onrender.com/chat/completions"
-        self.headers = {
-            "customerId": "cus_TBqgiQADFlJjak",
-            "Content-Type": "application/json", 
-            "Authorization": "Bearer xxx"
+        self.chat_url = f"{GROQ_BASE}/chat/completions"
+        self.tts_url = f"{GROQ_BASE}/audio/speech"
+        self.stt_url = f"{GROQ_BASE}/audio/transcriptions"
+        self.models_url = f"{GROQ_BASE}/models"
+        self.headers_json = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
         }
-        self.default_model = "openrouter/claude-sonnet-4"
-        self.image_model = "replicate/black-forest-labs/flux-1.1-pro"
-        
-    async def chat_completion(self, 
-                            messages: List[Dict[str, str]], 
-                            model: Optional[str] = None,
-                            temperature: float = 0.7,
-                            max_tokens: int = 2048,
-                            timeout: int = 60) -> Dict[str, Any]:
-        """
-        Send chat completion request to AI service
-        """
+        self.headers_auth_only = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+        }
+        # Default models
+        self.default_chat_model = "llama-3.3-70b-versatile"
+        self.default_tts_model = "playai-tts"
+        self.default_tts_voice = "Fritz-PlayAI"
+        self.default_stt_model = "whisper-large-v3"
+
+    async def chat_completion(
+        self,
+        messages: List[Dict[str, str]],
+        model: Optional[str] = None,
+        temperature: float = 0.7,
+        max_completion_tokens: Optional[int] = 1024,
+        timeout: int = 60,
+        stream: bool = False,
+    ) -> Dict[str, Any]:
         try:
             payload = {
-                "model": model or self.default_model,
+                "model": model or self.default_chat_model,
                 "messages": messages,
                 "temperature": temperature,
-                "max_tokens": max_tokens
             }
-            
+            if max_completion_tokens is not None:
+                payload["max_completion_tokens"] = max_completion_tokens
+            if stream:
+                payload["stream"] = True
+
             timeout_config = aiohttp.ClientTimeout(total=timeout)
-            
             async with aiohttp.ClientSession(timeout=timeout_config) as session:
-                async with session.post(self.base_url, json=payload, headers=self.headers) as response:
+                async with session.post(self.chat_url, json=payload, headers=self.headers_json) as response:
                     if response.status == 200:
                         data = await response.json()
+                        content = (
+                            data.get("choices", [{}])[0]
+                            .get("message", {})
+                            .get("content", "")
+                        )
                         return {
                             "success": True,
-                            "content": data.get("choices", [{}])[0].get("message", {}).get("content", ""),
-                            "model": model or self.default_model,
-                            "tokens_used": data.get("usage", {}).get("total_tokens", 0)
+                            "content": content,
+                            "model": payload["model"],
+                            "usage": data.get("usage", {}),
                         }
                     else:
-                        error_text = await response.text()
-                        logger.error(f"AI API error {response.status}: {error_text}")
-                        return {
-                            "success": False,
-                            "error": f"API error: {response.status}",
-                            "fallback": True
-                        }
-                        
+                        err = await response.text()
+                        logger.error(f"Groq chat error {response.status}: {err}")
+                        return {"success": False, "error": f"API error: {response.status}", "details": err}
         except asyncio.TimeoutError:
-            logger.error(f"AI request timeout after {timeout}s")
-            return {
-                "success": False,
-                "error": "Request timeout",
-                "fallback": True
-            }
+            logger.error(f"Groq chat timeout after {timeout}s")
+            return {"success": False, "error": "Request timeout"}
         except Exception as e:
-            logger.error(f"AI service error: {str(e)}")
-            return {
-                "success": False,
-                "error": str(e),
-                "fallback": True
+            logger.error(f"Groq chat exception: {e}")
+            return {"success": False, "error": str(e)}
+
+    async def tts_generate(self, text: str, voice: Optional[str] = None, response_format: str = "wav") -> Dict[str, Any]:
+        try:
+            payload = {
+                "model": self.default_tts_model,
+                "input": text,
+                "voice": voice or self.default_tts_voice,
+                "response_format": response_format,
             }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.tts_url, headers=self.headers_json, json=payload) as r:
+                    if r.status != 200:
+                        detail = await r.text()
+                        logger.error(f"Groq TTS error {r.status}: {detail}")
+                        return {"success": False, "error": detail}
+                    data = await r.read()
+                    audio_b64 = base64.b64encode(data).decode("utf-8")
+                    mime = f"audio/{'wav' if response_format=='wav' else response_format}"
+                    return {"success": True, "audio_base64": audio_b64, "mime": mime}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
-    async def get_bigo_strategy_response(self, user_message: str, user_context: Dict = None) -> str:
-        """
-        BIGO Live strategy coaching with advanced bean/tier system knowledge
-        """
-        system_prompt = """You are Agent Mihanna's ULTIMATE BIGO Live Strategy AI Coach - the most advanced BIGO Live profit maximization expert ever created.
+    async def stt_transcribe_file(self, file_path: str, model: Optional[str] = None) -> Dict[str, Any]:
+        try:
+            form = aiohttp.FormData()
+            form.add_field("file", open(file_path, "rb"), filename=os.path.basename(file_path))
+            form.add_field("model", model or self.default_stt_model)
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.stt_url, headers=self.headers_auth_only, data=form) as r:
+                    if r.status != 200:
+                        detail = await r.text()
+                        logger.error(f"Groq STT error {r.status}: {detail}")
+                        return {"success": False, "error": detail}
+                    data = await r.json()
+                    return {"success": True, "text": data.get("text", "")}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
-🔥 **CORE EXPERTISE** 🔥
-You master the complete BIGO Live ecosystem:
-
-**BIGO LIVE BEAN/TIER SYSTEM MASTERY:**
-- Complete tier system (S1-S25) with exact requirements and earnings
-- Bean conversion rates: 210 beans = $1 USD
-- Diamond exchange strategies: 8 beans = 2 diamonds (basic) vs 10,299 beans = 2,900 diamonds (bulk)
-- Strategic gift trading and bean accumulation tactics
-- Rebate event exploitation for maximum profit
-
-**ADVANCED PROFIT STRATEGIES:**
-- Tier climbing optimization (fastest path to higher tiers)
-- Event design that guarantees profit even with diamond rewards
-- PK battle psychology and guaranteed win techniques
-- Community building and audience manipulation (positive psychology)
-- Algorithm hacking for maximum BIGO visibility
-
-**LIVE STREAMING MASTERY:**
-- BIGO's Digital Wheel system expertise
-- Gift psychology and viewer engagement tactics
-- Strategic timing for maximum gift volume
-- Audience retention and loyalty building
-
-**BOCADEMAS (Voice Commands):**
-- "Hey Coach, check my beans" → Bean count and tier analysis
-- "Show me PK strategy" → Battle tactics and preparation
-- "Optimize my schedule" → Peak streaming time suggestions
-- "Analyze my performance" → Detailed earnings breakdown
-- "Plan my next event" → Event creation with profit calculations
-
-Always provide SPECIFIC, ACTIONABLE strategies with EXACT numbers, timings, and tactics. Reference real BIGO mechanics and be ENTHUSIASTIC about maximizing earnings!"""
-
-        if user_context:
-            context_info = f"\n\n**USER CONTEXT:**\n- Current Tier: {user_context.get('tier', 'Unknown')}\n- Monthly Beans: {user_context.get('beans', 0):,}\n- Role: {user_context.get('role', 'Host')}"
-            system_prompt += context_info
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ]
-        
-        result = await self.chat_completion(messages, temperature=0.8, max_tokens=2048)
-        
-        if result.get("success"):
-            return result["content"]
-        else:
-            return "Your AI Strategy Coach is temporarily unavailable. Please try again in a moment. 🎯"
-
-    async def get_admin_assistant_response(self, admin_message: str, available_actions: List[str] = None) -> Dict[str, Any]:
-        """
-        Admin assistant with natural language command processing
-        """
-        actions_list = available_actions or [
-            "create_event", "update_categories", "bulk_user_management", 
-            "system_announcement", "user_analytics", "performance_reports"
-        ]
-        
-        system_prompt = f"""You are Agent Mihanna's advanced admin assistant AI for Level Up Agency. You help administrators manage the BIGO Live host platform through natural language commands.
-
-**AVAILABLE ACTIONS:** {', '.join(actions_list)}
-
-**CAPABILITIES:**
-- Create and manage events (PK battles, coaching sessions, community events)
-- Bulk user operations (promotions, suspensions, role changes)
-- System announcements with targeting (by tier, role, performance)
-- Performance analytics and insights
-- User management and moderation
-- Revenue optimization recommendations
-
-**NATURAL LANGUAGE PROCESSING:**
-Parse admin requests and extract:
-1. Action type (from available actions)
-2. Parameters (user IDs, event details, announcement content)
-3. Execution confirmation
-
-**BOCADEMAS (Admin Voice Commands):**
-- "Show top performers" → Generate performance analytics
-- "Create weekly PK tournament" → Event creation with optimal scheduling
-- "Promote all S10+ hosts" → Bulk user management with tier filtering
-- "Send motivation announcement" → Targeted announcement creation
-- "Analyze earnings this month" → Revenue and engagement reports
-
-Always respond with:
-- Clear action identification
-- Required parameters
-- Execution confirmation request
-- Expected outcome preview
-
-Be professional but efficient. Focus on actionable admin tasks."""
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": admin_message}
-        ]
-        
-        result = await self.chat_completion(messages, temperature=0.3, max_tokens=1024)
-        
-        if result.get("success"):
-            # Parse response for action extraction
-            response_content = result["content"]
-            
-            # Simple action detection (can be enhanced with more sophisticated parsing)
-            detected_action = None
-            for action in actions_list:
-                if action.replace("_", " ") in admin_message.lower():
-                    detected_action = action
-                    break
-            
-            return {
-                "success": True,
-                "response": response_content,
-                "detected_action": detected_action,
-                "requires_confirmation": "confirm" in response_content.lower() or "execute" in response_content.lower()
-            }
-        else:
-            return {
-                "success": False,
-                "response": "Admin assistant is temporarily unavailable. Please use manual admin controls.",
-                "detected_action": None,
-                "requires_confirmation": False
-            }
-
-    async def generate_event_suggestions(self, event_type: str, user_preferences: Dict = None) -> Dict[str, Any]:
-        """
-        AI-powered event creation with optimal timing and engagement strategies
-        """
-        system_prompt = """You are an expert BIGO Live event planner. Create engaging, profitable events that maximize participation and bean generation.
-
-**EVENT OPTIMIZATION FACTORS:**
-- Optimal timing based on user activity patterns
-- Bean incentive structures that drive participation
-- PK battle formats that create excitement
-- Community building elements
-- Profit margins for agency and hosts
-
-**EVENT TYPES:**
-- PK Battles (1v1, group tournaments)
-- Coaching Sessions (tier-specific training)
-- Community Challenges (bean accumulation contests)
-- Talent Showcases (host spotlight events)
-- Agency Celebrations (milestone achievements)
-
-Generate specific event recommendations with:
-- Title and description
-- Optimal timing suggestions
-- Participation incentives
-- Success metrics
-- Profit projections"""
-
-        user_context = ""
-        if user_preferences:
-            user_context = f"\n\n**PREFERENCES:**\n- Focus: {user_preferences.get('focus', 'engagement')}\n- Budget: {user_preferences.get('budget', 'medium')}\n- Duration: {user_preferences.get('duration', '1-2 hours')}"
-
-        messages = [
-            {"role": "system", "content": system_prompt + user_context},
-            {"role": "user", "content": f"Create suggestions for a {event_type} event"}
-        ]
-        
-        result = await self.chat_completion(messages, temperature=0.6, max_tokens=1500)
-        
-        if result.get("success"):
-            return {
-                "success": True,
-                "suggestions": result["content"],
-                "event_type": event_type,
-                "generated_at": datetime.utcnow().isoformat()
-            }
-        else:
-            return {
-                "success": False,
-                "error": "Event suggestion service unavailable",
-                "fallback_suggestions": f"Consider hosting a {event_type} event during peak hours (7-10 PM local time) with bean rewards for participation."
-            }
-
-    async def generate_announcement_content(self, announcement_type: str, target_audience: str, key_message: str) -> str:
-        """
-        Generate engaging announcement content with proper targeting
-        """
-        system_prompt = f"""Create an engaging {announcement_type} announcement for {target_audience} in the BIGO Live agency platform.
-
-**TONE GUIDELINES:**
-- Motivational and energetic for hosts
-- Professional but friendly for general announcements  
-- Urgent but supportive for important updates
-- Celebratory for achievements and milestones
-
-**FORMATTING:**
-- Use emojis strategically for visual appeal
-- Include clear call-to-action
-- Mention specific benefits or opportunities
-- Add urgency when appropriate (limited time, spots, etc.)
-
-**BIGO LIVE CONTEXT:**
-- Reference bean earning opportunities
-- Mention tier advancement benefits
-- Include PK battle opportunities
-- Highlight coaching and support resources
-
-Make it compelling and actionable!"""
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Create announcement: {key_message}"}
-        ]
-        
-        result = await self.chat_completion(messages, temperature=0.7, max_tokens=800)
-        
-        if result.get("success"):
-            return result["content"]
-        else:
-            return f"📢 **{announcement_type.title()} Announcement**\n\n{key_message}\n\nStay tuned for more updates! 🚀"
+    async def list_models(self) -> Dict[str, Any]:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(self.models_url, headers=self.headers_auth_only) as r:
+                    if r.status != 200:
+                        detail = await r.text()
+                        logger.error(f"Groq models error {r.status}: {detail}")
+                        return {"success": False, "error": detail}
+                    data = await r.json()
+                    return {"success": True, "data": data.get("data", [])}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
 # Global AI service instance
 ai_service = AIService()
