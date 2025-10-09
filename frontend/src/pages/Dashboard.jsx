@@ -65,10 +65,11 @@ function Dashboard() {
           <TabsContent value="ai-coach"><AICoachPanel /></TabsContent>
           <TabsContent value="voice-assistant"><VoiceAssistantPanel /></TabsContent>
           {(user?.role === 'admin' || user?.role === 'owner') && (
-            <TabsContent value="admin-assistant"><EnhancedAdminAssistantPanel /></TabsContent>
-          )}
-          {(user?.role === 'admin' || user?.role === 'owner') && (
-            <TabsContent value="models"><AdminModelsPanel /></TabsContent>
+            <>
+              <TabsContent value="admin-assistant"><EnhancedAdminAssistantPanel /></TabsContent>
+              <TabsContent value="models"><AdminModelsPanel /></TabsContent>
+              <TabsContent value="settings"><SettingsPanel /></TabsContent>
+            </>
           )}
 
           <TabsContent value="calendar"><CalendarPanel /></TabsContent>
