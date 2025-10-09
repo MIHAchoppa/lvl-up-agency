@@ -2054,6 +2054,215 @@ async def admin_assistant_chat(chat_data: dict, current_user: User = Depends(req
             "user_id": current_user.id
         }
 
+# ============================================
+# ADMIN SETTINGS ENDPOINTS
+# ============================================
+
+@api_router.get("/admin/settings")
+async def get_admin_settings(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.OWNER]))):
+    """Get all admin settings"""
+    try:
+        settings = await db.settings.find({}).to_list(100)
+        # Mask sensitive values partially
+        for setting in settings:
+            if "key" in setting["key"].lower() or "secret" in setting["key"].lower():
+                val = setting.get("value", "")
+                if len(val) > 8:
+                    setting["value_masked"] = val[:4] + "•" * (len(val) - 8) + val[-4:]
+                else:
+                    setting["value_masked"] = "•" * len(val)
+            else:
+                setting["value_masked"] = setting.get("value", "")
+        return {"settings": settings}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/settings/{key}")
+async def get_setting(key: str, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.OWNER]))):
+    """Get specific setting"""
+    try:
+        setting = await db.settings.find_one({"key": key})
+        if not setting:
+            raise HTTPException(status_code=404, detail="Setting not found")
+        
+        # Mask value
+        val = setting.get("value", "")
+        if len(val) > 8:
+            setting["value_masked"] = val[:4] + "•" * (len(val) - 8) + val[-4:]
+        else:
+            setting["value_masked"] = "•" * len(val)
+        
+        return setting
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/admin/settings/groq-key")
+async def update_groq_key(req: UpdateSettingRequest, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.OWNER]))):
+    """Update Groq API key"""
+    try:
+        new_key = req.value.strip()
+        if not new_key:
+            raise HTTPException(status_code=400, detail="API key cannot be empty")
+        
+        # Update or insert setting
+        await db.settings.update_one(
+            {"key": "groq_api_key"},
+            {
+                "$set": {
+                    "value": new_key,
+                    "description": "Groq API Key for AI services",
+                    "updated_at": datetime.now(timezone.utc),
+                    "updated_by": current_user.id
+                }
+            },
+            upsert=True
+        )
+        
+        # Clear AI service cache to reload new key
+        ai_service.clear_key_cache()
+        
+        return {
+            "success": True,
+            "message": "Groq API key updated successfully",
+            "key_preview": new_key[:4] + "•" * (len(new_key) - 8) + new_key[-4:] if len(new_key) > 8 else "•" * len(new_key)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================
+# AI MEMORY & CONVERSATION ENDPOINTS
+# ============================================
+
+@api_router.post("/ai/chat/with-memory")
+async def ai_chat_with_memory(chat_data: dict, current_user: User = Depends(get_current_user)):
+    """AI chat with conversational memory"""
+    message = chat_data.get("message", "").strip()
+    session_id = chat_data.get("session_id") or str(uuid.uuid4())
+    chat_type = chat_data.get("chat_type", "strategy_coach")
+    use_research = bool(chat_data.get("use_research", False))
+
+    if not message:
+        raise HTTPException(status_code=400, detail="Message required")
+
+    # Enforce admin-only research tools
+    if use_research and current_user.role not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Research mode requires admin")
+
+    try:
+        # Get memory context
+        memory = await ai_service.get_memory_context(current_user.id, session_id)
+        
+        # Build messages with memory
+        messages = []
+        
+        # Add long-term memory as system context if available
+        if memory.get("long_term_summary"):
+            messages.append({
+                "role": "system",
+                "content": f"User background: {memory['long_term_summary']}"
+            })
+        
+        # Add conversation summary if available
+        if memory.get("summary"):
+            messages.append({
+                "role": "system",
+                "content": f"Previous conversation: {memory['summary']}"
+            })
+        
+        # Add recent messages
+        for msg in memory.get("messages", []):
+            messages.append({
+                "role": msg["role"],
+                "content": msg["content"]
+            })
+        
+        # Add current message
+        messages.append({"role": "user", "content": message})
+        
+        # Get AI response
+        result = await ai_service.chat_completion(messages=messages)
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "AI error"))
+        
+        ai_text = result.get("content", "")
+        
+        # Save conversation turn
+        await ai_service.save_conversation_turn(current_user.id, session_id, message, ai_text)
+        
+        # Save to ai_chats for history
+        chat_record = AIChat(
+            user_id=current_user.id,
+            message=message,
+            ai_response=ai_text,
+            chat_type=chat_type,
+            session_id=session_id
+        )
+        await db.ai_chats.insert_one(chat_record.dict())
+        
+        return {
+            "response": ai_text,
+            "session_id": session_id,
+            "chat_type": chat_type,
+            "has_memory": len(memory.get("messages", [])) > 0
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"AI chat with memory error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/ai/chat/memory/{session_id}")
+async def clear_conversation_memory(session_id: str, current_user: User = Depends(get_current_user)):
+    """Clear conversation memory for a session"""
+    try:
+        result = await db.conversations.delete_one({"session_id": session_id, "user_id": current_user.id})
+        return {
+            "success": True,
+            "deleted": result.deleted_count > 0,
+            "message": "Memory cleared"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================
+# AI ASSIST ENDPOINT (Fill/Improve inputs)
+# ============================================
+
+@api_router.post("/ai/assist")
+async def ai_assist_endpoint(req: AIAssistRequest, current_user: User = Depends(get_current_user)):
+    """AI assist to fill or improve input fields"""
+    try:
+        # Add user context
+        context = req.context.copy()
+        context["user_role"] = current_user.role
+        context["user_name"] = current_user.name
+        
+        result = await ai_service.ai_assist(
+            field_name=req.field_name,
+            current_value=req.current_value,
+            context=context,
+            mode=req.mode
+        )
+        
+        if not result.get("success"):
+            raise HTTPException(status_code=500, detail=result.get("error", "AI assist failed"))
+        
+        return {
+            "success": True,
+            "suggested_text": result.get("suggested_text", ""),
+            "mode": req.mode
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"AI assist error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include all routers in the main app
 app.include_router(api_router)
 # app.include_router(voice_router)
