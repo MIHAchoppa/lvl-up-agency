@@ -1382,7 +1382,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
             "explanation": it.get("explanation")
         }) for it in items]
         title = f"{req.topic.title()} – {req.difficulty.title()}"
-        quiz = Quiz(
+        quiz = QuizModel(
             title=title,
             topic=req.topic,
             difficulty=req.difficulty,
@@ -1398,7 +1398,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
 @api_router.post("/admin/quizzes")
 async def save_quiz(body: dict, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH, UserRole.OWNER]))):
     try:
-        quiz = Quiz(**body)
+        quiz = QuizModel(**body)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid quiz payload: {e}")
     await db.quizzes.insert_one(quiz.dict())
@@ -1738,7 +1738,7 @@ async def review_submission(submission_id: str, review_data: dict, current_user:
 # Quiz Routes
 @api_router.post("/quizzes")
 async def create_quiz(quiz_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
-    quiz = Quiz(**quiz_data)
+    quiz = QuizModel(**quiz_data)
     await db.quizzes.insert_one(quiz.dict())
     return quiz
 
