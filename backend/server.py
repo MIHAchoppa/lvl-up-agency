@@ -2897,6 +2897,112 @@ Be the recruiter who converts visitors to hosts!"""
         logger.error(f"Recruiter chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============================================
+# BIGO ACADEMY ENDPOINT
+# ============================================
+
+@api_router.post("/academy/generate")
+async def generate_academy_tutorial(tutorial_data: dict, current_user: User = Depends(get_current_user)):
+    """Generate comprehensive tutorial using compound AI models"""
+    topic = tutorial_data.get("topic", "").strip()
+    category = tutorial_data.get("category", "basics")
+    
+    if not topic:
+        raise HTTPException(status_code=400, detail="Topic required")
+    
+    try:
+        # Compound model approach: Research + Synthesis
+        
+        # Model 1: Research and gather information
+        research_prompt = f"""You are a BIGO Live expert researcher. Research the following topic and provide comprehensive information:
+
+Topic: {topic}
+Category: {category}
+
+Provide:
+1. Key facts and strategies
+2. Step-by-step guidance
+3. Best practices from successful streamers
+4. Common mistakes to avoid
+5. Pro tips and advanced techniques
+
+Be detailed and practical. Include real examples."""
+
+        research_result = await ai_service.chat_completion(
+            messages=[{"role": "user", "content": research_prompt}],
+            temperature=0.7,
+            max_completion_tokens=800
+        )
+        
+        if not research_result.get("success"):
+            raise Exception("Research phase failed")
+        
+        research_content = research_result.get("content", "")
+        
+        # Model 2: Synthesize into structured tutorial
+        synthesis_prompt = f"""You are a professional tutorial writer. Create a well-structured, engaging tutorial from this research:
+
+{research_content}
+
+Format as:
+📚 **{topic}**
+
+**Overview:**
+[Brief introduction]
+
+**Step-by-Step Guide:**
+1. [First step with details]
+2. [Second step with details]
+3. [Continue...]
+
+**Pro Tips:**
+💡 [Tip 1]
+💡 [Tip 2]
+
+**Common Mistakes:**
+❌ [Mistake 1]
+✅ [Correct approach]
+
+**Key Takeaways:**
+• [Point 1]
+• [Point 2]
+
+Make it actionable, engaging, and easy to follow!"""
+
+        synthesis_result = await ai_service.chat_completion(
+            messages=[{"role": "user", "content": synthesis_prompt}],
+            temperature=0.6,
+            max_completion_tokens=1000
+        )
+        
+        if not synthesis_result.get("success"):
+            # Fallback to research content
+            tutorial = research_content
+        else:
+            tutorial = synthesis_result.get("content", research_content)
+        
+        # Extract metadata
+        difficulty = "Intermediate"
+        if "beginner" in topic.lower() or "start" in topic.lower():
+            difficulty = "Beginner"
+        elif "advanced" in topic.lower() or "pro" in topic.lower():
+            difficulty = "Advanced"
+        
+        return {
+            "tutorial": tutorial,
+            "metadata": {
+                "title": topic,
+                "category": category,
+                "difficulty": difficulty,
+                "sources": "Compound AI Research",
+                "generated_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Academy tutorial error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include all routers in the main app
 app.include_router(api_router)
 # app.include_router(voice_router)
