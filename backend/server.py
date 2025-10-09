@@ -1296,14 +1296,8 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
     # Return placeholder transcription
     return {"transcription": "This is a placeholder transcription. Audio received successfully."}
 
-# ===== Quizzes Models (duplicate block removed) =====
-# Removed duplicate QuizQuestion definition to avoid redefinition errors
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    qtype: str  # mcq | tf | short
-    question: str
-    options: Optional[List[str]] = None
-    correct_answer: Optional[str] = None
-    explanation: Optional[str] = None
+# ===== Quizzes Models (continue) =====
+# Keeping single definitions above; remove stray fields
 
 class QuizModel(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
