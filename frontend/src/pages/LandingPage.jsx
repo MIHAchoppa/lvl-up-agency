@@ -7,6 +7,16 @@ import VoiceRecruiter from '../components/VoiceRecruiter';
 
 function LandingPage() {
   const navigate = useNavigate();
+  const [showRecruiter, setShowRecruiter] = useState(false);
+
+  useEffect(() => {
+    // Auto-show recruiter after 2 seconds
+    const timer = setTimeout(() => {
+      setShowRecruiter(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
       <header className="border-b border-yellow-500/20 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur z-10">
