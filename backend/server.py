@@ -331,7 +331,24 @@ class AIChat(BaseModel):
     message: str
     ai_response: str
     chat_type: str = "general"
+    session_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Setting(BaseModel):
+    key: str
+    value: str
+    description: Optional[str] = None
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_by: Optional[str] = None
+
+class UpdateSettingRequest(BaseModel):
+    value: str
+
+class AIAssistRequest(BaseModel):
+    field_name: str
+    current_value: str = ""
+    context: Dict[str, Any] = {}
+    mode: str = "fill"  # fill or improve
 
 class QuotaTarget(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
