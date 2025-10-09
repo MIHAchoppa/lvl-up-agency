@@ -14,6 +14,8 @@ import UsersPanel from '../components/dashboard/UsersPanel';
 import LeadsPanel from '../components/dashboard/LeadsPanel';
 import AuditionsPanel from '../components/dashboard/AuditionsPanel';
 import RewardsPanel from '../components/dashboard/RewardsPanel';
+import AdminModelsPanel from '../components/dashboard/AdminModelsPanel';
+
 import QuotaPanel from '../components/dashboard/QuotaPanel';
 
 function Dashboard() {
