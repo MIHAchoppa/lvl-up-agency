@@ -101,8 +101,7 @@ SECRET_KEY = os.environ.get("JWT_SECRET", "levelup-bigo-hosts-secret-2025")
 ALGORITHM = "HS256"
 
 # Groq AI Setup
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-groq_client = AsyncGroq(api_key=GROQ_API_KEY)
+# GROQ direct client deprecated; using REST via ai_service
 
 # Enums
 class UserRole(str, Enum):
