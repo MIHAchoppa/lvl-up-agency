@@ -96,6 +96,10 @@ function LandingPage() {
       <footer className="border-t border-yellow-500/20 py-8 text-center text-gray-400 text-sm">
         © {new Date().getFullYear()} Level Up Agency
       </footer>
+      {/* Voice Recruiter Modal */}
+      {showRecruiter && (
+        <VoiceRecruiter onClose={() => setShowRecruiter(false)} />
+      )}
     </div>
   );
 }
