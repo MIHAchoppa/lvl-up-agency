@@ -2099,9 +2099,9 @@ Be concise and actionable."""
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "user_id": current_user.id
         }
-    except Exception as e:
+    except Exception:
         return {
-            "response": f"I can help with admin tasks. What would you like to know?",
+            "response": "I can help with admin tasks. What would you like to know?",
             "actions": [],
             "context": context,
             "timestamp": datetime.now(timezone.utc).isoformat(),
