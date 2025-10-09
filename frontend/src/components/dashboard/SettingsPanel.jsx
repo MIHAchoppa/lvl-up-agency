@@ -44,7 +44,7 @@ function SettingsPanel() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${backendUrl}/api/admin/settings/groq-key`, {
         method: 'PUT',
         headers: {
