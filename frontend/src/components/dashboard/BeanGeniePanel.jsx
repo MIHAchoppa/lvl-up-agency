@@ -18,9 +18,18 @@ function BeanGeniePanel() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState('');
   
-  // Data states
-  const [organicStrategies, setOrganicStrategies] = useState([]);
-  const [bigoWheelStrategies, setBigoWheelStrategies] = useState([]);
+  // Data states - Dynamic panels
+  const [dynamicPanels, setDynamicPanels] = useState({});
+  const [activePanels, setActivePanels] = useState([
+    'organic_strategies',
+    'bigo_wheel',
+    'raffles',
+    'financial',
+    'analytics',
+    'notes'
+  ]);
+  
+  // Legacy states for backward compatibility
   const [raffles, setRaffles] = useState([]);
   const [debts, setDebts] = useState([]);
   const [notes, setNotes] = useState('');
