@@ -450,6 +450,55 @@ function BeanGeniePanel() {
     }
   };
 
+  // Bigo Wheel Management
+  const createWheel = async (wheelData) => {
+    try {
+      const { data } = await axios.post(`${API}/beangenie/wheel`, wheelData);
+      setActiveWheel(data);
+      setWheelPrizes(data.prizes || []);
+      toast.success('Wheel created!');
+      setShowWheelConfig(false);
+    } catch (error) {
+      toast.error('Failed to create wheel');
+    }
+  };
+
+  const addWheelPrize = async (prize) => {
+    try {
+      const { data } = await axios.post(`${API}/beangenie/wheel/${activeWheel.id}/prize`, prize);
+      setWheelPrizes(prev => [...prev, data]);
+      toast.success('Prize added');
+    } catch (error) {
+      toast.error('Failed to add prize');
+    }
+  };
+
+  const recordSpin = async (winnerId, prizeId) => {
+    try {
+      const { data } = await axios.post(`${API}/beangenie/wheel/${activeWheel.id}/spin`, {
+        winner_id: winnerId,
+        prize_id: prizeId
+      });
+      setSpinHistory(prev => [data, ...prev]);
+      toast.success('Spin recorded!');
+    } catch (error) {
+      toast.error('Failed to record spin');
+    }
+  };
+
+  const loadWheelData = async () => {
+    try {
+      const { data } = await axios.get(`${API}/beangenie/wheel/active`);
+      if (data.wheel) {
+        setActiveWheel(data.wheel);
+        setWheelPrizes(data.prizes || []);
+        setSpinHistory(data.spins || []);
+      }
+    } catch (error) {
+      console.error('Failed to load wheel data:', error);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col bg-black">
       {/* Header with BeanGenie Logo */}
