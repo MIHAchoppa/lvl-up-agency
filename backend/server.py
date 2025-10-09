@@ -1749,7 +1749,7 @@ async def get_quizzes(category: Optional[str] = None, current_user: User = Depen
         filter_query["category"] = category
     
     quizzes = await db.quizzes.find(filter_query).to_list(1000)
-    return [Quiz(**quiz) for quiz in quizzes]
+    return [QuizModel(**quiz) for quiz in quizzes]
 
 @api_router.get("/quizzes/{quiz_id}/questions")
 async def get_quiz_questions(quiz_id: str, current_user: User = Depends(get_current_user)):
