@@ -387,30 +387,49 @@ function BeanGeniePanel() {
   const updateAnalyticsLocal = () => {
     const totalRaffleTickets = raffles.reduce((sum, raffle) => sum + (raffle.tickets || 0), 0);
     const totalDebtAmount = debts.reduce((sum, debt) => sum + (debt.amount || 0), 0);
-    const activeStrategies = organicStrategies.length + bigoWheelStrategies.length;
+    const activeStrategies = Object.keys(dynamicPanels).reduce((sum, key) => {
+      return sum + (dynamicPanels[key]?.items?.length || 0);
+    }, 0);
     
     setAnalytics({
       totalRaffles: totalRaffleTickets,
       totalDebts: totalDebtAmount,
-      activeStrategies
+      activeStrategies,
+      activePanels: Object.keys(dynamicPanels).length
     });
   };
 
   const updateAnalytics = (data) => {
     const totalRaffleTickets = (data.raffles || []).reduce((sum, raffle) => sum + (raffle.tickets || 0), 0);
     const totalDebtAmount = (data.debts || []).reduce((sum, debt) => sum + (debt.amount || 0), 0);
-    const activeStrategies = (data.organicStrategies || []).length + (data.bigoWheelStrategies || []).length;
+    const activeStrategies = Object.keys(data.dynamicPanels || {}).reduce((sum, key) => {
+      return sum + (data.dynamicPanels[key]?.items?.length || 0);
+    }, 0);
     
     setAnalytics({
       totalRaffles: totalRaffleTickets,
       totalDebts: totalDebtAmount,
-      activeStrategies
+      activeStrategies,
+      activePanels: Object.keys(data.dynamicPanels || {}).length
     });
   };
 
   useEffect(() => {
     updateAnalyticsLocal();
-  }, [raffles, debts, organicStrategies, bigoWheelStrategies]);
+  }, [raffles, debts, dynamicPanels]);
+
+  const clearPanel = async (panelKey) => {
+    try {
+      await axios.delete(`${API}/beangenie/panel/${panelKey}`);
+      const newPanels = { ...dynamicPanels };
+      delete newPanels[panelKey];
+      setDynamicPanels(newPanels);
+      setActivePanels(activePanels.filter(p => p !== panelKey));
+      toast.success('Panel cleared');
+    } catch (error) {
+      toast.error('Failed to clear panel');
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-black">
