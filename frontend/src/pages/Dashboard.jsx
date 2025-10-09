@@ -57,7 +57,7 @@ function Dashboard() {
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9 mb-6 bg-black/40 border border-yellow-500/20">
-            <TabsTrigger value="beangenie" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🧞‍♂️ AI Coach</TabsTrigger>
+            <TabsTrigger value="beangenie" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🧞‍♂️ BeanGenie</TabsTrigger>
             <TabsTrigger value="voice-assistant" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🎙️ Voice</TabsTrigger>
             {(user?.role === 'admin' || user?.role === 'owner') && (
               <>
