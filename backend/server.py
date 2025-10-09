@@ -1197,6 +1197,12 @@ async def register(user_data: UserCreate):
     passcode_benefits = AGENCY_CODES.get(user_data.passcode, {"discord_access": False, "role": "host"})
     
     hashed_password = hash_password(user_data.password)
+
+@api_router.post("/auth/register/admin/rebuild")
+async def rebuild_admins(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    await sync_admins_collection(rebuild=True)
+    return {"message": "Admins collection rebuilt"}
+
     user = User(
         bigo_id=user_data.bigo_id,
         email=user_data.email,
