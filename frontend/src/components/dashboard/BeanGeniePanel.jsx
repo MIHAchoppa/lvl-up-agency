@@ -765,6 +765,107 @@ function BeanGeniePanel() {
               </CardContent>
             </Card>
 
+            {/* Bigo Wheel Management */}
+            <Card className="bg-gray-900 border-yellow-500/30 lg:col-span-2">
+              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 flex flex-row items-center justify-between">
+                <CardTitle className="text-yellow-400">🎯 Bigo Wheel Manager</CardTitle>
+                <Button 
+                  size="sm" 
+                  onClick={() => setShowWheelConfig(true)}
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:brightness-110 text-white"
+                >
+                  {activeWheel ? 'Edit Wheel' : '+ Create Wheel'}
+                </Button>
+              </CardHeader>
+              <CardContent className="p-4">
+                {!activeWheel ? (
+                  <div className="text-center py-8">
+                    <div className="text-6xl mb-4">🎡</div>
+                    <p className="text-yellow-400/70 mb-2">No active wheel</p>
+                    <p className="text-sm text-yellow-400/50">
+                      Create a digital spin wheel! Viewers send gifts to spin for prizes like tasks, rewards, or challenges.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Wheel Info */}
+                    <div className="bg-black/50 p-4 rounded-lg border border-yellow-500/20">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="text-lg font-bold text-yellow-400">{activeWheel.name}</h3>
+                          <p className="text-sm text-yellow-400/70">
+                            Cost: {activeWheel.gift_cost} {activeWheel.gift_type}
+                          </p>
+                        </div>
+                        <Badge className="bg-green-500 text-white">Active</Badge>
+                      </div>
+                    </div>
+
+                    {/* Prizes List */}
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-sm font-semibold text-yellow-400">Prizes ({wheelPrizes.length})</h4>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => {
+                            const name = prompt('Prize name:');
+                            const type = prompt('Type (task/physical/content):');
+                            if (name && type) {
+                              addWheelPrize({ name, type, icon: type === 'task' ? '🎭' : type === 'physical' ? '🎁' : '📹' });
+                            }
+                          }}
+                          className="text-xs"
+                        >
+                          + Add Prize
+                        </Button>
+                      </div>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {wheelPrizes.length === 0 ? (
+                          <p className="text-xs text-yellow-400/50 text-center py-4">No prizes yet</p>
+                        ) : (
+                          wheelPrizes.map((prize) => (
+                            <div key={prize.id} className="bg-black/30 p-2 rounded flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl">{prize.icon}</span>
+                                <div>
+                                  <div className="text-sm text-yellow-400">{prize.name}</div>
+                                  <div className="text-xs text-yellow-400/50">{prize.type}</div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Recent Spins */}
+                    <div>
+                      <h4 className="text-sm font-semibold text-yellow-400 mb-2">Recent Spins ({spinHistory.length})</h4>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {spinHistory.length === 0 ? (
+                          <p className="text-xs text-yellow-400/50 text-center py-2">No spins yet</p>
+                        ) : (
+                          spinHistory.slice(0, 5).map((spin) => (
+                            <div key={spin.id} className="bg-black/30 p-2 rounded text-xs flex justify-between items-center">
+                              <div>
+                                <span className="text-yellow-400">{spin.winner_name}</span>
+                                <span className="text-yellow-400/50"> won </span>
+                                <span className="text-yellow-400">{spin.prize_name}</span>
+                              </div>
+                              {!spin.fulfilled && (
+                                <Badge variant="outline" className="text-xs">Pending</Badge>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Master Notes */}
             <Card className="bg-gray-900 border-yellow-500/30">
               <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900">
