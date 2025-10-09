@@ -2512,6 +2512,136 @@ async def save_beangenie_notes(notes_data: dict, current_user: User = Depends(ge
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/beangenie/categorize")
+async def categorize_beangenie_content(category_data: dict, current_user: User = Depends(get_current_user)):
+    """Intelligently categorize BeanGenie AI response into dynamic panels"""
+    try:
+        content = category_data.get("content", "")
+        
+        # Use AI to categorize the content
+        categorization_prompt = f"""Analyze this BIGO Live strategy content and categorize it. Return a JSON array of categories.
+
+Content: {content}
+
+For each relevant category, provide:
+- category_key: lowercase_with_underscores (e.g., "content_ideas", "scheduling_tips", "performance_metrics")
+- category_name: Display name (e.g., "Content Ideas", "Scheduling Tips", "Performance Metrics")
+- icon: Relevant emoji
+- color: "yellow", "blue", "green", "red", or "purple"
+- extracted_content: The relevant portion of content (can be summarized)
+- metadata: Any structured data like dates, numbers, names (JSON object)
+
+Common categories:
+- organic_strategies: Natural growth tactics
+- bigo_wheel: Wheel spinning strategies
+- content_ideas: Stream content suggestions
+- scheduling: Timing and schedule recommendations
+- performance_metrics: Numbers, goals, KPIs
+- engagement_tactics: Audience interaction methods
+- collaboration_tips: Partnership strategies
+- monetization: Revenue generation ideas
+- technical_setup: Equipment, software, setup tips
+- trending_topics: Current trends to leverage
+
+Return ONLY valid JSON array, no other text."""
+
+        result = await ai_service.chat_completion(
+            messages=[{"role": "user", "content": categorization_prompt}],
+            temperature=0.3,
+            max_completion_tokens=500
+        )
+        
+        if not result.get("success"):
+            # Fallback to simple categorization
+            return {"categories": []}
+        
+        ai_response = result.get("content", "")
+        
+        # Try to parse JSON from response
+        import json
+        import re
+        
+        # Extract JSON from response
+        json_match = re.search(r'\[.*\]', ai_response, re.DOTALL)
+        if json_match:
+            categories = json.loads(json_match.group(0))
+        else:
+            # Fallback categorization
+            categories = []
+            lower_content = content.lower()
+            
+            if any(word in lower_content for word in ['organic', 'growth', 'natural', 'audience']):
+                categories.append({
+                    "category_key": "organic_strategies",
+                    "category_name": "Organic Strategies",
+                    "icon": "🌱",
+                    "color": "green",
+                    "extracted_content": content,
+                    "metadata": {}
+                })
+            
+            if any(word in lower_content for word in ['wheel', 'spin', 'bigo', 'timing']):
+                categories.append({
+                    "category_key": "bigo_wheel",
+                    "category_name": "Bigo Wheel Tactics",
+                    "icon": "🎯",
+                    "color": "blue",
+                    "extracted_content": content,
+                    "metadata": {}
+                })
+            
+            if any(word in lower_content for word in ['content', 'stream', 'video', 'topic']):
+                categories.append({
+                    "category_key": "content_ideas",
+                    "category_name": "Content Ideas",
+                    "icon": "💡",
+                    "color": "yellow",
+                    "extracted_content": content,
+                    "metadata": {}
+                })
+            
+            if any(word in lower_content for word in ['schedule', 'time', 'when', 'frequency']):
+                categories.append({
+                    "category_key": "scheduling",
+                    "category_name": "Scheduling Tips",
+                    "icon": "📅",
+                    "color": "purple",
+                    "extracted_content": content,
+                    "metadata": {}
+                })
+        
+        # Save to database
+        for category in categories:
+            panel_doc = {
+                "user_id": current_user.id,
+                "category_key": category["category_key"],
+                "category_name": category["category_name"],
+                "icon": category["icon"],
+                "color": category["color"],
+                "content": category["extracted_content"],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "metadata": category.get("metadata", {})
+            }
+            await db.beangenie_panels.insert_one(panel_doc)
+        
+        return {"categories": categories}
+        
+    except Exception as e:
+        logger.error(f"Categorization error: {e}")
+        return {"categories": []}
+
+@api_router.delete("/beangenie/panel/{category_key}")
+async def delete_beangenie_panel(category_key: str, current_user: User = Depends(get_current_user)):
+    """Delete all items in a specific panel"""
+    try:
+        result = await db.beangenie_panels.delete_many({
+            "user_id": current_user.id,
+            "category_key": category_key
+        })
+        return {"success": True, "deleted_count": result.deleted_count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include all routers in the main app
 app.include_router(api_router)
 # app.include_router(voice_router)
