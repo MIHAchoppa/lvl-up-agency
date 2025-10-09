@@ -18,7 +18,7 @@ from ..server import Event, Announcement, AdminAction, execute_admin_action
 
 logger = logging.getLogger(__name__)
 
-admin_assistant_router = APIRouter(prefix="/admin-assistant", tags=["admin-assistant"])
+admin_assistant_router = APIRouter(prefix="/api/admin-assistant", tags=["admin-assistant"])
 
 # Request Models
 class AdminChatRequest(BaseModel):
