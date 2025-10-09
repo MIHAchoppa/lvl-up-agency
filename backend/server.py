@@ -1280,16 +1280,7 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
 # ===== Quizzes Models (continue) =====
 # Keeping single definitions above; remove stray fields
 
-class QuizModelDuplicate(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    title: str
-    topic: str
-    difficulty: str = "medium"
-    audience: str = "all"  # all | cohort
-    questions: List[QuizQuestionDuplicate]
-    created_by: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    published: bool = False
+# Duplicate QuizModelDuplicate removed; using the primary definition above
 
 class QuizSubmission(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
