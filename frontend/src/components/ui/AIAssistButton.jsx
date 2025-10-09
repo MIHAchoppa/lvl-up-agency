@@ -22,7 +22,7 @@ function AIAssistButton({ fieldName, currentValue = '', onSuggest, context = {},
   const handleAIAssist = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${backendUrl}/api/ai/assist`, {
         method: 'POST',
         headers: {
