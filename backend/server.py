@@ -1823,7 +1823,7 @@ async def get_rewards(category: Optional[str] = None, current_user: User = Depen
         tiers = []
 
     # Define dynamic rewards at progressive bean targets
-    milestones = []  # deprecated variable; using labels below
+    # removed milestones variable; using labels directly
     labels = [
         (100_000, "Bronze Bean Achiever", "Profile review + shoutout in Lounge"),
         (250_000, "Silver Bean Achiever", "Small promo + schedule audit"),
