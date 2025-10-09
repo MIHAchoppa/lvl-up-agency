@@ -562,7 +562,7 @@ async def search_influencers(platform: str, keywords: List[str], min_followers: 
         return influencers
         
     except Exception as e:
-        print(f"Influencer search error: {str(e)}")
+        print(f"Influencer search error: {e}")
         return []
 
 async def create_outreach_email(influencer_data: Dict[str, Any]) -> str:
