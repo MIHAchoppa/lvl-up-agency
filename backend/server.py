@@ -1411,7 +1411,7 @@ async def save_quiz(body: dict, current_user: User = Depends(require_role([UserR
 @api_router.get("/quizzes")
 async def list_quizzes(current_user: User = Depends(get_current_user)):
     items = await db.quizzes.find({"published": True}).sort("created_at", -1).to_list(100)
-    return [Quiz(**x) for x in items]
+    return [QuizModel(**x) for x in items]
 
 @api_router.get("/quizzes/{quiz_id}")
 async def get_quiz(quiz_id: str, current_user: User = Depends(get_current_user)):
