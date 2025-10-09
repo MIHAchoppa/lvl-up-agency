@@ -1338,7 +1338,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
         f" Provide a brief explanation per question. Return JSON list with fields: qtype, question, options, correct_answer, explanation."
     )
     try:
-        groq_resp = await groq_client.chat.completions.create(
+        # groq_resp = await groq_client.chat.completions.create(
             model="groq/compound-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.5,
