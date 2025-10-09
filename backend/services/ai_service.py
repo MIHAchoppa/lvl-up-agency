@@ -180,6 +180,133 @@ class AIService:
                     return {"success": True, "data": data.get("data", [])}
         except Exception as e:
             return {"success": False, "error": str(e)}
+    
+    async def get_memory_context(self, user_id: str, session_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get conversation memory for context - token efficient"""
+        if not self.db:
+            return {"messages": [], "summary": None}
+        
+        try:
+            # Get long-term memory summary
+            memory_doc = await self.db.memories.find_one({"user_id": user_id})
+            long_term_summary = memory_doc.get("summary") if memory_doc else None
+            
+            # Get recent conversation (last 5 messages)
+            if session_id:
+                conv_doc = await self.db.conversations.find_one({"session_id": session_id, "user_id": user_id})
+                if conv_doc:
+                    messages = conv_doc.get("messages", [])[-5:]  # Last 5 messages only
+                    return {
+                        "messages": messages,
+                        "summary": conv_doc.get("summary"),
+                        "long_term_summary": long_term_summary
+                    }
+            
+            return {"messages": [], "summary": None, "long_term_summary": long_term_summary}
+        except Exception as e:
+            logger.error(f"Error loading memory: {e}")
+            return {"messages": [], "summary": None}
+    
+    async def save_conversation_turn(self, user_id: str, session_id: str, user_msg: str, ai_msg: str):
+        """Save conversation turn and compress if needed"""
+        if not self.db:
+            return
+        
+        try:
+            from datetime import datetime, timezone
+            turn = {
+                "role": "user",
+                "content": user_msg,
+                "timestamp": datetime.now(timezone.utc)
+            }
+            ai_turn = {
+                "role": "assistant",
+                "content": ai_msg,
+                "timestamp": datetime.now(timezone.utc)
+            }
+            
+            # Update conversation
+            result = await self.db.conversations.update_one(
+                {"session_id": session_id, "user_id": user_id},
+                {
+                    "$push": {"messages": {"$each": [turn, ai_turn]}},
+                    "$set": {"updated_at": datetime.now(timezone.utc)}
+                },
+                upsert=True
+            )
+            
+            # Check if we need to compress (>10 messages)
+            conv = await self.db.conversations.find_one({"session_id": session_id})
+            if conv and len(conv.get("messages", [])) > 10:
+                await self._compress_conversation(session_id, user_id)
+        except Exception as e:
+            logger.error(f"Error saving conversation: {e}")
+    
+    async def _compress_conversation(self, session_id: str, user_id: str):
+        """Compress old messages into summary"""
+        try:
+            conv = await self.db.conversations.find_one({"session_id": session_id})
+            if not conv:
+                return
+            
+            messages = conv.get("messages", [])
+            if len(messages) <= 10:
+                return
+            
+            # Take first 5 messages to summarize
+            to_summarize = messages[:5]
+            keep_recent = messages[5:]
+            
+            # Create summary prompt
+            conversation_text = "\n".join([f"{m['role']}: {m['content']}" for m in to_summarize])
+            summary_prompt = f"Summarize this conversation concisely (2-3 sentences max):\n\n{conversation_text}"
+            
+            result = await self.chat_completion(
+                messages=[{"role": "user", "content": summary_prompt}],
+                max_completion_tokens=150,
+                temperature=0.3
+            )
+            
+            if result.get("success"):
+                summary = result.get("content", "")
+                # Update conversation with summary and keep only recent messages
+                await self.db.conversations.update_one(
+                    {"session_id": session_id},
+                    {
+                        "$set": {
+                            "messages": keep_recent,
+                            "summary": (conv.get("summary", "") + " " + summary).strip()
+                        }
+                    }
+                )
+                logger.info(f"Compressed conversation {session_id}")
+        except Exception as e:
+            logger.error(f"Error compressing conversation: {e}")
+    
+    async def ai_assist(self, field_name: str, current_value: str, context: Dict[str, Any], mode: str = "fill") -> Dict[str, Any]:
+        """AI assist for filling or improving input fields"""
+        try:
+            if mode == "fill":
+                prompt = f"Generate content for the field '{field_name}'. Context: {context}. Be concise and relevant."
+            else:  # improve
+                prompt = f"Improve this content for '{field_name}': '{current_value}'. Context: {context}. Make it more professional and engaging while keeping the same meaning."
+            
+            result = await self.chat_completion(
+                messages=[{"role": "user", "content": prompt}],
+                max_completion_tokens=300,
+                temperature=0.7
+            )
+            
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "suggested_text": result.get("content", "").strip()
+                }
+            else:
+                return {"success": False, "error": result.get("error")}
+        except Exception as e:
+            logger.error(f"AI assist error: {e}")
+            return {"success": False, "error": str(e)}
 
 # Global AI service instance
 ai_service = AIService()
