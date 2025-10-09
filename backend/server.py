@@ -772,7 +772,7 @@ async def audition_upload_complete_auth(upload_id: str = Query(...), current_use
     # Notify admins
     await db.admin_notifications.insert_one({
         "type": "new_audition",
-        "message": f"New audition submitted (upload completed)",
+        "message": "New audition submitted (upload completed)",
         "audition_id": upload_rec["submission_id"],
         "created_at": datetime.now(timezone.utc)
     })
