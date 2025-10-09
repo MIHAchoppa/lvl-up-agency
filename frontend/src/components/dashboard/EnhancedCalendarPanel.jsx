@@ -211,11 +211,20 @@ function EnhancedCalendarPanel() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium">Title*</label>
-                        <Input
-                          value={eventForm.title}
-                          onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
-                          placeholder="Event title"
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            value={eventForm.title}
+                            onChange={(e) => setEventForm({...eventForm, title: e.target.value})}
+                            placeholder="Event title"
+                            className="flex-1"
+                          />
+                          <AIAssistButton
+                            fieldName="Event Title"
+                            currentValue={eventForm.title}
+                            onSuggest={(text) => setEventForm({...eventForm, title: text})}
+                            context={{ event_type: eventForm.event_type }}
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="text-sm font-medium">Type</label>
@@ -236,12 +245,22 @@ function EnhancedCalendarPanel() {
 
                     <div>
                       <label className="text-sm font-medium">Description</label>
-                      <Textarea
-                        value={eventForm.description}
-                        onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
-                        placeholder="Event description"
-                        rows={3}
-                      />
+                      <div className="flex gap-2">
+                        <Textarea
+                          value={eventForm.description}
+                          onChange={(e) => setEventForm({...eventForm, description: e.target.value})}
+                          placeholder="Event description"
+                          rows={3}
+                          className="flex-1"
+                        />
+                        <AIAssistButton
+                          fieldName="Event Description"
+                          currentValue={eventForm.description}
+                          onSuggest={(text) => setEventForm({...eventForm, description: text})}
+                          context={{ event_type: eventForm.event_type, title: eventForm.title }}
+                          className="self-start"
+                        />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
