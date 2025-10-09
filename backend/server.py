@@ -1245,15 +1245,22 @@ async def generate_voice(voice_request: VoiceRequest, current_user: User = Depen
 # STT endpoint (Whisper-like processing)
 @api_router.post("/stt")
 async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
-    # Accept audio/webm or audio/wav and return dummy transcription for now
-    if file.content_type not in ("audio/webm", "audio/wav", "audio/x-wav"):
-        raise HTTPException(status_code=400, detail="Unsupported audio format")
-    # For production, integrate real Whisper transcription here. Placeholder returns fixed string.
-    content = await file.read()
-    if not content:
-        raise HTTPException(status_code=400, detail="Empty audio")
-    # Return placeholder transcription
-    return {"transcription": "This is a placeholder transcription. Audio received successfully."}
+    if not file or not file.filename:
+        raise HTTPException(status_code=400, detail="No file uploaded")
+    # Save temp and send to Groq Whisper
+    tmp_path = f"/tmp/stt_{uuid.uuid4().hex}_{file.filename}"
+    with open(tmp_path, "wb") as f:
+        f.write(await file.read())
+    try:
+        res = await ai_service.stt_transcribe_file(tmp_path)
+        if not res.get("success"):
+            raise HTTPException(status_code=500, detail=res.get("error","STT failed"))
+        return {"transcription": res.get("text", "")}
+    finally:
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
 
 # ===== Quizzes Models (continue) =====
 # Keeping single definitions above; remove stray fields
