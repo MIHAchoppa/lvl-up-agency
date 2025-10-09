@@ -95,10 +95,13 @@ function BeanGeniePanel() {
     // Load initial data
     loadBeanGenieData();
     
+    // Load wheel data
+    loadWheelData();
+    
     // Initial greeting
     setMessages([{
       role: 'assistant',
-      content: "🧞‍♂️ Master, I am BeanGenie™ - your strategic assistant. Command me for organic strategies, bigo wheel tactics, raffle management, and financial tracking!",
+      content: "🧞‍♂️ Hey Boss! I'm BeanGenie™ - your AI coach and strategic partner! I'll help you with:\n\n💪 Growth & Strategy\n🎯 Bigo Wheel Management (gift-to-spin prizes!)\n📊 Performance Coaching\n💰 Monetization Tips\n🎬 Content Planning\n\nWhat do you need help with today?",
       timestamp: new Date()
     }]);
   }, []);
