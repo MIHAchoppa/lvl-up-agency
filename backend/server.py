@@ -1418,7 +1418,7 @@ async def get_quiz(quiz_id: str, current_user: User = Depends(get_current_user))
     q = await db.quizzes.find_one({"id": quiz_id})
     if not q:
         raise HTTPException(status_code=404, detail="Not found")
-    return Quiz(**q)
+    return QuizModel(**q)
 
 @api_router.post("/quizzes/{quiz_id}/submit")
 async def submit_quiz(quiz_id: str, body: dict, current_user: User = Depends(get_current_user)):
