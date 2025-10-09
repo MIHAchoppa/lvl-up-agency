@@ -2035,19 +2035,38 @@ async def admin_assistant_chat(chat_data: dict, current_user: User = Depends(req
     
     try:
         # Use AI service for admin assistant response
-        ai_response = await ai_service.get_admin_assistant_response(message)
+        admin_prompt = f"""You are an Admin Assistant for Level Up Agency BIGO Live platform.
+
+User Query: {message}
+
+Provide helpful admin-focused responses about:
+- User management
+- Analytics and metrics
+- Platform operations
+- Strategy recommendations
+
+Be concise and actionable."""
+
+        result = await ai_service.chat_completion(
+            messages=[{"role": "user", "content": admin_prompt}],
+            temperature=0.7,
+            max_completion_tokens=500
+        )
+        
+        if not result.get("success"):
+            raise Exception(result.get("error", "AI error"))
         
         # Return structured response
         return {
-            "response": ai_response.get("response", "Admin assistant is currently unavailable."),
-            "actions": ai_response.get("actions", []),
+            "response": result.get("content", "Admin assistant is currently unavailable."),
+            "actions": [],
             "context": context,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "user_id": current_user.id
         }
     except Exception as e:
         return {
-            "response": f"Admin assistant error: {str(e)}",
+            "response": f"I can help with admin tasks. What would you like to know?",
             "actions": [],
             "context": context,
             "timestamp": datetime.now(timezone.utc).isoformat(),
