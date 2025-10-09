@@ -20,7 +20,7 @@ from ..server import get_current_user, User, require_role, UserRole
 
 logger = logging.getLogger(__name__)
 
-voice_router = APIRouter(prefix="/voice", tags=["voice"])
+voice_router = APIRouter(prefix="/api/voice", tags=["voice"])
 
 # Voice Request Models
 class VoiceRequest(BaseModel):
