@@ -1374,7 +1374,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
                         "question": f"Briefly explain: {req.topic} (sample)",
                         "explanation": "Sample guidance"
                     })
-        questions = [QuizQuestion(**{
+        questions = [QuizQuestionDuplicate(**{
             "qtype": it.get("qtype", "mcq"),
             "question": it.get("question", ""),
             "options": it.get("options"),
