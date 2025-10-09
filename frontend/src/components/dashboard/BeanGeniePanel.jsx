@@ -240,46 +240,66 @@ function BeanGeniePanel() {
   };
 
   const categorizeAndDisplay = async (response) => {
-    const lowerResponse = response.toLowerCase();
-    
-    // Check for organic strategies
-    if (lowerResponse.includes('organic') || lowerResponse.includes('natural') || lowerResponse.includes('growth')) {
-      const newStrategy = {
-        content: response,
-        timestamp: new Date().toISOString()
-      };
-      setOrganicStrategies(prev => [...prev, newStrategy]);
-      await saveStrategy('organic', newStrategy);
-    }
-    
-    // Check for bigo wheel strategies
-    if (lowerResponse.includes('bigo') || lowerResponse.includes('wheel') || lowerResponse.includes('spin')) {
-      const newStrategy = {
-        content: response,
-        timestamp: new Date().toISOString()
-      };
-      setBigoWheelStrategies(prev => [...prev, newStrategy]);
-      await saveStrategy('bigo', newStrategy);
-    }
-    
-    // Check for raffle mentions
-    if (lowerResponse.includes('raffle') || lowerResponse.includes('ticket') || lowerResponse.includes('contest')) {
-      const nameMatch = response.match(/(?:add|give|assign)\s+(\w+)/i);
-      const ticketMatch = response.match(/(\d+)\s+tickets?/i);
+    try {
+      // Send to backend for intelligent categorization
+      const { data } = await axios.post(`${API}/beangenie/categorize`, {
+        content: response
+      });
       
-      if (nameMatch && ticketMatch) {
-        addRaffleEntry(nameMatch[1], parseInt(ticketMatch[1]));
+      if (data.categories && data.categories.length > 0) {
+        // Update dynamic panels with categorized content
+        const newPanels = { ...dynamicPanels };
+        
+        data.categories.forEach(category => {
+          const panelKey = category.category_key;
+          
+          if (!newPanels[panelKey]) {
+            newPanels[panelKey] = {
+              title: category.category_name,
+              icon: category.icon || '📋',
+              color: category.color || 'yellow',
+              items: []
+            };
+          }
+          
+          newPanels[panelKey].items.push({
+            content: category.extracted_content || response,
+            timestamp: new Date().toISOString(),
+            metadata: category.metadata || {}
+          });
+        });
+        
+        setDynamicPanels(newPanels);
+        
+        // Make sure new panels are active
+        const newActivePanels = [...new Set([...activePanels, ...data.categories.map(c => c.category_key)])];
+        setActivePanels(newActivePanels);
       }
-    }
-    
-    // Check for financial mentions
-    if (lowerResponse.includes('debt') || lowerResponse.includes('owe') || lowerResponse.includes('pay') || lowerResponse.includes('money')) {
-      const nameMatch = response.match(/(\w+)\s+owes?/i);
-      const amountMatch = response.match(/\$?(\d+(?:\.\d{2})?)/);
       
-      if (nameMatch && amountMatch) {
-        addDebtEntry(nameMatch[1], parseFloat(amountMatch[1]));
+      // Legacy handlers for raffles and debts
+      const lowerResponse = response.toLowerCase();
+      
+      // Check for raffle mentions
+      if (lowerResponse.includes('raffle') || lowerResponse.includes('ticket') || lowerResponse.includes('contest')) {
+        const nameMatch = response.match(/(?:add|give|assign)\s+(\w+)/i);
+        const ticketMatch = response.match(/(\d+)\s+tickets?/i);
+        
+        if (nameMatch && ticketMatch) {
+          addRaffleEntry(nameMatch[1], parseInt(ticketMatch[1]));
+        }
       }
+      
+      // Check for financial mentions
+      if (lowerResponse.includes('debt') || lowerResponse.includes('owe') || lowerResponse.includes('pay') || lowerResponse.includes('money')) {
+        const nameMatch = response.match(/(\w+)\s+owes?/i);
+        const amountMatch = response.match(/\$?(\d+(?:\.\d{2})?)/);
+        
+        if (nameMatch && amountMatch) {
+          addDebtEntry(nameMatch[1], parseFloat(amountMatch[1]));
+        }
+      }
+    } catch (error) {
+      console.error('Error categorizing response:', error);
     }
   };
 
