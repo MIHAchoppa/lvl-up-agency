@@ -54,6 +54,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logging.getLogger(__name__).error(f"Failed to seed admin: {e}")
     yield
+        # ensure admins collection exists and is synced
+        await sync_admins_collection(rebuild=False)
+
     # shutdown code
     client.close()
 
