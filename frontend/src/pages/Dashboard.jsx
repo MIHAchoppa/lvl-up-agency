@@ -65,6 +65,7 @@ function Dashboard() {
           </TabsList>
 
           <TabsContent value="ai-coach"><AICoachPanel /></TabsContent>
+          <TabsContent value="beangenie"><BeanGeniePanel /></TabsContent>
           <TabsContent value="voice-assistant"><VoiceAssistantPanel /></TabsContent>
           {(user?.role === 'admin' || user?.role === 'owner') && (
             <>
