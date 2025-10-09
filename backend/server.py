@@ -18,7 +18,7 @@ import asyncio
 import json
 import aiofiles
 import openpyxl
-from groq import AsyncGroq
+# from groq import AsyncGroq  # deprecated direct client, now via REST in ai_service
 import re
 from contextlib import asynccontextmanager
 # Email imports removed - not used in current implementation
