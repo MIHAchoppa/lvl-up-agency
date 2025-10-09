@@ -2683,6 +2683,95 @@ async def delete_beangenie_panel(category_key: str, current_user: User = Depends
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============================================
+# BIGO WHEEL ENDPOINTS
+# ============================================
+
+@api_router.post("/beangenie/wheel")
+async def create_bigo_wheel(wheel_data: dict, current_user: User = Depends(get_current_user)):
+    """Create a new Bigo wheel"""
+    try:
+        wheel_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": current_user.id,
+            "name": wheel_data.get("name", "My Wheel"),
+            "gift_cost": wheel_data.get("gift_cost", 100),
+            "gift_type": wheel_data.get("gift_type", "beans"),
+            "active": True,
+            "created_at": datetime.now(timezone.utc)
+        }
+        await db.bigo_wheels.insert_one(wheel_doc)
+        return wheel_doc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/beangenie/wheel/{wheel_id}/prize")
+async def add_wheel_prize(wheel_id: str, prize_data: dict, current_user: User = Depends(get_current_user)):
+    """Add prize to wheel"""
+    try:
+        prize_doc = {
+            "id": str(uuid.uuid4()),
+            "wheel_id": wheel_id,
+            "user_id": current_user.id,
+            "type": prize_data.get("type", "task"),  # task, physical, content
+            "name": prize_data.get("name"),
+            "description": prize_data.get("description", ""),
+            "icon": prize_data.get("icon", "🎁"),
+            "probability": prize_data.get("probability", 1),
+            "created_at": datetime.now(timezone.utc)
+        }
+        await db.bigo_wheel_prizes.insert_one(prize_doc)
+        return prize_doc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/beangenie/wheel/{wheel_id}/spin")
+async def record_wheel_spin(wheel_id: str, spin_data: dict, current_user: User = Depends(get_current_user)):
+    """Record a wheel spin"""
+    try:
+        spin_doc = {
+            "id": str(uuid.uuid4()),
+            "wheel_id": wheel_id,
+            "user_id": current_user.id,
+            "winner_id": spin_data.get("winner_id"),
+            "winner_name": spin_data.get("winner_name", "Anonymous"),
+            "prize_id": spin_data.get("prize_id"),
+            "prize_name": spin_data.get("prize_name"),
+            "fulfilled": spin_data.get("fulfilled", False),
+            "spun_at": datetime.now(timezone.utc)
+        }
+        await db.bigo_wheel_spins.insert_one(spin_doc)
+        return spin_doc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/beangenie/wheel/active")
+async def get_active_wheel(current_user: User = Depends(get_current_user)):
+    """Get active wheel with prizes and spins"""
+    try:
+        wheel = await db.bigo_wheels.find_one({"user_id": current_user.id, "active": True})
+        if not wheel:
+            return {"wheel": None, "prizes": [], "spins": []}
+        
+        prizes = await db.bigo_wheel_prizes.find({"wheel_id": wheel["id"]}).to_list(100)
+        spins = await db.bigo_wheel_spins.find({"wheel_id": wheel["id"]}).sort("spun_at", -1).limit(20).to_list(20)
+        
+        return {"wheel": wheel, "prizes": prizes, "spins": spins}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/beangenie/wheel/{wheel_id}/spin/{spin_id}/fulfill")
+async def mark_spin_fulfilled(wheel_id: str, spin_id: str, current_user: User = Depends(get_current_user)):
+    """Mark a spin as fulfilled"""
+    try:
+        result = await db.bigo_wheel_spins.update_one(
+            {"id": spin_id, "user_id": current_user.id},
+            {"$set": {"fulfilled": True, "fulfilled_at": datetime.now(timezone.utc)}}
+        )
+        return {"success": result.modified_count > 0}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include all routers in the main app
 app.include_router(api_router)
 # app.include_router(voice_router)
