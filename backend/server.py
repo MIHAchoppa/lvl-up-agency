@@ -1305,7 +1305,7 @@ class QuizModel(BaseModel):
     topic: str
     difficulty: str = "medium"
     audience: str = "all"  # all | cohort
-    questions: List[QuizQuestion]
+    questions: List[QuizQuestionDuplicate]
     created_by: str
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     published: bool = False
