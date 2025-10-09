@@ -65,6 +65,10 @@ function Dashboard() {
           {(user?.role === 'admin' || user?.role === 'owner') && (
             <TabsContent value="admin-assistant"><EnhancedAdminAssistantPanel /></TabsContent>
           )}
+          {(user?.role === 'admin' || user?.role === 'owner') && (
+            <TabsContent value="models"><AdminModelsPanel /></TabsContent>
+          )}
+
           <TabsContent value="calendar"><CalendarPanel /></TabsContent>
           <TabsContent value="messages"><MessagesPanel /></TabsContent>
           <TabsContent value="announcements"><AnnouncementsPanel /></TabsContent>
