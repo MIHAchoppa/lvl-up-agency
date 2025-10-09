@@ -1990,6 +1990,51 @@ async def get_all_redemptions(current_user: User = Depends(require_role([UserRol
     redemptions = await db.redemptions.find({}).sort("requested_at", -1).to_list(1000)
     return [Redemption(**red) for red in redemptions]
 
+# Voice router endpoints (moved to /api/voice)
+@api_router.get("/voice/voices")
+async def get_voice_voices(current_user: User = Depends(get_current_user)):
+    """Get available voices from voice service (fallback implementation)"""
+    try:
+        # Return fallback voices list
+        return {
+            "voices": [
+                {"id": "coach_voice", "name": "Strategy Coach", "type": "coach"},
+                {"id": "admin_voice", "name": "Admin Assistant", "type": "admin"},
+                {"id": "motivational_voice", "name": "Motivational Coach", "type": "motivational"}
+            ],
+            "status": "fallback"
+        }
+    except Exception as e:
+        return {"voices": [], "error": str(e)}
+
+# Admin assistant router endpoints (moved to /api/admin-assistant)
+@api_router.post("/admin-assistant/chat")
+async def admin_assistant_chat(chat_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    """Admin assistant chat endpoint with structured response"""
+    message = chat_data.get("message", "")
+    context = chat_data.get("context", {})
+    
+    try:
+        # Use AI service for admin assistant response
+        ai_response = await ai_service.get_admin_assistant_response(message)
+        
+        # Return structured response
+        return {
+            "response": ai_response.get("response", "Admin assistant is currently unavailable."),
+            "actions": ai_response.get("actions", []),
+            "context": context,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "user_id": current_user.id
+        }
+    except Exception as e:
+        return {
+            "response": f"Admin assistant error: {str(e)}",
+            "actions": [],
+            "context": context,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "user_id": current_user.id
+        }
+
 # Include all routers in the main app
 app.include_router(api_router)
 # app.include_router(voice_router)
