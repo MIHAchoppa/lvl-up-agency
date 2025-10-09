@@ -13,10 +13,10 @@ import asyncio
 import logging
 from datetime import datetime
 
-from ..services.voice_service import voice_service
-from ..services.ai_service import ai_service
-from ..services.websocket_service import connection_manager
-from ..server import get_current_user, User, require_role, UserRole
+from services.voice_service import voice_service
+from services.ai_service import ai_service
+from services.websocket_service import connection_manager
+from server import get_current_user, User, require_role, UserRole
 
 logger = logging.getLogger(__name__)
 
