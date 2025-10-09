@@ -35,13 +35,23 @@ export function AuthProvider({ children }) {
     return user;
   };
 
+  const register = async (payload) => {
+    // payload: { name, email, bigo_id, password, passcode? }
+    const res = await axios.post(`${API}/auth/register`, payload);
+    const { access_token, user } = res.data;
+    localStorage.setItem('token', access_token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+    setUser(user);
+    return user;
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     delete axios.defaults.headers.common['Authorization'];
     setUser(null);
   };
 
-  const value = useMemo(() => ({ user, loading, login, logout }), [user, loading]);
+  const value = useMemo(() => ({ user, loading, login, logout, register }), [user, loading]);
 
   return (
     <AuthContext.Provider value={value}>
