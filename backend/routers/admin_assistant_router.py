@@ -11,10 +11,10 @@ import logging
 from datetime import datetime, timedelta, timezone
 import json
 
-from ..services.ai_service import ai_service
-from ..services.websocket_service import connection_manager
-from ..server import get_current_user, User, require_role, UserRole, db
-from ..server import Event, Announcement, AdminAction, execute_admin_action
+from services.ai_service import ai_service
+from services.websocket_service import connection_manager
+from server import get_current_user, User, require_role, UserRole, db
+from server import Event, Announcement, AdminAction, execute_admin_action
 
 logger = logging.getLogger(__name__)
 
