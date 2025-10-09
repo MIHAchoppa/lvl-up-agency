@@ -4,7 +4,7 @@ import io
 from datetime import datetime
 
 # Test the full flow and debug the video streaming issue
-base_url = "https://host-dashboard-8.preview.emergentagent.com"
+base_url = "https://bugzapper-beans.preview.emergentagent.com"
 api_url = f"{base_url}/api"
 
 # 1. Register host

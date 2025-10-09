@@ -3,7 +3,7 @@ import sys
 
 def test_demo_user():
     """Test the specific demo user credentials mentioned in the request"""
-    base_url = "https://host-dashboard-8.preview.emergentagent.com"
+    base_url = "https://bugzapper-beans.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("🔍 Testing Demo User Credentials")
@@ -63,7 +63,7 @@ def test_demo_user():
 
 def test_invalid_credentials():
     """Test invalid credentials to verify error handling"""
-    base_url = "https://host-dashboard-8.preview.emergentagent.com"
+    base_url = "https://bugzapper-beans.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     print("\n🔒 Testing Invalid Credentials")
