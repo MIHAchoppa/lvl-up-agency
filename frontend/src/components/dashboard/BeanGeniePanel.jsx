@@ -103,8 +103,11 @@ function BeanGeniePanel() {
   const loadBeanGenieData = async () => {
     try {
       const { data } = await axios.get(`${API}/beangenie/data`);
-      setOrganicStrategies(data.organicStrategies || []);
-      setBigoWheelStrategies(data.bigoWheelStrategies || []);
+      
+      // Load dynamic panels
+      setDynamicPanels(data.dynamicPanels || {});
+      
+      // Legacy data
       setRaffles(data.raffles || []);
       setDebts(data.debts || []);
       setNotes(data.notes || '');
