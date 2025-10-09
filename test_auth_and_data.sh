@@ -124,7 +124,7 @@ CREATE_EVENT=$(curl -s -X POST $BASE_URL/events \
   -d '{
     "title": "Test Event",
     "description": "Test Description",
-    "event_type": "training",
+    "event_type": "agency",
     "start_time": "2025-12-01T10:00:00Z"
   }')
 
