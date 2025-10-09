@@ -2287,18 +2287,35 @@ class BeanGenieDebt(BaseModel):
 async def get_beangenie_data(current_user: User = Depends(get_current_user)):
     """Get all BeanGenie data for current user"""
     try:
-        # Get all user's BeanGenie data
-        strategies = await db.beangenie_strategies.find({"user_id": current_user.id}).to_list(100)
+        # Get dynamic panels
+        panels_cursor = db.beangenie_panels.find({"user_id": current_user.id})
+        panels_list = await panels_cursor.to_list(100)
+        
+        # Organize panels by category key
+        dynamic_panels = {}
+        for panel in panels_list:
+            category_key = panel.get("category_key")
+            if category_key:
+                if category_key not in dynamic_panels:
+                    dynamic_panels[category_key] = {
+                        "title": panel.get("category_name", "Unknown"),
+                        "icon": panel.get("icon", "📋"),
+                        "color": panel.get("color", "yellow"),
+                        "items": []
+                    }
+                dynamic_panels[category_key]["items"].append({
+                    "content": panel.get("content"),
+                    "timestamp": panel.get("timestamp"),
+                    "metadata": panel.get("metadata", {})
+                })
+        
+        # Get legacy data
         raffles = await db.beangenie_raffles.find({"user_id": current_user.id}).to_list(100)
         debts = await db.beangenie_debts.find({"user_id": current_user.id}).to_list(100)
         notes_doc = await db.beangenie_notes.find_one({"user_id": current_user.id})
         
-        organic = [s for s in strategies if s.get("type") == "organic"]
-        bigo = [s for s in strategies if s.get("type") == "bigo"]
-        
         return {
-            "organicStrategies": organic,
-            "bigoWheelStrategies": bigo,
+            "dynamicPanels": dynamic_panels,
             "raffles": raffles,
             "debts": debts,
             "notes": notes_doc.get("content", "") if notes_doc else ""
