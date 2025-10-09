@@ -535,47 +535,53 @@ function BeanGeniePanel() {
         <div className="flex-1 p-4 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             
-            {/* Organic Strategies */}
-            <Card className="bg-gray-900 border-yellow-500/30">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900">
-                <CardTitle className="text-yellow-400">🌱 Organic Strategies</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-2 max-h-60 overflow-y-auto">
-                {organicStrategies.length === 0 ? (
-                  <p className="text-sm text-yellow-400/50">Waiting for organic strategy suggestions...</p>
-                ) : (
-                  organicStrategies.map((strategy, idx) => (
-                    <div key={idx} className="bg-black/50 p-2 rounded border-l-4 border-yellow-500">
-                      <div className="text-sm text-yellow-400">{strategy.content}</div>
-                      <div className="text-xs text-yellow-400/50 mt-1">
-                        {new Date(strategy.timestamp).toLocaleTimeString()}
+            {/* Dynamic Panels - Rendered based on conversation */}
+            {Object.entries(dynamicPanels).map(([panelKey, panel]) => (
+              <Card key={panelKey} className="bg-gray-900 border-yellow-500/30">
+                <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 flex flex-row items-center justify-between">
+                  <CardTitle className="text-yellow-400">
+                    {panel.icon} {panel.title}
+                  </CardTitle>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => clearPanel(panelKey)}
+                    className="text-yellow-400/50 hover:text-yellow-400"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </Button>
+                </CardHeader>
+                <CardContent className="p-4 space-y-2 max-h-60 overflow-y-auto">
+                  {(!panel.items || panel.items.length === 0) ? (
+                    <p className="text-sm text-yellow-400/50">No {panel.title.toLowerCase()} yet...</p>
+                  ) : (
+                    panel.items.map((item, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`bg-black/50 p-2 rounded border-l-4`}
+                        style={{ borderLeftColor: panel.color === 'yellow' ? '#EAB308' : panel.color === 'blue' ? '#3B82F6' : panel.color === 'green' ? '#10B981' : panel.color === 'red' ? '#EF4444' : '#A855F7' }}
+                      >
+                        <div className="text-sm text-yellow-400">{item.content}</div>
+                        {item.metadata && Object.keys(item.metadata).length > 0 && (
+                          <div className="text-xs text-yellow-400/70 mt-1">
+                            {Object.entries(item.metadata).map(([key, value]) => (
+                              <span key={key} className="mr-2">
+                                <strong>{key}:</strong> {value}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="text-xs text-yellow-400/50 mt-1">
+                          {new Date(item.timestamp).toLocaleTimeString()}
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Digital Bigo Wheel */}
-            <Card className="bg-gray-900 border-yellow-500/30">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900">
-                <CardTitle className="text-yellow-400">🎯 Digital Bigo Wheel</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 space-y-2 max-h-60 overflow-y-auto">
-                {bigoWheelStrategies.length === 0 ? (
-                  <p className="text-sm text-yellow-400/50">No wheel strategies loaded...</p>
-                ) : (
-                  bigoWheelStrategies.map((strategy, idx) => (
-                    <div key={idx} className="bg-black/50 p-2 rounded border-l-4 border-blue-500">
-                      <div className="text-sm text-yellow-400">{strategy.content}</div>
-                      <div className="text-xs text-yellow-400/50 mt-1">
-                        {new Date(strategy.timestamp).toLocaleTimeString()}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            ))}
 
             {/* Raffles & Contests */}
             <Card className="bg-gray-900 border-yellow-500/30">
