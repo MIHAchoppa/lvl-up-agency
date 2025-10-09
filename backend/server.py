@@ -822,16 +822,14 @@ async def public_onboarding_chat(req: OnboardingChatRequest):
         "Avoid making promises; emphasize coaching, community, and realistic earnings ranges based on effort."
     )
     try:
-        comp = await groq_client.chat.completions.create(
-            model="groq/compound-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": msg}
-            ],
-            temperature=0.6,
-            max_tokens=500
-        )
-        text = comp.choices[0].message.content
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": msg}
+        ]
+        ai_resp = await ai_service.chat_completion(messages, temperature=0.6, max_completion_tokens=500)
+        if not ai_resp.get("success"):
+            raise HTTPException(status_code=500, detail=ai_resp.get("error", "AI error"))
+        text = ai_resp.get("content", "")
         # Store lightweight transcript (best-effort)
         try:
             await db.public_onboarding_chats.insert_one({
@@ -843,6 +841,8 @@ async def public_onboarding_chat(req: OnboardingChatRequest):
         except Exception:
             pass
         return {"response": text}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
