@@ -53,6 +53,61 @@
       - working: true
         agent: "testing"
         comment: "VERIFIED: Demo host creation successful. Generated unique BIGO ID 'demo_host_005233', registered with password 'host123' and email 'demo_host_005233@lvlup.com'. POST /api/auth/register returned 200 status with access_token and user.role='host' confirmed. All verification criteria met."
+  - task: "Router prefix compliance and endpoint accessibility"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: All API routes properly prefixed with /api and reachable. Fixed import issues in router files. TTS endpoints (/api/tts/voices, /api/tts/speak) working, public AI chat reachable, AI chat research permissions enforced (403 for non-admin, 200 for admin), STT endpoint working with placeholder transcription, voice router fallback implemented at /api/voice/voices, admin assistant router implemented at /api/admin-assistant/chat with structured response. All audition endpoints functional. Kubernetes ingress rule compliance confirmed."
+  - task: "AI chat research permissions enforcement"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: AI chat research permissions working correctly. Non-admin users (hosts) receive 403 when using use_research=true parameter. Admin users receive 200 and can access research features. Permission enforcement implemented in /api/ai/chat endpoint."
+  - task: "STT endpoint implementation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: STT endpoint /api/stt implemented and working. Accepts audio/webm files and returns placeholder transcription. Endpoint properly handles file uploads and returns structured response with transcription field."
+  - task: "Voice service fallback endpoints"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Voice service fallback implemented at /api/voice/voices. Returns structured response with fallback voices list including coach, admin, and motivational voice types. Endpoint requires authentication and provides graceful fallback when voice service is unavailable."
+  - task: "Admin assistant structured responses"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "VERIFIED: Admin assistant endpoint /api/admin-assistant/chat implemented with structured responses. Requires admin authentication, returns structured JSON with response, actions, context, timestamp, and user_id fields. Integrates with AI service for admin assistant functionality."
 
 ## frontend:
   - task: "Admin login tab added in Auth page"
