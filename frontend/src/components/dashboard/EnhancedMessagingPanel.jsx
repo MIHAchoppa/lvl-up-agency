@@ -7,13 +7,16 @@ import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { toast } from 'sonner';
 import AIAssistButton from '../ui/AIAssistButton';
+import { useAuth } from '../../context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function EnhancedMessagingPanel() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('lounge');
   const [channels, setChannels] = useState([]);
   const [selectedChannel, setSelectedChannel] = useState(null);
@@ -21,12 +24,25 @@ function EnhancedMessagingPanel() {
   const [privateMessages, setPrivateMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState([]);
   const [wsConnection, setWsConnection] = useState(null);
   
+  // New message dialog
+  const [showNewMessageDialog, setShowNewMessageDialog] = useState(false);
+  const [newMessageRecipient, setNewMessageRecipient] = useState('');
+  
+  // @ mention states
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const inputRef = useRef(null);
 
   // Initialize WebSocket connection
   useEffect(() => {
