@@ -90,6 +90,7 @@ class AIService:
         stream: bool = False,
     ) -> Dict[str, Any]:
         try:
+            headers = await self.get_headers_json()
             payload = {
                 "model": model or self.default_chat_model,
                 "messages": messages,
@@ -102,7 +103,7 @@ class AIService:
 
             timeout_config = aiohttp.ClientTimeout(total=timeout)
             async with aiohttp.ClientSession(timeout=timeout_config) as session:
-                async with session.post(self.chat_url, json=payload, headers=self.headers_json) as response:
+                async with session.post(self.chat_url, json=payload, headers=headers) as response:
                     if response.status == 200:
                         data = await response.json()
                         content = (
