@@ -117,14 +117,15 @@ function BeanGeniePanel() {
     }
   };
 
-  const sendMessage = async (messageText = null) => {
+  const sendMessage = async (messageText = null, contextCategory = null) => {
     const message = (messageText || input).trim();
     if (!message) return;
     
     const userMessage = {
       role: 'user',
       content: message,
-      timestamp: new Date()
+      timestamp: new Date(),
+      category: contextCategory
     };
     
     setMessages(prev => [...prev, userMessage]);
@@ -132,15 +133,26 @@ function BeanGeniePanel() {
     setLoading(true);
 
     try {
+      // Include active panel context for smarter responses
+      const activePanelContext = Object.entries(dynamicPanels).map(([key, panel]) => ({
+        category: key,
+        title: panel.title,
+        recent_items: panel.items.slice(-3).map(i => i.content)
+      }));
+
       const { data } = await axios.post(`${API}/beangenie/chat`, {
         message,
-        session_id: sessionId.current
+        session_id: sessionId.current,
+        active_context: contextCategory,
+        panel_context: activePanelContext,
+        user_role: user?.role
       });
 
       const assistantMessage = {
         role: 'assistant',
         content: data.response,
-        timestamp: new Date()
+        timestamp: new Date(),
+        category: contextCategory
       };
 
       setMessages(prev => [...prev, assistantMessage]);
