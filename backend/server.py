@@ -573,17 +573,13 @@ The email should:
 Keep it under 200 words and professional but exciting."""
 
         # migrated to ai_service.chat_completion
-        # response = await groq_client.chat.completions.create(
-            model="openai/gpt-oss-20b",
-            messages=[
-                {"role": "system", "content": "You are an expert email copywriter specializing in influencer recruitment for BIGO Live hosting."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1024
-        )
-        
-        return response.choices[0].message.content
+                ai = await ai_service.chat_completion([
+            {"role": "system", "content": "You are an expert email copywriter specializing in influencer recruitment for BIGO Live hosting."},
+            {"role": "user", "content": prompt}
+        ], temperature=0.7, max_completion_tokens=800)
+        if not ai.get("success"):
+            return "We couldn't generate the email right now. Please try again."
+        return ai.get("content", "")
         
     except Exception as e:
         return f"Error creating email: {str(e)}"
