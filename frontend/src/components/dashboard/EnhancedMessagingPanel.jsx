@@ -544,18 +544,11 @@ function EnhancedMessagingPanel() {
                     {selectedChannel && (
                       <div className="flex gap-2">
                         <Input
+                          ref={inputRef}
                           value={newMessage}
-                          onChange={(e) => {
-                            setNewMessage(e.target.value);
-                            handleTyping();
-                          }}
+                          onChange={handleInputChange}
                           placeholder={`Message #${selectedChannel.name}...`}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              sendMessage();
-                            }
-                          }}
+                          onKeyDown={handleKeyDown}
                           disabled={loading}
                           className="flex-1"
                         />
