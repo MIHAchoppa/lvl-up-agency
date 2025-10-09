@@ -1382,7 +1382,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
             "explanation": it.get("explanation")
         }) for it in items]
         title = f"{req.topic.title()} – {req.difficulty.title()}"
-        quiz = QuizModel(
+        quiz = QuizModelDuplicate(
             title=title,
             topic=req.topic,
             difficulty=req.difficulty,
@@ -1398,7 +1398,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
 @api_router.post("/admin/quizzes")
 async def save_quiz(body: dict, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH, UserRole.OWNER]))):
     try:
-        quiz = QuizModel(**body)
+        quiz = QuizModelDuplicate(**body)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid quiz payload: {e}")
     await db.quizzes.insert_one(quiz.dict())
@@ -1411,14 +1411,14 @@ async def save_quiz(body: dict, current_user: User = Depends(require_role([UserR
 @api_router.get("/quizzes")
 async def list_quizzes(current_user: User = Depends(get_current_user)):
     items = await db.quizzes.find({"published": True}).sort("created_at", -1).to_list(100)
-    return [QuizModel(**x) for x in items]
+    return [QuizModelDuplicate(**x) for x in items]
 
 @api_router.get("/quizzes/{quiz_id}")
 async def get_quiz(quiz_id: str, current_user: User = Depends(get_current_user)):
     q = await db.quizzes.find_one({"id": quiz_id})
     if not q:
         raise HTTPException(status_code=404, detail="Not found")
-    return QuizModel(**q)
+    return QuizModelDuplicate(**q)
 
 @api_router.post("/quizzes/{quiz_id}/submit")
 async def submit_quiz(quiz_id: str, body: dict, current_user: User = Depends(get_current_user)):
@@ -1738,7 +1738,7 @@ async def review_submission(submission_id: str, review_data: dict, current_user:
 # Quiz Routes
 @api_router.post("/quizzes")
 async def create_quiz(quiz_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
-    quiz = QuizModel(**quiz_data)
+    quiz = QuizModelDuplicate(**quiz_data)
     await db.quizzes.insert_one(quiz.dict())
     return quiz
 
@@ -1749,7 +1749,7 @@ async def get_quizzes(category: Optional[str] = None, current_user: User = Depen
         filter_query["category"] = category
     
     quizzes = await db.quizzes.find(filter_query).to_list(1000)
-    return [QuizModel(**quiz) for quiz in quizzes]
+    return [QuizModelDuplicate(**quiz) for quiz in quizzes]
 
 @api_router.get("/quizzes/{quiz_id}/questions")
 async def get_quiz_questions(quiz_id: str, current_user: User = Depends(get_current_user)):
