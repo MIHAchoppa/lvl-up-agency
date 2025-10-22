@@ -21,6 +21,7 @@ function EnhancedAdminAssistantPanel() {
   const [suggestions, setSuggestions] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
   const [autoExecute, setAutoExecute] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   
   // Quick command templates
   const [quickCommands] = useState([
@@ -33,6 +34,7 @@ function EnhancedAdminAssistantPanel() {
   ]);
 
   const messagesEndRef = useRef(null);
+  const currentAudioRef = useRef(null);
 
   useEffect(() => {
     fetchAnalytics();
@@ -135,6 +137,9 @@ function EnhancedAdminAssistantPanel() {
       if (result.action && result.payload) {
         await handleCalendarAction(result.action, result.payload);
       }
+
+      // Generate voice for the response
+      await speakText(result.response);
 
     } catch (error) {
       console.error('Chat error:', error);
@@ -275,6 +280,51 @@ function EnhancedAdminAssistantPanel() {
     await sendMessage(`Execute: ${suggestion.action}`);
   };
 
+  const speakText = async (text) => {
+    try {
+      setIsSpeaking(true);
+      
+      // Limit text length for TTS (first 500 characters)
+      const textToSpeak = text.substring(0, 500);
+      
+      const { data } = await axios.post(`${API}/tts/speak`, {
+        text: textToSpeak,
+        voice: 'Fritz-PlayAI'
+      });
+
+      if (data.audio_base64) {
+        const audioData = `data:audio/wav;base64,${data.audio_base64}`;
+        const audio = new Audio(audioData);
+        
+        currentAudioRef.current = audio;
+        
+        audio.onended = () => {
+          setIsSpeaking(false);
+          currentAudioRef.current = null;
+        };
+
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          currentAudioRef.current = null;
+        };
+
+        await audio.play();
+      }
+    } catch (error) {
+      console.error('TTS error:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const stopSpeaking = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+    setIsSpeaking(false);
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -380,6 +430,15 @@ function EnhancedAdminAssistantPanel() {
                       disabled={loading}
                       className="flex-1"
                     />
+                    {isSpeaking && (
+                      <Button
+                        onClick={stopSpeaking}
+                        variant="outline"
+                        className="text-red-500"
+                      >
+                        🔇 Stop
+                      </Button>
+                    )}
                     <Button 
                       onClick={() => sendMessage()} 
                       disabled={loading || !input.trim()}

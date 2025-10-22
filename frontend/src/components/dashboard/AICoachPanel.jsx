@@ -103,21 +103,17 @@ function AICoachPanel() {
     setMessages(prev => [...prev, userMessage]);
 
     try {
-      const response = await axios.post(`${API}/voice/tts`, {
+      const response = await axios.post(`${API}/tts/speak`, {
         text: text,
-        voice_type: 'coach',
-        user_context: {
-          role: 'host',
-          tier: 'S5' // This would come from user data
-        }
+        voice: 'Fritz-PlayAI'
       });
 
       const result = response.data;
       
-      if (result.success) {
+      if (result.audio_base64) {
         const assistantMessage = {
           role: 'assistant',
-          content: result.enhanced_text,
+          content: text,
           timestamp: new Date(),
           audio_base64: result.audio_base64,
           voice: true,
@@ -127,9 +123,7 @@ function AICoachPanel() {
         setMessages(prev => [...prev, assistantMessage]);
         
         // Auto-play audio response
-        if (result.audio_base64) {
-          await playAudioResponse(result.audio_base64);
-        }
+        await playAudioResponse(result.audio_base64);
         
         toast.success('🎙️ Voice response generated!');
       } else {
@@ -157,7 +151,7 @@ function AICoachPanel() {
         currentAudio.pause();
       }
       
-      const audioData = `data:audio/mpeg;base64,${audioBase64}`;
+      const audioData = `data:audio/wav;base64,${audioBase64}`;
       const audio = new Audio(audioData);
       
       setCurrentAudio(audio);
