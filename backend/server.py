@@ -678,7 +678,6 @@ class AuditionSubmission(BaseModel):
 
 # GridFS setup for audition videos
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-import shutil
 import mimetypes
 
 gridfs_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="audition_videos")
