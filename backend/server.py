@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -18,17 +18,11 @@ import asyncio
 import json
 import aiofiles
 import openpyxl
-# from groq import AsyncGroq  # deprecated direct client, now via REST in ai_service
 import re
 from contextlib import asynccontextmanager
-# Email imports removed - not used in current implementation
 
-# Import new services and routers
+# Import new services
 from services.ai_service import ai_service
-from services.voice_service import voice_service  
-from services.websocket_service import connection_manager
-# from routers.voice_router import voice_router
-# from routers.admin_assistant_router import admin_assistant_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -250,7 +244,7 @@ class Event(BaseModel):
     active: bool = True
     category: str = "general"
 
-class QuizModelDuplicate(BaseModel):
+class Quiz(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     description: str
@@ -260,7 +254,7 @@ class QuizModelDuplicate(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
 
-class QuizQuestionDuplicate(BaseModel):
+class QuizQuestion(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     quiz_id: str
     prompt: str
@@ -398,12 +392,24 @@ class ProfilePost(BaseModel):
 
 # Helper functions
 def hash_password(password: str) -> str:
+    """Hash a password using bcrypt."""
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against its hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """
+    Create a JWT access token.
+    
+    Args:
+        data: Dictionary containing the token payload
+        expires_delta: Optional custom expiration time, defaults to 24 hours
+    
+    Returns:
+        Encoded JWT token string
+    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -414,6 +420,18 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get the current authenticated user from JWT token.
+    
+    Args:
+        credentials: HTTP Bearer credentials containing JWT token
+    
+    Returns:
+        User object if authentication successful
+    
+    Raises:
+        HTTPException: If token is invalid or user not found
+    """
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
@@ -428,6 +446,18 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def require_role(required_roles: List[UserRole]):
+    """
+    Dependency to require specific user roles for endpoints.
+    
+    Args:
+        required_roles: List of UserRole enums that are allowed
+    
+    Returns:
+        Role checker dependency function
+    
+    Raises:
+        HTTPException: If user doesn't have required role
+    """
     def role_checker(current_user: User = Depends(get_current_user)):
         if current_user.role not in required_roles:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
@@ -648,7 +678,6 @@ class AuditionSubmission(BaseModel):
 
 # GridFS setup for audition videos
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-import shutil
 import mimetypes
 
 gridfs_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="audition_videos")
@@ -832,9 +861,17 @@ class OnboardingChatRequest(BaseModel):
 
 @api_router.post("/public/ai/onboarding-chat")
 async def public_onboarding_chat(req: OnboardingChatRequest):
+    """
+    Public AI chat endpoint for onboarding visitors.
+    
+    Note: In production, this endpoint should have rate limiting applied
+    to prevent abuse (e.g., 10 requests per minute per IP).
+    """
     msg = (req.message or "").strip()
     if not msg:
         raise HTTPException(status_code=400, detail="Message required")
+    if len(msg) > 500:
+        raise HTTPException(status_code=400, detail="Message too long (max 500 characters)")
     system_prompt = (
         "You are Lvl-Up, the LVL-UP onboarding agent for a BIGO Live agency. "
         "Your only goal is to warmly recruit visitors to become paid BIGO Live broadcasters. "
@@ -883,20 +920,7 @@ async def tts_speak(req: TTSRequest, current_user: User = Depends(get_current_us
     return {"audio_base64": res.get("audio_base64"), "mime": res.get("mime")}
 
 
-# DEPRECATE old public endpoints (force auth)
-@api_router.post("/public/audition/upload/init")
-async def audition_upload_init_deprecated():
-    raise HTTPException(status_code=401, detail="Login required to submit an audition")
-
-@api_router.post("/public/audition/upload/chunk")
-async def audition_upload_chunk_deprecated():
-    raise HTTPException(status_code=401, detail="Login required to submit an audition")
-
-@api_router.post("/public/audition/upload/complete")
-async def audition_upload_complete_deprecated():
-    raise HTTPException(status_code=401, detail="Login required to submit an audition")
-
-
+# Public audition endpoints
 @api_router.post("/public/audition/upload/init")
 async def audition_upload_init(meta: AuditionUploadInit):
     # Validate type if provided
@@ -1331,7 +1355,7 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
 # ===== Quizzes Models (continue) =====
 # Keeping single definitions above; remove stray fields
 
-# Duplicate QuizModelDuplicate removed; using the primary definition above
+# Quiz models defined above
 
 class QuizSubmission(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -1396,7 +1420,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
                         "question": f"Briefly explain: {req.topic} (sample)",
                         "explanation": "Sample guidance"
                     })
-        questions = [QuizQuestionDuplicate(**{
+        questions = [QuizQuestion(**{
             "qtype": it.get("qtype", "mcq"),
             "question": it.get("question", ""),
             "options": it.get("options"),
@@ -1404,7 +1428,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
             "explanation": it.get("explanation")
         }) for it in items]
         title = f"{req.topic.title()} – {req.difficulty.title()}"
-        quiz = QuizModelDuplicate(
+        quiz = Quiz(
             title=title,
             topic=req.topic,
             difficulty=req.difficulty,
@@ -1420,7 +1444,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
 @api_router.post("/admin/quizzes")
 async def save_quiz(body: dict, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH, UserRole.OWNER]))):
     try:
-        quiz = QuizModelDuplicate(**body)
+        quiz = Quiz(**body)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid quiz payload: {e}")
     await db.quizzes.insert_one(quiz.dict())
@@ -1433,14 +1457,14 @@ async def save_quiz(body: dict, current_user: User = Depends(require_role([UserR
 @api_router.get("/quizzes")
 async def list_quizzes(current_user: User = Depends(get_current_user)):
     items = await db.quizzes.find({"published": True}).sort("created_at", -1).to_list(100)
-    return [QuizModelDuplicate(**x) for x in items]
+    return [Quiz(**x) for x in items]
 
 @api_router.get("/quizzes/{quiz_id}")
 async def get_quiz(quiz_id: str, current_user: User = Depends(get_current_user)):
     q = await db.quizzes.find_one({"id": quiz_id})
     if not q:
         raise HTTPException(status_code=404, detail="Not found")
-    return QuizModelDuplicate(**q)
+    return Quiz(**q)
 
 @api_router.post("/quizzes/{quiz_id}/submit")
 async def submit_quiz(quiz_id: str, body: dict, current_user: User = Depends(get_current_user)):
@@ -1760,7 +1784,7 @@ async def review_submission(submission_id: str, review_data: dict, current_user:
 # Quiz Routes
 @api_router.post("/quizzes")
 async def create_quiz(quiz_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
-    quiz = QuizModelDuplicate(**quiz_data)
+    quiz = Quiz(**quiz_data)
     await db.quizzes.insert_one(quiz.dict())
     return quiz
 
@@ -1771,12 +1795,12 @@ async def get_quizzes(category: Optional[str] = None, current_user: User = Depen
         filter_query["category"] = category
     
     quizzes = await db.quizzes.find(filter_query).to_list(1000)
-    return [QuizModelDuplicate(**quiz) for quiz in quizzes]
+    return [Quiz(**quiz) for quiz in quizzes]
 
 @api_router.get("/quizzes/{quiz_id}/questions")
 async def get_quiz_questions(quiz_id: str, current_user: User = Depends(get_current_user)):
     questions = await db.quiz_questions.find({"quiz_id": quiz_id}).to_list(1000)
-    return [QuizQuestionDuplicate(**q) for q in questions]
+    return [QuizQuestion(**q) for q in questions]
 
 @api_router.post("/quizzes/{quiz_id}/attempt")
 async def attempt_quiz(quiz_id: str, answers: List[int], current_user: User = Depends(get_current_user)):
@@ -2388,6 +2412,8 @@ async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_curre
     
     if not message:
         raise HTTPException(status_code=400, detail="Message required")
+    if len(message) > 2000:
+        raise HTTPException(status_code=400, detail="Message too long (max 2000 characters)")
     
     try:
         # Enhanced context-aware system prompt
@@ -2817,11 +2843,18 @@ async def mark_spin_fulfilled(wheel_id: str, spin_id: str, current_user: User = 
 
 @api_router.post("/recruiter/chat")
 async def recruiter_chat(chat_data: dict):
-    """AI recruiter chatbot for landing page"""
+    """
+    AI recruiter chatbot for landing page.
+    
+    Note: In production, this endpoint should have rate limiting applied
+    to prevent abuse (e.g., 10 requests per minute per IP).
+    """
     message = chat_data.get("message", "").strip()
     
     if not message:
         raise HTTPException(status_code=400, detail="Message required")
+    if len(message) > 500:
+        raise HTTPException(status_code=400, detail="Message too long (max 500 characters)")
     
     try:
         # Recruiter system prompt
