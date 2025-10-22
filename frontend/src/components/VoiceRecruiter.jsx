@@ -167,13 +167,13 @@ function VoiceRecruiter({ onClose }) {
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-3">
               <img 
-                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
-                alt="BeanGenie Recruiter" 
-                className="h-12 w-12"
+                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+                alt="Level Up Agency Logo" 
+                className="h-12 w-12 rounded-full object-cover"
               />
               <div>
-                <h2 className="text-xl font-bold text-yellow-400">AI Recruiter</h2>
-                <p className="text-sm text-yellow-400/70">Let's get you started!</p>
+                <h2 className="text-xl font-bold text-yellow-400">Voice Recruiter</h2>
+                <p className="text-sm text-yellow-400/70">Join Level Up Agency!</p>
               </div>
             </div>
             <Button
@@ -276,24 +276,38 @@ function VoiceRecruiter({ onClose }) {
             )}
             <Button
               size="sm"
-              onClick={() => sendMessage("I'm a new user interested in becoming a host")}
+              onClick={() => {
+                sendMessage("I want to audition");
+                // Navigate after message or based on action
+                setTimeout(() => {
+                  navigate('/audition');
+                  onClose();
+                }, 2000);
+              }}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              🆕 New Host
+              🎤 I want to audition
             </Button>
             <Button
               size="sm"
-              onClick={() => sendMessage("I'm already a host and want to join")}
+              onClick={() => {
+                sendMessage("I want to register");
+                // Navigate after message or based on action
+                setTimeout(() => {
+                  navigate('/login');
+                  onClose();
+                }, 2000);
+              }}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
-              ✅ Existing Host
+              📝 Register
             </Button>
             <Button
               size="sm"
-              onClick={() => navigate('/audition')}
+              onClick={() => sendMessage("I'm already a host")}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              🎯 Go to Audition
+              ⭐ I'm already a host
             </Button>
           </div>
         </CardContent>

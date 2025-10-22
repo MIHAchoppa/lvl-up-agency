@@ -163,7 +163,8 @@ function BeanGeniePanel() {
         role: 'assistant',
         content: data.response,
         timestamp: new Date(),
-        category: contextCategory
+        category: contextCategory,
+        sources: data.sources || []  // Capture sources from API
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -534,9 +535,9 @@ function BeanGeniePanel() {
         )}
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
         {/* Left - Chat */}
-        <div className="flex flex-col w-1/3 border-r border-yellow-500/30">
+        <div className="flex flex-col w-full md:w-1/3 border-r border-yellow-500/30">
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg, idx) => (
               <div key={idx} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
@@ -545,7 +546,27 @@ function BeanGeniePanel() {
                     ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-black'
                     : 'bg-gray-900 text-yellow-400 border border-yellow-500/30'
                 }`}>
-                  {msg.content}
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                  {/* Sources Section */}
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-yellow-500/30 text-xs">
+                      <div className="font-semibold text-yellow-300 mb-2">📚 Sources:</div>
+                      <div className="space-y-1">
+                        {msg.sources.map((source, sidx) => (
+                          <div key={sidx}>
+                            <a 
+                              href={source.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-yellow-400 hover:text-yellow-300 underline"
+                            >
+                              {source.label}
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
