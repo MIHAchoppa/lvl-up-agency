@@ -7,6 +7,11 @@ import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
+/**
+ * ProtectedRoute - Wrapper component to protect routes that require authentication
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components to render if authenticated
+ */
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();

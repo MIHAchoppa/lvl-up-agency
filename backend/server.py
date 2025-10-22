@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -18,17 +18,11 @@ import asyncio
 import json
 import aiofiles
 import openpyxl
-# from groq import AsyncGroq  # deprecated direct client, now via REST in ai_service
 import re
 from contextlib import asynccontextmanager
-# Email imports removed - not used in current implementation
 
-# Import new services and routers
+# Import new services
 from services.ai_service import ai_service
-from services.voice_service import voice_service  
-from services.websocket_service import connection_manager
-# from routers.voice_router import voice_router
-# from routers.admin_assistant_router import admin_assistant_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -398,12 +392,24 @@ class ProfilePost(BaseModel):
 
 # Helper functions
 def hash_password(password: str) -> str:
+    """Hash a password using bcrypt."""
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a password against its hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    """
+    Create a JWT access token.
+    
+    Args:
+        data: Dictionary containing the token payload
+        expires_delta: Optional custom expiration time, defaults to 24 hours
+    
+    Returns:
+        Encoded JWT token string
+    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -414,6 +420,18 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    Get the current authenticated user from JWT token.
+    
+    Args:
+        credentials: HTTP Bearer credentials containing JWT token
+    
+    Returns:
+        User object if authentication successful
+    
+    Raises:
+        HTTPException: If token is invalid or user not found
+    """
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
@@ -428,6 +446,18 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def require_role(required_roles: List[UserRole]):
+    """
+    Dependency to require specific user roles for endpoints.
+    
+    Args:
+        required_roles: List of UserRole enums that are allowed
+    
+    Returns:
+        Role checker dependency function
+    
+    Raises:
+        HTTPException: If user doesn't have required role
+    """
     def role_checker(current_user: User = Depends(get_current_user)):
         if current_user.role not in required_roles:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
