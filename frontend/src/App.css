@@ -1,12 +1,162 @@
-/* Light Theme Custom Utilities */
-.text-gradient {
-  background: linear-gradient(135deg, #D4AF37, #f59e0b);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Card Effects */
+body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  color: #111827;
+  background-color: #f9fafb;
+}
+
+/* Light Theme Color Variables */
+:root {
+  --color-black: #0A0A0A;
+  --color-gold: #D4AF37;
+  --color-white: #FFFFFF;
+  --color-gray: #9AA0A6;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+}
+
+/* Typography Classes */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.font-serif {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-sans {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Custom Tailwind Extensions */
+.text-gold {
+  color: var(--color-gold);
+}
+
+.bg-gold {
+  background-color: var(--color-gold);
+}
+
+.border-gold {
+  border-color: var(--color-gold);
+}
+
+.hover\:bg-gold\/90:hover {
+  background-color: rgba(212, 175, 55, 0.9);
+}
+
+.bg-gold\/10 {
+  background-color: rgba(212, 175, 55, 0.1);
+}
+
+.bg-gold\/20 {
+  background-color: rgba(212, 175, 55, 0.2);
+}
+
+.border-gold\/20 {
+  border-color: rgba(212, 175, 55, 0.2);
+}
+
+.border-gold\/30 {
+  border-color: rgba(212, 175, 55, 0.3);
+}
+
+/* Light Theme Specific Styles */
+.bg-light {
+  background-color: #ffffff;
+}
+
+.bg-light-secondary {
+  background-color: #f8fafc;
+}
+
+.text-light-primary {
+  color: #1e293b;
+}
+
+.text-light-secondary {
+  color: #64748b;
+}
+
+.border-light {
+  border-color: #e2e8f0;
+}
+
+/* Card Styles for Light Theme */
+.card-light {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.card-light:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Animation Classes */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(212, 175, 55, 0.1),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Light theme scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+}
+
+/* Card hover effects */
 .card-hover {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -16,7 +166,7 @@
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-/* Button Glow Effect */
+/* Button animations */
 .btn-glow {
   position: relative;
   overflow: hidden;
@@ -42,32 +192,226 @@
   left: 100%;
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
+/* Text gradient effects */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-gold), #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Focus states for light theme */
+.focus-gold:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+}
+
+/* Loading states */
+.loading-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Status indicators for light theme */
+.status-dot {
+  position: relative;
+}
+
+.status-dot::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
   width: 8px;
   height: 8px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  border: 2px solid white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
+/* Progress bars */
+.progress-gold {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold),
+    #f59e0b
+  );
 }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+/* Voice assistant specific styles */
+.voice-assistant-pulse {
+  animation: voice-pulse 2s ease-in-out infinite;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #D4AF37;
+@keyframes voice-pulse {
+  0%, 100% { 
+    background-color: var(--color-gold);
+    transform: scale(1);
+  }
+  50% { 
+    background-color: #f59e0b;
+    transform: scale(1.05);
+  }
 }
 
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-  .card-hover {
-    transition: none;
+/* Admin agent specific styles */
+.admin-glow {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+/* Recruitment panel styles */
+.recruitment-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #0ea5e9;
+  border-radius: 12px;
+}
+
+/* Mobile responsiveness helpers */
+@media (max-width: 768px) {
+  .mobile-p-4 {
+    padding: 1rem;
   }
   
-  .btn-glow::before {
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .voice-assistant-mobile {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Light theme specific overrides */
+@media (prefers-color-scheme: light) {
+  body {
+    background-color: #ffffff;
+  }
+  
+  .bg-gray-50 {
+    background-color: #f8fafc !important;
+  }
+  
+  .text-gray-900 {
+    color: #0f172a !important;
+  }
+  
+  .text-gray-600 {
+    color: #475569 !important;
+  }
+  
+  .border-gray-200 {
+    border-color: #e2e8f0 !important;
+  }
+}
+
+/* Utility classes for consistent spacing */
+.space-y-1 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.25rem;
+}
+
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.5rem;
+}
+
+.space-y-3 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0.75rem;
+}
+
+.space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1rem;
+}
+
+.space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 1.5rem;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Floating assistant positioning */
+.floating-assistants {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Success/Error message styles for light theme */
+.toast-success {
+  background-color: #dcfce7;
+  border: 1px solid #16a34a;
+  color: #15803d;
+}
+
+.toast-error {
+  background-color: #fef2f2;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
+  }
+  
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .text-gold {
+    color: #b8860b;
+  }
+  
+  .bg-gold {
+    background-color: #b8860b;
+  }
+  
+  .border-gold {
+    border-color: #b8860b;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer,
+  .animate-float,
+  .loading-pulse,
+  .voice-assistant-pulse {
+    animation: none;
+  }
+  
+  .card-hover {
     transition: none;
   }
 }
