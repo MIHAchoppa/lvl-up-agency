@@ -168,6 +168,44 @@ html {
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(234, 179, 8, 0.3);
   }
+  
+  /* Professional card styles */
+  .card-premium {
+    background: linear-gradient(135deg, rgba(13, 13, 13, 0.95) 0%, rgba(17, 17, 17, 0.95) 100%);
+    border: 1px solid rgba(234, 179, 8, 0.2);
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(234, 179, 8, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-premium:hover {
+    border-color: rgba(234, 179, 8, 0.4);
+    box-shadow: 0 8px 40px rgba(234, 179, 8, 0.25);
+    transform: translateY(-2px);
+  }
+  
+  /* Text shimmer effect */
+  .text-shimmer {
+    background: linear-gradient(
+      90deg,
+      #fbbf24 0%,
+      #f59e0b 25%,
+      #fbbf24 50%,
+      #f59e0b 75%,
+      #fbbf24 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+  }
+  
+  /* Focus ring style */
+  .focus-ring-gold {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.3);
+  }
 }
 
 /* Custom animations */

@@ -21,30 +21,30 @@ function LandingPage() {
     <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
       <header className="border-b border-yellow-500/20 sticky top-0 glass-dark z-50 transition-smooth">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 animate-fade-in">
+          <div className="flex items-center gap-2 sm:gap-3 animate-fade-in">
             <img 
               src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
               alt="Level Up Agency" 
-              className="h-10 w-10 object-contain transition-smooth hover:scale-110"
+              className="h-8 sm:h-10 w-8 sm:w-10 object-contain transition-smooth hover:scale-110"
             />
-            <span className="font-bold text-lg">Level Up Agency</span>
-            <span className="text-yellow-500/50">|</span>
+            <span className="font-bold text-base sm:text-lg">Level Up Agency</span>
+            <span className="hidden sm:inline text-yellow-500/50">|</span>
             <img 
               src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
               alt="BeanGenie" 
-              className="h-8 w-8 object-contain transition-smooth hover:scale-110"
+              className="hidden sm:block h-8 w-8 object-contain transition-smooth hover:scale-110"
             />
-            <span className="text-sm text-gradient-gold font-medium">Powered by BeanGenie™</span>
+            <span className="hidden md:inline text-sm text-gradient-gold font-medium">Powered by BeanGenie™</span>
           </div>
-          <nav className="flex items-center gap-6 text-sm">
-            <a href="#features" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Features</a>
-            <a href="#how" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">How it works</a>
-            <Link to="/login" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Login / Sign up</Link>
+          <nav className="flex items-center gap-3 sm:gap-6 text-sm">
+            <a href="#features" className="hidden sm:inline text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Features</a>
+            <a href="#how" className="hidden md:inline text-gray-300 hover:text-yellow-400 transition-smooth font-medium">How it works</a>
+            <Link to="/login" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Login</Link>
             <button 
               onClick={() => navigate('/dashboard')} 
-              className="ml-2 px-4 py-2 rounded-lg gradient-gold text-black font-bold shadow-gold transition-smooth hover:shadow-gold-lg hover:scale-105"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg gradient-gold text-black font-bold shadow-gold transition-smooth hover:shadow-gold-lg hover:scale-105 text-xs sm:text-sm"
             >
-              Go to Dashboard
+              Dashboard
             </button>
           </nav>
         </div>
