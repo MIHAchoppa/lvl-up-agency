@@ -1,240 +1,139 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import VoiceRecruiter from '../components/VoiceRecruiter';
-import LvlUpRecruitr from '../components/LvlUpRecruitr';
-import Footer from '../components/Footer';
-import { Sparkles, Play, Users, Trophy } from 'lucide-react';
 
 function LandingPage() {
   const navigate = useNavigate();
   const [showRecruiter, setShowRecruiter] = useState(false);
 
   useEffect(() => {
-    // Auto-show recruiter after 3 seconds
+    // Auto-show recruiter after 2 seconds
     const timer = setTimeout(() => {
       setShowRecruiter(true);
-    }, 3000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);
-
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo Section */}
-            <div className="flex items-center gap-2 md:gap-3">
-              <img 
-                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
-                alt="Level Up Agency" 
-                className="h-8 w-8 md:h-10 md:w-10 object-contain"
-              />
-              <span className="font-bold text-lg md:text-xl text-gray-900 font-serif">
-                Level Up Agency
-              </span>
-            </div>
-
-            {/* Navigation */}
-            <nav className="hidden md:flex items-center gap-6 text-sm lg:text-base">
-              <a href="#features" className="text-gray-600 hover:text-gold-600 transition-colors font-medium">
-                Features
-              </a>
-              <a href="#how-it-works" className="text-gray-600 hover:text-gold-600 transition-colors font-medium">
-                How it Works
-              </a>
-              <Link to="/login" className="text-gray-600 hover:text-gold-600 transition-colors font-medium">
-                Login
-              </Link>
-              <Button 
-                onClick={() => navigate('/dashboard')} 
-                className="bg-gold-500 hover:bg-gold-600 text-white px-6 py-2 rounded-lg shadow-md font-semibold btn-glow"
-              >
-                Dashboard
-              </Button>
-            </nav>
-
-            {/* Mobile Menu Button */}
-            <div className="md:hidden flex items-center gap-2">
-              <Link to="/login">
-                <Button variant="ghost" className="text-gray-700">
-                  Login
-                </Button>
-              </Link>
-              <Button 
-                onClick={() => navigate('/dashboard')} 
-                className="bg-gold-500 hover:bg-gold-600 text-white px-4 py-2 text-sm rounded-lg"
-              >
-                Dashboard
-              </Button>
-            </div>
+    <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
+      <header className="border-b border-yellow-500/20 sticky top-0 glass-dark z-50 transition-smooth">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3 animate-fade-in">
+            <img 
+              src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+              alt="Level Up Agency" 
+              className="h-8 sm:h-10 w-8 sm:w-10 object-contain transition-smooth hover:scale-110"
+            />
+            <span className="font-bold text-base sm:text-lg">Level Up Agency</span>
+            <span className="hidden sm:inline text-yellow-500/50">|</span>
+            <img 
+              src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
+              alt="BeanGenie" 
+              className="hidden sm:block h-8 w-8 object-contain transition-smooth hover:scale-110"
+            />
+            <span className="hidden md:inline text-sm text-gradient-gold font-medium">Powered by BeanGenie™</span>
           </div>
+          <nav className="flex items-center gap-3 sm:gap-6 text-sm">
+            <a href="#features" className="hidden sm:inline text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Features</a>
+            <a href="#how" className="hidden md:inline text-gray-300 hover:text-yellow-400 transition-smooth font-medium">How it works</a>
+            <Link to="/login" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Login</Link>
+            <button 
+              onClick={() => navigate('/dashboard')} 
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg gradient-gold text-black font-bold shadow-gold transition-smooth hover:shadow-gold-lg hover:scale-105 text-xs sm:text-sm"
+            >
+              Dashboard
+            </button>
+          </nav>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-gold-50 via-white to-gold-50">
-        {/* Decorative Elements */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-          <div className="absolute top-20 right-10 w-72 h-72 bg-gold-200/30 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-20 left-10 w-96 h-96 bg-gold-100/20 rounded-full blur-3xl"></div>
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left Column - Content */}
-            <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 bg-gold-100 text-gold-800 px-4 py-2 rounded-full text-sm font-medium mb-6">
-                <Sparkles className="w-4 h-4" />
-                <span>AI-Powered Platform</span>
-              </div>
-              
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 font-serif mb-6 leading-tight">
-                Become a Top-Earning
-                <span className="text-gradient"> BIGO Live Host</span>
+      <main>
+        <section className="relative overflow-hidden">
+          <div className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-yellow-500/10 blur-3xl animate-pulse-glow" />
+          <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-amber-500/10 blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 pb-16 grid lg:grid-cols-2 gap-12 items-center">
+            <div className="animate-fade-in-up">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
+                <span className="text-gradient-gold">Become a top-earning</span>
+                <br />
+                <span className="text-white">BIGO Live host</span>
+                <br />
+                <span className="text-white">with AI coaching</span>
               </h1>
-              
-              <p className="text-lg md:text-xl text-gray-600 mb-8 leading-relaxed">
-                Transform your streaming career with Bean Genie's AI coaching, expert guidance, and a supportive community. Start earning more today!
+              <p className="mt-6 text-gray-300 text-lg md:text-xl leading-relaxed">
+                Audition, learn, and grow with Bean Genie and our AI-powered platform. Strategy, events, PK prep, and more.
               </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button 
-                  onClick={() => navigate('/dashboard')}
-                  className="bg-gold-500 hover:bg-gold-600 text-white px-8 py-6 text-lg rounded-xl shadow-lg font-semibold btn-glow"
+              <div className="mt-8 flex flex-wrap gap-4">
+                <button 
+                  onClick={() => navigate('/dashboard')} 
+                  className="px-6 py-3.5 rounded-xl gradient-gold text-black font-bold shadow-gold-lg transition-smooth hover:scale-105 hover:shadow-gold"
                 >
-                  <Play className="w-5 h-5 mr-2" />
-                  Get Started Now
-                </Button>
-                <Link to="/login">
-                  <Button 
-                    variant="outline"
-                    className="border-2 border-gold-500 text-gold-600 hover:bg-gold-50 px-8 py-6 text-lg rounded-xl font-semibold w-full sm:w-auto"
-                  >
-                    Sign Up Free
-                  </Button>
+                  Enter Dashboard →
+                </button>
+                <Link 
+                  to="/login" 
+                  className="px-6 py-3.5 rounded-xl border-2 border-yellow-500/40 text-yellow-400 font-bold transition-smooth hover:border-yellow-400 hover:bg-yellow-500/10 hover:scale-105"
+                >
+                  Login / Sign up
                 </Link>
               </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-gray-200">
-                <div className="text-center lg:text-left">
-                  <div className="text-3xl font-bold text-gray-900 mb-1">500+</div>
-                  <div className="text-sm text-gray-600">Active Hosts</div>
-                </div>
-                <div className="text-center lg:text-left">
-                  <div className="text-3xl font-bold text-gray-900 mb-1">24/7</div>
-                  <div className="text-sm text-gray-600">AI Support</div>
-                </div>
-                <div className="text-center lg:text-left">
-                  <div className="text-3xl font-bold text-gray-900 mb-1">95%</div>
-                  <div className="text-sm text-gray-600">Success Rate</div>
-                </div>
-              </div>
             </div>
-
-            {/* Right Column - Feature Cards */}
-            <div className="relative">
+            <div className="rounded-2xl border border-yellow-500/30 glass p-8 shadow-gold-lg hover-lift animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 card-hover">
-                  <div className="w-12 h-12 bg-gold-100 rounded-xl flex items-center justify-center mb-4">
-                    <Sparkles className="w-6 h-6 text-gold-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 font-serif">AI Coach</h3>
-                  <p className="text-sm text-gray-600">Bean Genie helps you excel</p>
+                <div className="p-5 rounded-xl glass-dark border border-yellow-500/30 hover-lift transition-smooth hover:border-yellow-500/50">
+                  <div className="text-3xl font-bold text-gradient-gold mb-2">AI Coach</div>
+                  <div className="text-gray-400 text-sm">Strategy, beans, PK</div>
                 </div>
-
-                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 card-hover mt-8">
-                  <div className="w-12 h-12 bg-gold-100 rounded-xl flex items-center justify-center mb-4">
-                    <Play className="w-6 h-6 text-gold-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 font-serif">Quick Start</h3>
-                  <p className="text-sm text-gray-600">Stream in minutes</p>
+                <div className="p-5 rounded-xl glass-dark border border-yellow-500/30 hover-lift transition-smooth hover:border-yellow-500/50">
+                  <div className="text-3xl font-bold text-gradient-gold mb-2">Voice</div>
+                  <div className="text-gray-400 text-sm">Bean Genie calls</div>
                 </div>
-
-                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 card-hover">
-                  <div className="w-12 h-12 bg-gold-100 rounded-xl flex items-center justify-center mb-4">
-                    <Users className="w-6 h-6 text-gold-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 font-serif">Community</h3>
-                  <p className="text-sm text-gray-600">Connect with hosts</p>
+                <div className="p-5 rounded-xl glass-dark border border-yellow-500/30 hover-lift transition-smooth hover:border-yellow-500/50">
+                  <div className="text-3xl font-bold text-gradient-gold mb-2">Auditions</div>
+                  <div className="text-gray-400 text-sm">Video upload</div>
                 </div>
-
-                <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 card-hover mt-8">
-                  <div className="w-12 h-12 bg-gold-100 rounded-xl flex items-center justify-center mb-4">
-                    <Trophy className="w-6 h-6 text-gold-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 font-serif">Top Earnings</h3>
-                  <p className="text-sm text-gray-600">Maximize revenue</p>
+                <div className="p-5 rounded-xl glass-dark border border-yellow-500/30 hover-lift transition-smooth hover:border-yellow-500/50">
+                  <div className="text-3xl font-bold text-gradient-gold mb-2">Events</div>
+                  <div className="text-gray-400 text-sm">Calendar & RSVP</div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* How It Works Section */}
-      <section id="how-it-works" className="py-20 px-4 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold font-serif text-gray-900 mb-4">
-              How It Works
+        <section id="features" className="py-20 border-t border-yellow-500/20 bg-gradient-to-b from-transparent to-black/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-center text-gradient-gold mb-12">
+              Powerful Features for Your Success
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Get started in three simple steps and begin your journey to success
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gold-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 shadow-lg">
-                1
-              </div>
-              <h3 className="text-xl font-semibold font-serif text-gray-900 mb-3">
-                Sign Up & Audition
-              </h3>
-              <p className="text-gray-600">
-                Create your account and submit your audition video. Our team reviews applications within 24 hours.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gold-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 shadow-lg">
-                2
-              </div>
-              <h3 className="text-xl font-semibold font-serif text-gray-900 mb-3">
-                Get AI Coaching
-              </h3>
-              <p className="text-gray-600">
-                Work with Bean Genie to develop your streaming strategy, improve your content, and build your audience.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gold-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-6 shadow-lg">
-                3
-              </div>
-              <h3 className="text-xl font-semibold font-serif text-gray-900 mb-3">
-                Start Earning
-              </h3>
-              <p className="text-gray-600">
-                Go live, engage your audience, and watch your earnings grow with our proven strategies and support.
-              </p>
+            <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+              {[
+                { title: "AI Coaching", icon: "🤖", desc: "Get personalized strategies and real-time guidance from advanced AI coaches." },
+                { title: "Audition Upload", icon: "🎬", desc: "Submit your best performances and get professional feedback instantly." },
+                { title: "Group Chat", icon: "💬", desc: "Connect with other hosts, share tips, and build your network." }
+              ].map((feature, i) => (
+                <div 
+                  key={i} 
+                  className="p-8 rounded-2xl glass border border-yellow-500/30 shadow-gold hover-lift transition-smooth hover:border-yellow-500/50 animate-fade-in-up"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <div className="text-5xl mb-4">{feature.icon}</div>
+                  <div className="text-2xl font-bold text-gradient-gold mb-3">{feature.title}</div>
+                  <p className="text-gray-300 leading-relaxed">{feature.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Features Section - Using New Component */}
-      <section id="features">
-        <LvlUpRecruitr />
-      </section>
-
-      {/* Footer */}
-      <Footer />
-
+      <footer className="border-t border-yellow-500/30 py-10 text-center text-gray-400 bg-black/50">
+        <p className="text-sm font-medium">© {new Date().getFullYear()} Level Up Agency. All rights reserved.</p>
+        <p className="text-xs mt-2 text-yellow-500/50">Powered by BeanGenie™ AI Technology</p>
+      </footer>
       {/* Voice Recruiter Modal */}
       {showRecruiter && (
         <VoiceRecruiter onClose={() => setShowRecruiter(false)} />
@@ -244,4 +143,3 @@ function LandingPage() {
 }
 
 export default LandingPage;
-

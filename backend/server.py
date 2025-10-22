@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -18,11 +18,17 @@ import asyncio
 import json
 import aiofiles
 import openpyxl
+# from groq import AsyncGroq  # deprecated direct client, now via REST in ai_service
 import re
 from contextlib import asynccontextmanager
+# Email imports removed - not used in current implementation
 
-# Import new services
+# Import new services and routers
 from services.ai_service import ai_service
+from services.voice_service import voice_service  
+from services.websocket_service import connection_manager
+# from routers.voice_router import voice_router
+# from routers.admin_assistant_router import admin_assistant_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -49,8 +55,20 @@ async def lifespan(app: FastAPI):
             logging.getLogger(__name__).info("Seeded default Admin user")
     except Exception as e:
         logging.getLogger(__name__).error(f"Failed to seed admin: {e}")
+    
     # ensure admins collection exists and is synced before serving
     await sync_admins_collection(rebuild=False)
+    
+    # Create text index on BIGO knowledge base for search
+    try:
+        existing_indexes = await db.bigo_knowledge.list_indexes().to_list(100)
+        has_text_index = any(idx.get("name") == "content_text_title_text" for idx in existing_indexes)
+        if not has_text_index:
+            await db.bigo_knowledge.create_index([("content", "text"), ("title", "text")])
+            logging.getLogger(__name__).info("Created text index on bigo_knowledge collection")
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Could not create bigo_knowledge text index: {e}")
+    
     yield
     # shutdown code
     client.close()
@@ -244,7 +262,7 @@ class Event(BaseModel):
     active: bool = True
     category: str = "general"
 
-class Quiz(BaseModel):
+class QuizModelDuplicate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     title: str
     description: str
@@ -254,7 +272,7 @@ class Quiz(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
 
-class QuizQuestion(BaseModel):
+class QuizQuestionDuplicate(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     quiz_id: str
     prompt: str
@@ -390,26 +408,23 @@ class ProfilePost(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
 
+class BigoKnowledge(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    url: str
+    title: str
+    content: str
+    tags: List[str] = []
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Helper functions
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
     return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    """
-    Create a JWT access token.
-    
-    Args:
-        data: Dictionary containing the token payload
-        expires_delta: Optional custom expiration time, defaults to 24 hours
-    
-    Returns:
-        Encoded JWT token string
-    """
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
@@ -419,19 +434,24 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+async def search_bigo_knowledge(query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    """Search BIGO knowledge base using text search"""
+    try:
+        if not query.strip():
+            return []
+        
+        # Use MongoDB text search
+        results = await db.bigo_knowledge.find(
+            {"$text": {"$search": query}},
+            {"score": {"$meta": "textScore"}}
+        ).sort([("score", {"$meta": "textScore"})]).limit(limit).to_list(limit)
+        
+        return results
+    except Exception as e:
+        logging.getLogger(__name__).error(f"BIGO knowledge search error: {e}")
+        return []
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """
-    Get the current authenticated user from JWT token.
-    
-    Args:
-        credentials: HTTP Bearer credentials containing JWT token
-    
-    Returns:
-        User object if authentication successful
-    
-    Raises:
-        HTTPException: If token is invalid or user not found
-    """
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
@@ -446,18 +466,6 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Invalid token")
 
 def require_role(required_roles: List[UserRole]):
-    """
-    Dependency to require specific user roles for endpoints.
-    
-    Args:
-        required_roles: List of UserRole enums that are allowed
-    
-    Returns:
-        Role checker dependency function
-    
-    Raises:
-        HTTPException: If user doesn't have required role
-    """
     def role_checker(current_user: User = Depends(get_current_user)):
         if current_user.role not in required_roles:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
@@ -678,6 +686,7 @@ class AuditionSubmission(BaseModel):
 
 # GridFS setup for audition videos
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+import shutil
 import mimetypes
 
 gridfs_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="audition_videos")
@@ -861,17 +870,9 @@ class OnboardingChatRequest(BaseModel):
 
 @api_router.post("/public/ai/onboarding-chat")
 async def public_onboarding_chat(req: OnboardingChatRequest):
-    """
-    Public AI chat endpoint for onboarding visitors.
-    
-    Note: In production, this endpoint should have rate limiting applied
-    to prevent abuse (e.g., 10 requests per minute per IP).
-    """
     msg = (req.message or "").strip()
     if not msg:
         raise HTTPException(status_code=400, detail="Message required")
-    if len(msg) > 500:
-        raise HTTPException(status_code=400, detail="Message too long (max 500 characters)")
     system_prompt = (
         "You are Lvl-Up, the LVL-UP onboarding agent for a BIGO Live agency. "
         "Your only goal is to warmly recruit visitors to become paid BIGO Live broadcasters. "
@@ -920,7 +921,20 @@ async def tts_speak(req: TTSRequest, current_user: User = Depends(get_current_us
     return {"audio_base64": res.get("audio_base64"), "mime": res.get("mime")}
 
 
-# Public audition endpoints
+# DEPRECATE old public endpoints (force auth)
+@api_router.post("/public/audition/upload/init")
+async def audition_upload_init_deprecated():
+    raise HTTPException(status_code=401, detail="Login required to submit an audition")
+
+@api_router.post("/public/audition/upload/chunk")
+async def audition_upload_chunk_deprecated():
+    raise HTTPException(status_code=401, detail="Login required to submit an audition")
+
+@api_router.post("/public/audition/upload/complete")
+async def audition_upload_complete_deprecated():
+    raise HTTPException(status_code=401, detail="Login required to submit an audition")
+
+
 @api_router.post("/public/audition/upload/init")
 async def audition_upload_init(meta: AuditionUploadInit):
     # Validate type if provided
@@ -1355,7 +1369,7 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
 # ===== Quizzes Models (continue) =====
 # Keeping single definitions above; remove stray fields
 
-# Quiz models defined above
+# Duplicate QuizModelDuplicate removed; using the primary definition above
 
 class QuizSubmission(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -1420,7 +1434,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
                         "question": f"Briefly explain: {req.topic} (sample)",
                         "explanation": "Sample guidance"
                     })
-        questions = [QuizQuestion(**{
+        questions = [QuizQuestionDuplicate(**{
             "qtype": it.get("qtype", "mcq"),
             "question": it.get("question", ""),
             "options": it.get("options"),
@@ -1428,7 +1442,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
             "explanation": it.get("explanation")
         }) for it in items]
         title = f"{req.topic.title()} – {req.difficulty.title()}"
-        quiz = Quiz(
+        quiz = QuizModelDuplicate(
             title=title,
             topic=req.topic,
             difficulty=req.difficulty,
@@ -1444,7 +1458,7 @@ async def generate_quiz(req: QuizGenRequest, current_user: User = Depends(requir
 @api_router.post("/admin/quizzes")
 async def save_quiz(body: dict, current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.COACH, UserRole.OWNER]))):
     try:
-        quiz = Quiz(**body)
+        quiz = QuizModelDuplicate(**body)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid quiz payload: {e}")
     await db.quizzes.insert_one(quiz.dict())
@@ -1457,14 +1471,14 @@ async def save_quiz(body: dict, current_user: User = Depends(require_role([UserR
 @api_router.get("/quizzes")
 async def list_quizzes(current_user: User = Depends(get_current_user)):
     items = await db.quizzes.find({"published": True}).sort("created_at", -1).to_list(100)
-    return [Quiz(**x) for x in items]
+    return [QuizModelDuplicate(**x) for x in items]
 
 @api_router.get("/quizzes/{quiz_id}")
 async def get_quiz(quiz_id: str, current_user: User = Depends(get_current_user)):
     q = await db.quizzes.find_one({"id": quiz_id})
     if not q:
         raise HTTPException(status_code=404, detail="Not found")
-    return Quiz(**q)
+    return QuizModelDuplicate(**q)
 
 @api_router.post("/quizzes/{quiz_id}/submit")
 async def submit_quiz(quiz_id: str, body: dict, current_user: User = Depends(get_current_user)):
@@ -1784,7 +1798,7 @@ async def review_submission(submission_id: str, review_data: dict, current_user:
 # Quiz Routes
 @api_router.post("/quizzes")
 async def create_quiz(quiz_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
-    quiz = Quiz(**quiz_data)
+    quiz = QuizModelDuplicate(**quiz_data)
     await db.quizzes.insert_one(quiz.dict())
     return quiz
 
@@ -1795,12 +1809,12 @@ async def get_quizzes(category: Optional[str] = None, current_user: User = Depen
         filter_query["category"] = category
     
     quizzes = await db.quizzes.find(filter_query).to_list(1000)
-    return [Quiz(**quiz) for quiz in quizzes]
+    return [QuizModelDuplicate(**quiz) for quiz in quizzes]
 
 @api_router.get("/quizzes/{quiz_id}/questions")
 async def get_quiz_questions(quiz_id: str, current_user: User = Depends(get_current_user)):
     questions = await db.quiz_questions.find({"quiz_id": quiz_id}).to_list(1000)
-    return [QuizQuestion(**q) for q in questions]
+    return [QuizQuestionDuplicate(**q) for q in questions]
 
 @api_router.post("/quizzes/{quiz_id}/attempt")
 async def attempt_quiz(quiz_id: str, answers: List[int], current_user: User = Depends(get_current_user)):
@@ -1870,6 +1884,51 @@ async def get_personal_events(current_user: User = Depends(get_current_user)):
         "active": True
     }).sort("start_time", 1).to_list(1000)
     return [Event(**event) for event in events]
+
+@api_router.put("/events/{event_id}")
+async def update_event(event_id: str, event_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    """Update an existing event"""
+    try:
+        event = await db.events.find_one({"id": event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        # Update allowed fields
+        update_fields = {}
+        allowed_fields = ["title", "description", "event_type", "start_time", "end_time", 
+                         "timezone_display", "flyer_url", "bigo_live_link", "signup_form_link", 
+                         "location", "max_participants", "category"]
+        
+        for field in allowed_fields:
+            if field in event_data:
+                update_fields[field] = event_data[field]
+        
+        if update_fields:
+            await db.events.update_one({"id": event_id}, {"$set": update_fields})
+        
+        updated_event = await db.events.find_one({"id": event_id})
+        return Event(**updated_event)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/events/{event_id}")
+async def delete_event(event_id: str, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    """Delete (soft delete) an event"""
+    try:
+        event = await db.events.find_one({"id": event_id})
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        # Soft delete by setting active=False
+        await db.events.update_one({"id": event_id}, {"$set": {"active": False}})
+        
+        return {"success": True, "message": "Event deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Rewards Routes
 @api_router.get("/rewards")
@@ -2088,12 +2147,12 @@ async def get_voice_voices(current_user: User = Depends(get_current_user)):
 # Admin assistant router endpoints (moved to /api/admin-assistant)
 @api_router.post("/admin-assistant/chat")
 async def admin_assistant_chat(chat_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
-    """Admin assistant chat endpoint with structured response"""
+    """Admin assistant chat endpoint with structured calendar action extraction"""
     message = chat_data.get("message", "")
     context = chat_data.get("context", {})
     
     try:
-        # Use AI service for admin assistant response
+        # Enhanced prompt to extract calendar actions
         admin_prompt = f"""You are an Admin Assistant for Level Up Agency BIGO Live platform.
 
 User Query: {message}
@@ -2103,30 +2162,72 @@ Provide helpful admin-focused responses about:
 - Analytics and metrics
 - Platform operations
 - Strategy recommendations
+- Calendar event management
+
+IMPORTANT: If the user wants to create, update, or delete a calendar event, include a JSON action block at the end.
+
+ACTION EXTRACTION RULES:
+- For "create event" requests: Extract title, description, start_time (ISO format), end_time, event_type (personal/pk/show/community/agency), timezone_display, flyer_url, signup_form_link, location, max_participants
+- For "update event" requests: Extract event_id and fields to update
+- For "delete event" requests: Extract event_id
+
+Response format:
+1. First, provide a natural language response to the user
+2. If applicable, end with:
+ACTION_JSON:
+{{"action": "create_event|update_event|delete_event", "payload": {{...}}}}
+
+Example for create event:
+"I'll create that event for you!
+ACTION_JSON:
+{{"action": "create_event", "payload": {{"title": "Weekly PK", "description": "...", "start_time": "2025-10-25T19:00:00Z", "event_type": "pk", "timezone_display": "PST"}}}}"
 
 Be concise and actionable."""
 
         result = await ai_service.chat_completion(
             messages=[{"role": "user", "content": admin_prompt}],
             temperature=0.7,
-            max_completion_tokens=500
+            max_completion_tokens=600
         )
         
         if not result.get("success"):
             raise Exception(result.get("error", "AI error"))
         
+        ai_response = result.get("content", "Admin assistant is currently unavailable.")
+        
+        # Extract action JSON if present
+        action = None
+        payload = None
+        
+        if "ACTION_JSON:" in ai_response:
+            parts = ai_response.split("ACTION_JSON:")
+            response_text = parts[0].strip()
+            try:
+                action_json_str = parts[1].strip()
+                action_data = json.loads(action_json_str)
+                action = action_data.get("action")
+                payload = action_data.get("payload", {})
+            except (json.JSONDecodeError, IndexError) as e:
+                logging.getLogger(__name__).warning(f"Failed to parse action JSON: {e}")
+                response_text = ai_response
+        else:
+            response_text = ai_response
+        
         # Return structured response
         return {
-            "response": result.get("content", "Admin assistant is currently unavailable."),
-            "actions": [],
+            "response": response_text,
+            "action": action,
+            "payload": payload,
             "context": context,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "user_id": current_user.id
         }
-    except Exception:
+    except Exception as e:
+        logging.getLogger(__name__).error(f"Admin assistant error: {e}")
         return {
             "response": "I can help with admin tasks. What would you like to know?",
-            "actions": [],
+            "action": None,
+            "payload": None,
             "context": context,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "user_id": current_user.id
@@ -2403,7 +2504,7 @@ async def get_beangenie_data(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/beangenie/chat")
 async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_current_user)):
-    """BeanGenie AI chat with context-aware responses"""
+    """BeanGenie AI chat with BIGO-only responses and source citations"""
     message = chat_data.get("message", "").strip()
     session_id = chat_data.get("session_id", str(uuid.uuid4()))
     active_context = chat_data.get("active_context")
@@ -2412,10 +2513,25 @@ async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_curre
     
     if not message:
         raise HTTPException(status_code=400, detail="Message required")
-    if len(message) > 2000:
-        raise HTTPException(status_code=400, detail="Message too long (max 2000 characters)")
     
     try:
+        # Search BIGO knowledge base
+        knowledge_results = await search_bigo_knowledge(message, limit=5)
+        
+        # If no relevant sources found, refuse to answer
+        if not knowledge_results:
+            return {
+                "response": "🔍 I need more BIGO-specific information to help you. Could you rephrase your question with BIGO Live terms? For example, mention 'BIGO beans', 'BIGO streaming', 'BIGO gifts', 'BIGO tier system', or specific BIGO features you want to know about.",
+                "sources": [],
+                "session_id": session_id
+            }
+        
+        # Build context from knowledge sources
+        sources_context = "\n\n".join([
+            f"[{i+1}] {r['title']}\nURL: {r['url']}\n{r['content'][:800]}"
+            for i, r in enumerate(knowledge_results)
+        ])
+        
         # Enhanced context-aware system prompt
         context_info = ""
         if active_context:
@@ -2428,95 +2544,74 @@ async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_curre
                 for p in panel_context[:3]
             ])
         
-        # BeanGenie enhanced system prompt with AI Coach capabilities
-        system_prompt = f"""You are BeanGenie™, the ultimate AI coach and strategic assistant for BIGO Live success. You combine strategic planning, tactical execution, and emotional support.
+        # Strict BIGO-only system prompt
+        system_prompt = f"""You are BeanGenie™, the BIGO Live expert coach. You MUST follow these rules STRICTLY:
 
-YOUR EXPERTISE:
-1. ORGANIC GROWTH - Audience building, engagement tactics, content strategy, personal branding
-2. BIGO WHEEL MASTERY - Digital spin wheels where viewers send GIFTS to spin. Prizes can be:
-   - Physical rewards (merch, gift cards)
-   - Tasks/challenges (outfit change, truth/dare, hot pic, prank call)
-   - Live actions (sing, dance, game)
-   - Content creation (shoutout, collab, exclusive content)
-   Help optimize gift amounts, prize balance, and engagement
-3. CONTENT STRATEGY - Stream ideas, scheduling, trending topics, collaboration
-4. PERFORMANCE COACHING - Metrics analysis, goal setting, motivation, mindset
-5. TECHNICAL GUIDANCE - Equipment, software, setup, troubleshooting
-6. MONETIZATION - Revenue streams, gift strategies, sponsorships
-7. COMMUNITY MANAGEMENT - Raffles, contests, fan engagement
-8. CRISIS MANAGEMENT - Handling challenges, reputation, conflict resolution
+CRITICAL RULES:
+1. ONLY answer questions about BIGO Live platform
+2. ONLY use information from the provided sources below
+3. ALWAYS cite sources using [1], [2], etc. in your response
+4. End your response with a "Sources:" section listing all cited sources
+5. Be concise and actionable - max 300 words
+6. Address user as "Master" or "Boss"
+
+PROVIDED BIGO SOURCES:
+{sources_context}
 
 PAY TIER SYSTEM (Level Up Agency):
-🥉 BRONZE - $500-1000/month (Part-time, 20hrs/week, beginner friendly)
-🥈 SILVER - $1000-2000/month (Full-time, 40hrs/week, established streamers)
-🥇 GOLD - $2000-5000/month (Professional, 60hrs/week, high engagement)
-💎 DIAMOND - $5000+/month (Elite, 80hrs/week, top performers)
-
-Earnings depend on: streaming hours, viewer engagement, gifts received, consistency, content quality.
-Help hosts understand requirements and plan their path to higher tiers.
+🥉 BRONZE - $500-1000/month (Part-time, 20hrs/week)
+🥈 SILVER - $1000-2000/month (Full-time, 40hrs/week)
+🥇 GOLD - $2000-5000/month (Professional, 60hrs/week)
+💎 DIAMOND - $5000+/month (Elite, 80hrs/week)
 
 CURRENT USER: {user_role.title()} role{context_info}{panel_info}
 
-RESPONSE STYLE:
+RESPONSE FORMAT:
+- Main answer with inline citations [1], [2]
 - Be motivational yet practical
-- Provide specific, actionable steps
-- Use relevant examples from BIGO Live
-- Address user as "Master" or "Boss"
-- Show empathy and understanding
-- Celebrate wins, encourage through challenges
-- Include numbers and metrics when relevant
-- Reference pay tiers when discussing goals/earnings
+- Use specific examples from BIGO Live
+- End with "Sources:" section
 
-DYNAMIC CATEGORIZATION:
-Generate category names from the CONTENT itself. Examples:
-- "wheel strategy" → Create "Wheel Strategy" panel
-- "content planning" → Create "Content Planning" panel
-- "audience tips" → Create "Audience Growth" panel
-- "earnings advice" → Create "Monetization Strategy" panel
+If the question is NOT about BIGO Live, politely redirect to BIGO topics."""
 
-Categories should be UNIQUE and DESCRIPTIVE based on the conversation topic.
-
-Be the coach, strategist, and cheerleader they need!"""
-
-        # Get memory context
-        memory = await ai_service.get_memory_context(current_user.id, session_id)
-        
-        # Build messages with memory
-        messages = [{"role": "system", "content": system_prompt}]
-        
-        if memory.get("long_term_summary"):
-            messages.append({
-                "role": "system",
-                "content": f"User background: {memory['long_term_summary']}"
-            })
-        
-        if memory.get("summary"):
-            messages.append({
-                "role": "system",
-                "content": f"Previous conversation: {memory['summary']}"
-            })
-        
-        for msg in memory.get("messages", []):
-            messages.append({
-                "role": msg["role"],
-                "content": msg["content"]
-            })
-        
-        messages.append({"role": "user", "content": message})
+        # Build messages
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": message}
+        ]
         
         # Get AI response
-        result = await ai_service.chat_completion(messages=messages, temperature=0.8)
+        result = await ai_service.chat_completion(messages=messages, temperature=0.7, max_completion_tokens=600)
         
         if not result.get("success"):
             raise HTTPException(status_code=500, detail=result.get("error", "AI error"))
         
         ai_text = result.get("content", "")
         
+        # Ensure Sources section exists
+        if "Sources:" not in ai_text and "sources:" not in ai_text.lower():
+            # Append sources section
+            sources_section = "\n\nSources:\n" + "\n".join([
+                f"[{i+1}] {r['title']}"
+                for i, r in enumerate(knowledge_results)
+            ])
+            ai_text += sources_section
+        
+        # Build sources array for frontend
+        sources = [
+            {
+                "label": f"[{i+1}] {r['title']}",
+                "url": r['url']
+            }
+            for i, r in enumerate(knowledge_results)
+        ]
+        
         # Save conversation turn
         await ai_service.save_conversation_turn(current_user.id, session_id, message, ai_text)
         
         return {
             "response": ai_text,
+            "sources": sources,
             "session_id": session_id
         }
     except HTTPException:
@@ -2838,23 +2933,87 @@ async def mark_spin_fulfilled(wheel_id: str, spin_id: str, current_user: User = 
         raise HTTPException(status_code=500, detail=str(e))
 
 # ============================================
+# BIGO KNOWLEDGE BASE ENDPOINTS
+# ============================================
+
+@api_router.post("/beangenie/knowledge/upsert")
+async def upsert_bigo_knowledge(knowledge_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
+    """Upsert BIGO knowledge base entry (admin/owner only)"""
+    try:
+        url = knowledge_data.get("url", "").strip()
+        title = knowledge_data.get("title", "").strip()
+        content = knowledge_data.get("content", "").strip()
+        tags = knowledge_data.get("tags", [])
+        
+        if not url or not title or not content:
+            raise HTTPException(status_code=400, detail="URL, title, and content are required")
+        
+        # Validate bigo.tv domain only
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        if not parsed.netloc.endswith("bigo.tv"):
+            raise HTTPException(status_code=400, detail="Only bigo.tv domains are allowed")
+        
+        # Cap content at 20k chars
+        if len(content) > 20000:
+            content = content[:20000]
+        
+        # Upsert by URL
+        doc = {
+            "url": url,
+            "title": title,
+            "content": content,
+            "tags": tags,
+            "updated_at": datetime.now(timezone.utc)
+        }
+        
+        existing = await db.bigo_knowledge.find_one({"url": url})
+        if existing:
+            await db.bigo_knowledge.update_one({"url": url}, {"$set": doc})
+            doc["id"] = existing["id"]
+        else:
+            doc["id"] = str(uuid.uuid4())
+            doc["created_at"] = datetime.now(timezone.utc)
+            await db.bigo_knowledge.insert_one(doc)
+        
+        return {"success": True, "id": doc["id"], "url": url}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/beangenie/knowledge/search")
+async def search_knowledge(q: str = Query(..., min_length=1), current_user: User = Depends(get_current_user)):
+    """Search BIGO knowledge base"""
+    try:
+        results = await search_bigo_knowledge(q, limit=10)
+        # Return simplified results for frontend
+        return {
+            "results": [
+                {
+                    "id": r.get("id"),
+                    "url": r.get("url"),
+                    "title": r.get("title"),
+                    "snippet": r.get("content", "")[:200] + "..." if len(r.get("content", "")) > 200 else r.get("content", ""),
+                    "tags": r.get("tags", [])
+                }
+                for r in results
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============================================
 # VOICE RECRUITER ENDPOINT
 # ============================================
 
 @api_router.post("/recruiter/chat")
 async def recruiter_chat(chat_data: dict):
-    """
-    AI recruiter chatbot for landing page.
-    
-    Note: In production, this endpoint should have rate limiting applied
-    to prevent abuse (e.g., 10 requests per minute per IP).
-    """
+    """AI recruiter chatbot for landing page"""
     message = chat_data.get("message", "").strip()
     
     if not message:
         raise HTTPException(status_code=400, detail="Message required")
-    if len(message) > 500:
-        raise HTTPException(status_code=400, detail="Message too long (max 500 characters)")
     
     try:
         # Recruiter system prompt

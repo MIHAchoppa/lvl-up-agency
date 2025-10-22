@@ -29,26 +29,36 @@ function Dashboard() {
     <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
       <Toaster />
       {/* Header */}
-      <header className="bg-[#0b0b0b] border-b border-yellow-500/20">
+      <header className="glass-dark border-b border-yellow-500/30 sticky top-0 z-40 shadow-gold">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <img 
                 src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
                 alt="Level Up Agency" 
-                className="h-8 w-8 object-contain"
+                className="h-9 w-9 object-contain transition-smooth hover:scale-110"
               />
-              <h1 className="text-xl font-bold text-white">Level Up Agency</h1>
-              <span className="text-yellow-500/30">•</span>
+              <h1 className="text-xl font-bold text-gradient-gold">Level Up Agency</h1>
+              <span className="text-yellow-500/40">•</span>
               <img 
                 src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
                 alt="BeanGenie" 
-                className="h-6 w-6 object-contain"
+                className="h-7 w-7 object-contain transition-smooth hover:scale-110"
               />
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-300">Welcome, {user?.name} ({user?.role})</span>
-              <button onClick={logout} className="text-sm text-black px-3 py-1.5 rounded-md bg-gradient-to-r from-yellow-500 to-amber-600 shadow-[0_0_25px_rgba(245,197,24,0.25)] hover:brightness-110">Logout</button>
+              <div className="px-4 py-2 rounded-lg glass border border-yellow-500/20">
+                <span className="text-sm font-medium text-gray-200">
+                  👋 {user?.name} 
+                  <span className="text-yellow-400 ml-2">({user?.role})</span>
+                </span>
+              </div>
+              <button 
+                onClick={logout} 
+                className="px-4 py-2 rounded-lg font-bold text-black gradient-gold shadow-gold transition-smooth hover:scale-105 hover:shadow-gold-lg"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>
@@ -57,22 +67,77 @@ function Dashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 mb-6 bg-black/40 border border-yellow-500/20">
-            <TabsTrigger value="beangenie" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🧞‍♂️ BeanGenie</TabsTrigger>
-            <TabsTrigger value="academy" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">📚 Academy</TabsTrigger>
-            <TabsTrigger value="voice-assistant" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🎙️ Voice</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-10 gap-2 mb-8 p-2 glass-dark border border-yellow-500/30 rounded-xl shadow-gold">
+            <TabsTrigger 
+              value="beangenie" 
+              className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+            >
+              🧞‍♂️ BeanGenie
+            </TabsTrigger>
+            <TabsTrigger 
+              value="academy" 
+              className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+            >
+              📚 Academy
+            </TabsTrigger>
+            <TabsTrigger 
+              value="voice-assistant" 
+              className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+            >
+              🎙️ Voice
+            </TabsTrigger>
             {(user?.role === 'admin' || user?.role === 'owner') && (
               <>
-                <TabsTrigger value="admin-assistant" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🤖 Admin AI</TabsTrigger>
-                <TabsTrigger value="models" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🧩 Models</TabsTrigger>
-                <TabsTrigger value="settings" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">⚙️ Settings</TabsTrigger>
+                <TabsTrigger 
+                  value="admin-assistant" 
+                  className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+                >
+                  🤖 Admin AI
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="models" 
+                  className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+                >
+                  🧩 Models
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="settings" 
+                  className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+                >
+                  ⚙️ Settings
+                </TabsTrigger>
               </>
             )}
-            <TabsTrigger value="calendar" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">📅 Calendar</TabsTrigger>
-            <TabsTrigger value="messages" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">💬 Messages</TabsTrigger>
-            <TabsTrigger value="announcements" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">📢 Announcements</TabsTrigger>
-            <TabsTrigger value="tasks" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">✅ Tasks</TabsTrigger>
-            <TabsTrigger value="rewards" className="data-[state=active]:text-black data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-amber-600">🏆 Rewards</TabsTrigger>
+            <TabsTrigger 
+              value="calendar" 
+              className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+            >
+              📅 Calendar
+            </TabsTrigger>
+            <TabsTrigger 
+              value="messages" 
+              className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+            >
+              💬 Messages
+            </TabsTrigger>
+            <TabsTrigger 
+              value="announcements" 
+              className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+            >
+              📢 Announcements
+            </TabsTrigger>
+            <TabsTrigger 
+              value="tasks" 
+              className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+            >
+              ✅ Tasks
+            </TabsTrigger>
+            <TabsTrigger 
+              value="rewards" 
+              className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+            >
+              🏆 Rewards
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="beangenie"><BeanGeniePanel /></TabsContent>

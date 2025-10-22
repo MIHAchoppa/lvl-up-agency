@@ -21,6 +21,7 @@ function EnhancedAdminAssistantPanel() {
   const [suggestions, setSuggestions] = useState([]);
   const [pendingAction, setPendingAction] = useState(null);
   const [autoExecute, setAutoExecute] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   
   // Quick command templates
   const [quickCommands] = useState([
@@ -33,6 +34,7 @@ function EnhancedAdminAssistantPanel() {
   ]);
 
   const messagesEndRef = useRef(null);
+  const currentAudioRef = useRef(null);
 
   useEffect(() => {
     fetchAnalytics();
@@ -125,32 +127,19 @@ function EnhancedAdminAssistantPanel() {
         role: 'assistant',
         content: result.response,
         timestamp: new Date(),
-        detected_action: result.detected_action,
-        requires_confirmation: result.requires_confirmation,
-        execution_result: result.execution_result
+        action: result.action,
+        payload: result.payload
       };
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Handle pending actions that require confirmation
-      if (result.detected_action && result.requires_confirmation) {
-        setPendingAction({
-          id: `action_${Date.now()}`,
-          type: result.detected_action,
-          message: messageText,
-          timestamp: new Date()
-        });
-        toast.info('Action detected - confirmation required');
+      // Handle calendar actions
+      if (result.action && result.payload) {
+        await handleCalendarAction(result.action, result.payload);
       }
 
-      // Show execution results
-      if (result.execution_result) {
-        if (result.execution_result.success) {
-          toast.success('Action executed successfully');
-        } else {
-          toast.error(`Action failed: ${result.execution_result.message}`);
-        }
-      }
+      // Generate voice for the response
+      await speakText(result.response);
 
     } catch (error) {
       console.error('Chat error:', error);
@@ -164,6 +153,54 @@ function EnhancedAdminAssistantPanel() {
       toast.error('Failed to process admin command');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCalendarAction = async (action, payload) => {
+    try {
+      let result;
+      let successMessage = '';
+
+      if (action === 'create_event') {
+        result = await axios.post(`${API}/events`, payload);
+        successMessage = `✅ Event created: ${payload.title}`;
+        toast.success('Event created successfully!');
+      } else if (action === 'update_event') {
+        const { event_id, ...updateData } = payload;
+        result = await axios.put(`${API}/events/${event_id}`, updateData);
+        successMessage = `✅ Event updated: ${updateData.title || 'Event'}`;
+        toast.success('Event updated successfully!');
+      } else if (action === 'delete_event') {
+        const { event_id } = payload;
+        result = await axios.delete(`${API}/events/${event_id}`);
+        successMessage = `✅ Event deleted`;
+        toast.success('Event deleted successfully!');
+      }
+
+      // Add system message to chat
+      if (successMessage) {
+        const systemMessage = {
+          role: 'system',
+          content: successMessage,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, systemMessage]);
+      }
+
+      // Refresh analytics
+      fetchAnalytics();
+    } catch (error) {
+      console.error('Calendar action error:', error);
+      const errorMsg = error.response?.data?.detail || error.message;
+      toast.error(`Action failed: ${errorMsg}`);
+      
+      // Add error message to chat
+      const errorMessage = {
+        role: 'system',
+        content: `❌ Action failed: ${errorMsg}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
     }
   };
 
@@ -241,6 +278,51 @@ function EnhancedAdminAssistantPanel() {
     
     setMessages(prev => [...prev, message]);
     await sendMessage(`Execute: ${suggestion.action}`);
+  };
+
+  const speakText = async (text) => {
+    try {
+      setIsSpeaking(true);
+      
+      // Limit text length for TTS (first 500 characters)
+      const textToSpeak = text.substring(0, 500);
+      
+      const { data } = await axios.post(`${API}/tts/speak`, {
+        text: textToSpeak,
+        voice: 'Fritz-PlayAI'
+      });
+
+      if (data.audio_base64) {
+        const audioData = `data:audio/wav;base64,${data.audio_base64}`;
+        const audio = new Audio(audioData);
+        
+        currentAudioRef.current = audio;
+        
+        audio.onended = () => {
+          setIsSpeaking(false);
+          currentAudioRef.current = null;
+        };
+
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          currentAudioRef.current = null;
+        };
+
+        await audio.play();
+      }
+    } catch (error) {
+      console.error('TTS error:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const stopSpeaking = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+    setIsSpeaking(false);
   };
 
   return (
@@ -348,6 +430,15 @@ function EnhancedAdminAssistantPanel() {
                       disabled={loading}
                       className="flex-1"
                     />
+                    {isSpeaking && (
+                      <Button
+                        onClick={stopSpeaking}
+                        variant="outline"
+                        className="text-red-500"
+                      >
+                        🔇 Stop
+                      </Button>
+                    )}
                     <Button 
                       onClick={() => sendMessage()} 
                       disabled={loading || !input.trim()}

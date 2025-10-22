@@ -154,19 +154,17 @@ class AIService:
         try:
             headers = await self.get_headers_auth_only()
             form = aiohttp.FormData()
-            with open(file_path, "rb") as f:
-                form.add_field("file", f, filename=os.path.basename(file_path))
-                form.add_field("model", model or self.default_stt_model)
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(self.stt_url, headers=headers, data=form) as r:
-                        if r.status != 200:
-                            detail = await r.text()
-                            logger.error(f"Groq STT error {r.status}: {detail}")
-                            return {"success": False, "error": detail}
-                        data = await r.json()
-                        return {"success": True, "text": data.get("text", "")}
+            form.add_field("file", open(file_path, "rb"), filename=os.path.basename(file_path))
+            form.add_field("model", model or self.default_stt_model)
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.stt_url, headers=headers, data=form) as r:
+                    if r.status != 200:
+                        detail = await r.text()
+                        logger.error(f"Groq STT error {r.status}: {detail}")
+                        return {"success": False, "error": detail}
+                    data = await r.json()
+                    return {"success": True, "text": data.get("text", "")}
         except Exception as e:
-            logger.error(f"STT transcription error: {e}")
             return {"success": False, "error": str(e)}
 
     async def list_models(self) -> Dict[str, Any]:
@@ -309,43 +307,6 @@ class AIService:
         except Exception as e:
             logger.error(f"AI assist error: {e}")
             return {"success": False, "error": str(e)}
-    
-    async def get_bigo_strategy_response(self, user_message: str, user_context: Optional[Dict[str, Any]] = None) -> str:
-        """Get BIGO Live strategy coaching response"""
-        try:
-            tier_info = ""
-            if user_context and user_context.get("tier"):
-                tier_info = f"Current tier: {user_context['tier']}\n"
-            
-            system_prompt = f"""You are an expert BIGO Live strategy coach helping hosts maximize their success.
-            
-{tier_info}
-Provide helpful, actionable advice about:
-- Streaming strategies and scheduling
-- Audience engagement techniques
-- Bean earning optimization
-- Tier progression guidance
-- Community building
-- Content creation tips
-
-Be supportive, specific, and results-oriented."""
-
-            result = await self.chat_completion(
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ],
-                temperature=0.7,
-                max_completion_tokens=500
-            )
-            
-            if result.get("success"):
-                return result.get("content", "I'm here to help with your BIGO Live strategy!")
-            else:
-                return "I'm experiencing technical difficulties. Please try again."
-        except Exception as e:
-            logger.error(f"BIGO strategy response error: {e}")
-            return "I'm here to help with your BIGO Live strategy. Please try asking again."
 
 # Global AI service instance
 ai_service = AIService()

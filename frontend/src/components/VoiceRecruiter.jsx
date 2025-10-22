@@ -160,44 +160,44 @@ function VoiceRecruiter({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl bg-gradient-to-br from-gray-900 to-black border-2 border-yellow-500/50 shadow-2xl">
+    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl bg-gradient-to-br from-gray-100 to-white border-2 border-yellow-500/50 shadow-2xl">
         <CardContent className="p-6">
           {/* Header */}
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
               <img 
                 src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
                 alt="BeanGenie Recruiter" 
-                className="h-12 w-12"
+                className="h-14 w-14 transition-smooth hover:scale-110"
               />
               <div>
-                <h2 className="text-xl font-bold text-yellow-400">AI Recruiter</h2>
-                <p className="text-sm text-yellow-400/70">Let's get you started!</p>
+                <h2 className="text-xl font-bold text-yellow-600">AI Recruiter</h2>
+                <p className="text-sm text-yellow-600/70">Let's get you started!</p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-yellow-400 hover:text-yellow-300"
+              className="text-yellow-600 hover:text-yellow-700"
             >
               ✕
             </Button>
           </div>
 
           {/* Messages */}
-          <div className="bg-black/40 rounded-lg p-4 h-64 overflow-y-auto mb-4 space-y-3">
+          <div className="bg-white/40 rounded-lg p-4 h-64 overflow-y-auto mb-4 space-y-3">
             {messages.map((msg, idx) => (
               <div 
                 key={idx} 
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
                 <div 
-                  className={`max-w-[80%] p-3 rounded-lg ${
+                  className={`max-w-[80%] p-4 rounded-xl transition-smooth ${
                     msg.role === 'user' 
-                      ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black'
-                      : 'bg-gray-800 text-yellow-400 border border-yellow-500/30'
+                      ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900'
+                      : 'bg-gray-200 text-yellow-600 border border-yellow-500/30'
                   }`}
                 >
                   {msg.content}
@@ -206,9 +206,9 @@ function VoiceRecruiter({ onClose }) {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-gray-800 text-yellow-400 p-3 rounded-lg">
+                <div className="bg-gray-200 text-yellow-600 p-3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
                     Thinking...
                   </div>
                 </div>
@@ -218,17 +218,17 @@ function VoiceRecruiter({ onClose }) {
           </div>
 
           {/* Input */}
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-3 mb-4">
             <button
               onClick={startListening}
               disabled={isListening}
-              className={`p-3 rounded-full transition-all ${
+              className={`p-3.5 rounded-xl transition-smooth shadow-gold ${
                 isListening
-                  ? 'bg-red-500 animate-pulse'
-                  : 'bg-gradient-to-r from-yellow-500 to-amber-600'
+                  ? 'bg-red-500 animate-pulse scale-110'
+                  : 'gradient-gold hover:scale-105'
               }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="#000" viewBox="0 0 24 24" className="w-5 h-5">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="#000" viewBox="0 0 24 24" className="w-6 h-6">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
               </svg>
@@ -239,13 +239,13 @@ function VoiceRecruiter({ onClose }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
               placeholder="Type your response..."
-              className="flex-1 bg-black border-yellow-500 text-yellow-400"
+              className="flex-1 bg-white border-yellow-500 text-yellow-600"
             />
 
             <Button
               onClick={() => sendMessage()}
               disabled={loading || !input.trim()}
-              className="bg-gradient-to-r from-yellow-500 to-amber-600 text-black"
+              className="bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900"
             >
               Send
             </Button>
@@ -276,24 +276,38 @@ function VoiceRecruiter({ onClose }) {
             )}
             <Button
               size="sm"
-              onClick={() => sendMessage("I'm a new user interested in becoming a host")}
+              onClick={() => {
+                sendMessage("I want to audition");
+                // Navigate after message or based on action
+                setTimeout(() => {
+                  navigate('/audition');
+                  onClose();
+                }, 2000);
+              }}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              🆕 New Host
+              🎤 I want to audition
             </Button>
             <Button
               size="sm"
-              onClick={() => sendMessage("I'm already a host and want to join")}
+              onClick={() => {
+                sendMessage("I want to register");
+                // Navigate after message or based on action
+                setTimeout(() => {
+                  navigate('/login');
+                  onClose();
+                }, 2000);
+              }}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
-              ✅ Existing Host
+              📝 Register
             </Button>
             <Button
               size="sm"
-              onClick={() => navigate('/audition')}
+              onClick={() => sendMessage("I'm already a host")}
               className="bg-purple-600 hover:bg-purple-700 text-white"
             >
-              🎯 Go to Audition
+              ⭐ I'm already a host
             </Button>
           </div>
         </CardContent>
