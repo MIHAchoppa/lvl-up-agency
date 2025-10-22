@@ -862,9 +862,17 @@ class OnboardingChatRequest(BaseModel):
 
 @api_router.post("/public/ai/onboarding-chat")
 async def public_onboarding_chat(req: OnboardingChatRequest):
+    """
+    Public AI chat endpoint for onboarding visitors.
+    
+    Note: In production, this endpoint should have rate limiting applied
+    to prevent abuse (e.g., 10 requests per minute per IP).
+    """
     msg = (req.message or "").strip()
     if not msg:
         raise HTTPException(status_code=400, detail="Message required")
+    if len(msg) > 500:
+        raise HTTPException(status_code=400, detail="Message too long (max 500 characters)")
     system_prompt = (
         "You are Lvl-Up, the LVL-UP onboarding agent for a BIGO Live agency. "
         "Your only goal is to warmly recruit visitors to become paid BIGO Live broadcasters. "
@@ -2405,6 +2413,8 @@ async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_curre
     
     if not message:
         raise HTTPException(status_code=400, detail="Message required")
+    if len(message) > 2000:
+        raise HTTPException(status_code=400, detail="Message too long (max 2000 characters)")
     
     try:
         # Enhanced context-aware system prompt
@@ -2834,11 +2844,18 @@ async def mark_spin_fulfilled(wheel_id: str, spin_id: str, current_user: User = 
 
 @api_router.post("/recruiter/chat")
 async def recruiter_chat(chat_data: dict):
-    """AI recruiter chatbot for landing page"""
+    """
+    AI recruiter chatbot for landing page.
+    
+    Note: In production, this endpoint should have rate limiting applied
+    to prevent abuse (e.g., 10 requests per minute per IP).
+    """
     message = chat_data.get("message", "").strip()
     
     if not message:
         raise HTTPException(status_code=400, detail="Message required")
+    if len(message) > 500:
+        raise HTTPException(status_code=400, detail="Message too long (max 500 characters)")
     
     try:
         # Recruiter system prompt
