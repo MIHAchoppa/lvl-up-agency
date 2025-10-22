@@ -125,31 +125,15 @@ function EnhancedAdminAssistantPanel() {
         role: 'assistant',
         content: result.response,
         timestamp: new Date(),
-        detected_action: result.detected_action,
-        requires_confirmation: result.requires_confirmation,
-        execution_result: result.execution_result
+        action: result.action,
+        payload: result.payload
       };
 
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Handle pending actions that require confirmation
-      if (result.detected_action && result.requires_confirmation) {
-        setPendingAction({
-          id: `action_${Date.now()}`,
-          type: result.detected_action,
-          message: messageText,
-          timestamp: new Date()
-        });
-        toast.info('Action detected - confirmation required');
-      }
-
-      // Show execution results
-      if (result.execution_result) {
-        if (result.execution_result.success) {
-          toast.success('Action executed successfully');
-        } else {
-          toast.error(`Action failed: ${result.execution_result.message}`);
-        }
+      // Handle calendar actions
+      if (result.action && result.payload) {
+        await handleCalendarAction(result.action, result.payload);
       }
 
     } catch (error) {
@@ -164,6 +148,54 @@ function EnhancedAdminAssistantPanel() {
       toast.error('Failed to process admin command');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCalendarAction = async (action, payload) => {
+    try {
+      let result;
+      let successMessage = '';
+
+      if (action === 'create_event') {
+        result = await axios.post(`${API}/events`, payload);
+        successMessage = `✅ Event created: ${payload.title}`;
+        toast.success('Event created successfully!');
+      } else if (action === 'update_event') {
+        const { event_id, ...updateData } = payload;
+        result = await axios.put(`${API}/events/${event_id}`, updateData);
+        successMessage = `✅ Event updated: ${updateData.title || 'Event'}`;
+        toast.success('Event updated successfully!');
+      } else if (action === 'delete_event') {
+        const { event_id } = payload;
+        result = await axios.delete(`${API}/events/${event_id}`);
+        successMessage = `✅ Event deleted`;
+        toast.success('Event deleted successfully!');
+      }
+
+      // Add system message to chat
+      if (successMessage) {
+        const systemMessage = {
+          role: 'system',
+          content: successMessage,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, systemMessage]);
+      }
+
+      // Refresh analytics
+      fetchAnalytics();
+    } catch (error) {
+      console.error('Calendar action error:', error);
+      const errorMsg = error.response?.data?.detail || error.message;
+      toast.error(`Action failed: ${errorMsg}`);
+      
+      // Add error message to chat
+      const errorMessage = {
+        role: 'system',
+        content: `❌ Action failed: ${errorMsg}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
     }
   };
 

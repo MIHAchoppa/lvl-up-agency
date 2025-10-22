@@ -59,7 +59,7 @@ function EnhancedMessagingPanel() {
   const initializeWebSocket = () => {
     // In a real implementation, this would connect to the WebSocket endpoint
     // For now, we'll simulate with polling
-    // WebSocket connection initialization placeholder
+    console.log('WebSocket connection would be initialized here');
   };
 
   const fetchInitialData = async () => {
