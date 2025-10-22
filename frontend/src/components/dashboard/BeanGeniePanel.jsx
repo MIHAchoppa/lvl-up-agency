@@ -507,7 +507,7 @@ function BeanGeniePanel() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-black">
+    <div className="h-full flex flex-col bg-gray-50">
       {/* Header with BeanGenie Logo */}
       <div className="p-4 text-center border-b border-yellow-500/30">
         <div className="flex items-center justify-center gap-3 mb-2">
@@ -521,14 +521,14 @@ function BeanGeniePanel() {
           </h2>
         </div>
         {voiceStatus && (
-          <div className="text-sm text-yellow-400 animate-pulse">{voiceStatus}</div>
+          <div className="text-sm text-yellow-600 animate-pulse">{voiceStatus}</div>
         )}
         {messages.length === 1 && !loading && (
           <Button
             size="sm"
             onClick={() => speakText(messages[0].content)}
             disabled={isSpeaking}
-            className="mt-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-black hover:brightness-110"
+            className="mt-2 bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900 hover:brightness-110"
           >
             {isSpeaking ? '🔊 Speaking...' : '🔊 Hear Welcome Message'}
           </Button>
@@ -543,8 +543,8 @@ function BeanGeniePanel() {
               <div key={idx} className={msg.role === 'user' ? 'text-right' : 'text-left'}>
                 <div className={`inline-block px-4 py-2 rounded-2xl max-w-xl ${
                   msg.role === 'user' 
-                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-black'
-                    : 'bg-gray-900 text-yellow-400 border border-yellow-500/30'
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900'
+                    : 'bg-gray-100 text-yellow-600 border border-yellow-500/30'
                 }`}>
                   <div className="whitespace-pre-wrap">{msg.content}</div>
                   {/* Sources Section */}
@@ -572,9 +572,9 @@ function BeanGeniePanel() {
             ))}
             {loading && (
               <div className="text-left">
-                <div className="inline-block px-4 py-2 rounded-2xl bg-gray-900 text-yellow-400">
+                <div className="inline-block px-4 py-2 rounded-2xl bg-gray-100 text-yellow-600">
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-400"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
                     Consulting BeanGenie...
                   </div>
                 </div>
@@ -610,13 +610,13 @@ function BeanGeniePanel() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if(e.key === 'Enter') sendMessage(); }}
               placeholder="Command the genie..."
-              className="flex-1 bg-black border-yellow-500 text-yellow-400"
+              className="flex-1 bg-white border-yellow-500 text-yellow-600"
             />
 
             <Button
               onClick={() => sendMessage()}
               disabled={loading || !input.trim()}
-              className="bg-gradient-to-r from-yellow-400 to-orange-400 text-black hover:brightness-110"
+              className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 hover:brightness-110"
             >
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-6 h-6 fill-black">
                 <path d="M12 2C10.343 2 9 3.343 9 5C9 6.657 10.343 8 12 8C13.657 8 15 6.657 15 5C15 3.343 13.657 2 12 2Z"/>
@@ -642,16 +642,16 @@ function BeanGeniePanel() {
             
             {/* Dynamic Panels - Rendered based on conversation */}
             {Object.entries(dynamicPanels).map(([panelKey, panel]) => (
-              <Card key={panelKey} className="bg-gray-900 border-yellow-500/30">
-                <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 flex flex-row items-center justify-between">
-                  <CardTitle className="text-yellow-400">
+              <Card key={panelKey} className="bg-gray-100 border-yellow-500/30">
+                <CardHeader className="bg-gradient-to-r from-gray-200 to-gray-100 flex flex-row items-center justify-between">
+                  <CardTitle className="text-yellow-600">
                     {panel.icon} {panel.title}
                   </CardTitle>
                   <Button 
                     size="sm" 
                     variant="ghost" 
                     onClick={() => clearPanel(panelKey)}
-                    className="text-yellow-400/50 hover:text-yellow-400"
+                    className="text-yellow-600/50 hover:text-yellow-600"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -660,17 +660,17 @@ function BeanGeniePanel() {
                 </CardHeader>
                 <CardContent className="p-4 space-y-2 max-h-60 overflow-y-auto">
                   {(!panel.items || panel.items.length === 0) ? (
-                    <p className="text-sm text-yellow-400/50">No {panel.title.toLowerCase()} yet...</p>
+                    <p className="text-sm text-yellow-600/50">No {panel.title.toLowerCase()} yet...</p>
                   ) : (
                     panel.items.map((item, idx) => (
                       <div 
                         key={idx} 
-                        className={`bg-black/50 p-2 rounded border-l-4`}
+                        className={`bg-white/50 p-2 rounded border-l-4`}
                         style={{ borderLeftColor: panel.color === 'yellow' ? '#EAB308' : panel.color === 'blue' ? '#3B82F6' : panel.color === 'green' ? '#10B981' : panel.color === 'red' ? '#EF4444' : '#A855F7' }}
                       >
-                        <div className="text-sm text-yellow-400">{item.content}</div>
+                        <div className="text-sm text-yellow-600">{item.content}</div>
                         {item.metadata && Object.keys(item.metadata).length > 0 && (
-                          <div className="text-xs text-yellow-400/70 mt-1">
+                          <div className="text-xs text-yellow-600/70 mt-1">
                             {Object.entries(item.metadata).map(([key, value]) => (
                               <span key={key} className="mr-2">
                                 <strong>{key}:</strong> {value}
@@ -678,7 +678,7 @@ function BeanGeniePanel() {
                             ))}
                           </div>
                         )}
-                        <div className="text-xs text-yellow-400/50 mt-1">
+                        <div className="text-xs text-yellow-600/50 mt-1">
                           {new Date(item.timestamp).toLocaleTimeString()}
                         </div>
                       </div>
@@ -689,10 +689,10 @@ function BeanGeniePanel() {
             ))}
 
             {/* Raffles & Contests */}
-            <Card className="bg-gray-900 border-yellow-500/30">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 flex flex-row items-center justify-between">
-                <CardTitle className="text-yellow-400">🎫 Raffles & Contests</CardTitle>
-                <Button size="sm" onClick={() => addRaffleEntry()} className="bg-yellow-500 text-black hover:bg-yellow-400">
+            <Card className="bg-gray-100 border-yellow-500/30">
+              <CardHeader className="bg-gradient-to-r from-gray-200 to-gray-100 flex flex-row items-center justify-between">
+                <CardTitle className="text-yellow-600">🎫 Raffles & Contests</CardTitle>
+                <Button size="sm" onClick={() => addRaffleEntry()} className="bg-yellow-500 text-gray-900 hover:bg-yellow-400">
                   Add Entry
                 </Button>
               </CardHeader>
@@ -701,21 +701,21 @@ function BeanGeniePanel() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-yellow-500/30">
-                        <th className="text-left p-2 text-yellow-400">Name</th>
-                        <th className="text-left p-2 text-yellow-400">Tickets</th>
-                        <th className="text-left p-2 text-yellow-400">Actions</th>
+                        <th className="text-left p-2 text-yellow-600">Name</th>
+                        <th className="text-left p-2 text-yellow-600">Tickets</th>
+                        <th className="text-left p-2 text-yellow-600">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {raffles.length === 0 ? (
                         <tr>
-                          <td colSpan="3" className="p-2 text-center text-yellow-400/50">No raffle entries yet...</td>
+                          <td colSpan="3" className="p-2 text-center text-yellow-600/50">No raffle entries yet...</td>
                         </tr>
                       ) : (
                         raffles.map((raffle) => (
                           <tr key={raffle.id} className="border-b border-yellow-500/10 hover:bg-yellow-500/5">
-                            <td className="p-2 text-yellow-400">{raffle.name}</td>
-                            <td className="p-2 text-yellow-400">{raffle.tickets}</td>
+                            <td className="p-2 text-yellow-600">{raffle.name}</td>
+                            <td className="p-2 text-yellow-600">{raffle.tickets}</td>
                             <td className="p-2">
                               <Button size="sm" variant="destructive" onClick={() => deleteRaffleEntry(raffle.id)}>
                                 Delete
@@ -731,10 +731,10 @@ function BeanGeniePanel() {
             </Card>
 
             {/* Financial Tracking */}
-            <Card className="bg-gray-900 border-yellow-500/30">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 flex flex-row items-center justify-between">
-                <CardTitle className="text-yellow-400">💰 Financial Tracking</CardTitle>
-                <Button size="sm" onClick={() => addDebtEntry()} className="bg-yellow-500 text-black hover:bg-yellow-400">
+            <Card className="bg-gray-100 border-yellow-500/30">
+              <CardHeader className="bg-gradient-to-r from-gray-200 to-gray-100 flex flex-row items-center justify-between">
+                <CardTitle className="text-yellow-600">💰 Financial Tracking</CardTitle>
+                <Button size="sm" onClick={() => addDebtEntry()} className="bg-yellow-500 text-gray-900 hover:bg-yellow-400">
                   Add Debt
                 </Button>
               </CardHeader>
@@ -743,23 +743,23 @@ function BeanGeniePanel() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-yellow-500/30">
-                        <th className="text-left p-2 text-yellow-400">Name</th>
-                        <th className="text-left p-2 text-yellow-400">Amount</th>
-                        <th className="text-left p-2 text-yellow-400">Due Date</th>
-                        <th className="text-left p-2 text-yellow-400">Actions</th>
+                        <th className="text-left p-2 text-yellow-600">Name</th>
+                        <th className="text-left p-2 text-yellow-600">Amount</th>
+                        <th className="text-left p-2 text-yellow-600">Due Date</th>
+                        <th className="text-left p-2 text-yellow-600">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {debts.length === 0 ? (
                         <tr>
-                          <td colSpan="4" className="p-2 text-center text-yellow-400/50">No financial records yet...</td>
+                          <td colSpan="4" className="p-2 text-center text-yellow-600/50">No financial records yet...</td>
                         </tr>
                       ) : (
                         debts.map((debt) => (
                           <tr key={debt.id} className="border-b border-yellow-500/10 hover:bg-yellow-500/5">
-                            <td className="p-2 text-yellow-400">{debt.name}</td>
-                            <td className="p-2 text-yellow-400">${debt.amount.toFixed(2)}</td>
-                            <td className="p-2 text-yellow-400">{debt.dueDate}</td>
+                            <td className="p-2 text-yellow-600">{debt.name}</td>
+                            <td className="p-2 text-yellow-600">${debt.amount.toFixed(2)}</td>
+                            <td className="p-2 text-yellow-600">{debt.dueDate}</td>
                             <td className="p-2">
                               <Button size="sm" variant="default" onClick={() => deleteDebtEntry(debt.id)}>
                                 Paid
@@ -775,24 +775,24 @@ function BeanGeniePanel() {
             </Card>
 
             {/* Quick Analytics */}
-            <Card className="bg-gray-900 border-yellow-500/30">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900">
-                <CardTitle className="text-yellow-400">📊 Quick Analytics</CardTitle>
+            <Card className="bg-gray-100 border-yellow-500/30">
+              <CardHeader className="bg-gradient-to-r from-gray-200 to-gray-100">
+                <CardTitle className="text-yellow-600">📊 Quick Analytics</CardTitle>
               </CardHeader>
               <CardContent className="p-4 space-y-3">
-                <div className="flex justify-between text-yellow-400">
+                <div className="flex justify-between text-yellow-600">
                   <span>Active Panels:</span>
                   <span className="font-bold">{analytics.activePanels || 0}</span>
                 </div>
-                <div className="flex justify-between text-yellow-400">
+                <div className="flex justify-between text-yellow-600">
                   <span>Total Items:</span>
                   <span className="font-bold">{analytics.activeStrategies}</span>
                 </div>
-                <div className="flex justify-between text-yellow-400">
+                <div className="flex justify-between text-yellow-600">
                   <span>Raffle Tickets:</span>
                   <span className="font-bold">{analytics.totalRaffles}</span>
                 </div>
-                <div className="flex justify-between text-yellow-400">
+                <div className="flex justify-between text-yellow-600">
                   <span>Outstanding Debts:</span>
                   <span className="font-bold">${analytics.totalDebts.toFixed(2)}</span>
                 </div>
@@ -800,9 +800,9 @@ function BeanGeniePanel() {
             </Card>
 
             {/* Bigo Wheel Management */}
-            <Card className="bg-gray-900 border-yellow-500/30 lg:col-span-2">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 flex flex-row items-center justify-between">
-                <CardTitle className="text-yellow-400">🎯 Bigo Wheel Manager</CardTitle>
+            <Card className="bg-gray-100 border-yellow-500/30 lg:col-span-2">
+              <CardHeader className="bg-gradient-to-r from-gray-200 to-gray-100 flex flex-row items-center justify-between">
+                <CardTitle className="text-yellow-600">🎯 Bigo Wheel Manager</CardTitle>
                 <Button 
                   size="sm" 
                   onClick={() => setShowWheelConfig(true)}
@@ -815,19 +815,19 @@ function BeanGeniePanel() {
                 {!activeWheel ? (
                   <div className="text-center py-8">
                     <div className="text-6xl mb-4">🎡</div>
-                    <p className="text-yellow-400/70 mb-2">No active wheel</p>
-                    <p className="text-sm text-yellow-400/50">
+                    <p className="text-yellow-600/70 mb-2">No active wheel</p>
+                    <p className="text-sm text-yellow-600/50">
                       Create a digital spin wheel! Viewers send gifts to spin for prizes like tasks, rewards, or challenges.
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     {/* Wheel Info */}
-                    <div className="bg-black/50 p-4 rounded-lg border border-yellow-500/20">
+                    <div className="bg-white/50 p-4 rounded-lg border border-yellow-500/20">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="text-lg font-bold text-yellow-400">{activeWheel.name}</h3>
-                          <p className="text-sm text-yellow-400/70">
+                          <h3 className="text-lg font-bold text-yellow-600">{activeWheel.name}</h3>
+                          <p className="text-sm text-yellow-600/70">
                             Cost: {activeWheel.gift_cost} {activeWheel.gift_type}
                           </p>
                         </div>
@@ -838,7 +838,7 @@ function BeanGeniePanel() {
                     {/* Prizes List */}
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-sm font-semibold text-yellow-400">Prizes ({wheelPrizes.length})</h4>
+                        <h4 className="text-sm font-semibold text-yellow-600">Prizes ({wheelPrizes.length})</h4>
                         <Button 
                           size="sm" 
                           variant="outline" 
@@ -856,15 +856,15 @@ function BeanGeniePanel() {
                       </div>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {wheelPrizes.length === 0 ? (
-                          <p className="text-xs text-yellow-400/50 text-center py-4">No prizes yet</p>
+                          <p className="text-xs text-yellow-600/50 text-center py-4">No prizes yet</p>
                         ) : (
                           wheelPrizes.map((prize) => (
-                            <div key={prize.id} className="bg-black/30 p-2 rounded flex items-center justify-between">
+                            <div key={prize.id} className="bg-white/30 p-2 rounded flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="text-xl">{prize.icon}</span>
                                 <div>
-                                  <div className="text-sm text-yellow-400">{prize.name}</div>
-                                  <div className="text-xs text-yellow-400/50">{prize.type}</div>
+                                  <div className="text-sm text-yellow-600">{prize.name}</div>
+                                  <div className="text-xs text-yellow-600/50">{prize.type}</div>
                                 </div>
                               </div>
                             </div>
@@ -875,17 +875,17 @@ function BeanGeniePanel() {
 
                     {/* Recent Spins */}
                     <div>
-                      <h4 className="text-sm font-semibold text-yellow-400 mb-2">Recent Spins ({spinHistory.length})</h4>
+                      <h4 className="text-sm font-semibold text-yellow-600 mb-2">Recent Spins ({spinHistory.length})</h4>
                       <div className="space-y-1 max-h-32 overflow-y-auto">
                         {spinHistory.length === 0 ? (
-                          <p className="text-xs text-yellow-400/50 text-center py-2">No spins yet</p>
+                          <p className="text-xs text-yellow-600/50 text-center py-2">No spins yet</p>
                         ) : (
                           spinHistory.slice(0, 5).map((spin) => (
-                            <div key={spin.id} className="bg-black/30 p-2 rounded text-xs flex justify-between items-center">
+                            <div key={spin.id} className="bg-white/30 p-2 rounded text-xs flex justify-between items-center">
                               <div>
-                                <span className="text-yellow-400">{spin.winner_name}</span>
-                                <span className="text-yellow-400/50"> won </span>
-                                <span className="text-yellow-400">{spin.prize_name}</span>
+                                <span className="text-yellow-600">{spin.winner_name}</span>
+                                <span className="text-yellow-600/50"> won </span>
+                                <span className="text-yellow-600">{spin.prize_name}</span>
                               </div>
                               {!spin.fulfilled && (
                                 <Badge variant="outline" className="text-xs">Pending</Badge>
@@ -901,18 +901,18 @@ function BeanGeniePanel() {
             </Card>
 
             {/* Master Notes */}
-            <Card className="bg-gray-900 border-yellow-500/30">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900">
-                <CardTitle className="text-yellow-400">📝 Master Notes</CardTitle>
+            <Card className="bg-gray-100 border-yellow-500/30">
+              <CardHeader className="bg-gradient-to-r from-gray-200 to-gray-100">
+                <CardTitle className="text-yellow-600">📝 Master Notes</CardTitle>
               </CardHeader>
               <CardContent className="p-4">
                 <textarea 
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full h-32 bg-black border border-yellow-500/30 rounded p-2 text-yellow-400 resize-none focus:border-yellow-500 outline-none"
+                  className="w-full h-32 bg-white border border-yellow-500/30 rounded p-2 text-yellow-600 resize-none focus:border-yellow-500 outline-none"
                   placeholder="Master's private notes..."
                 />
-                <Button onClick={saveNotes} className="mt-2 bg-yellow-500 text-black hover:bg-yellow-400">
+                <Button onClick={saveNotes} className="mt-2 bg-yellow-500 text-gray-900 hover:bg-yellow-400">
                   Save Notes
                 </Button>
               </CardContent>

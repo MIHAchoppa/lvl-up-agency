@@ -73,7 +73,7 @@ function SettingsPanel() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-black/60 border-yellow-500/20 text-white">
+      <Card className="bg-white/60 border-yellow-500/20 text-gray-900">
         <CardHeader>
           <CardTitle className="text-2xl flex items-center gap-2">
             <span>⚙️</span>
@@ -86,38 +86,38 @@ function SettingsPanel() {
           {/* Groq API Key Section */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-lg font-semibold text-yellow-500 mb-2">Groq API Configuration</h3>
-              <p className="text-sm text-gray-400 mb-4">
+              <h3 className="text-lg font-semibold text-yellow-600 mb-2">Groq API Configuration</h3>
+              <p className="text-sm text-gray-600 mb-4">
                 Configure the Groq API key for AI services (Chat, TTS, STT). Changes take effect immediately without restart.
               </p>
             </div>
 
             {loadingSettings ? (
-              <div className="text-center py-4 text-gray-400">Loading settings...</div>
+              <div className="text-center py-4 text-gray-600">Loading settings...</div>
             ) : (
               <>
                 {/* Current Key Preview */}
                 {keyPreview && (
-                  <div className="bg-black/40 border border-yellow-500/10 rounded-lg p-4">
-                    <div className="text-sm text-gray-400 mb-1">Current API Key</div>
-                    <div className="font-mono text-yellow-500/70">{keyPreview}</div>
+                  <div className="bg-white/40 border border-yellow-500/10 rounded-lg p-4">
+                    <div className="text-sm text-gray-600 mb-1">Current API Key</div>
+                    <div className="font-mono text-yellow-600/70">{keyPreview}</div>
                   </div>
                 )}
 
                 {/* Update Key Form */}
                 <div className="space-y-3">
-                  <label className="text-sm text-gray-300">New Groq API Key</label>
+                  <label className="text-sm text-gray-700">New Groq API Key</label>
                   <Input
                     type="password"
                     value={groqKey}
                     onChange={(e) => setGroqKey(e.target.value)}
                     placeholder="Enter new Groq API key"
-                    className="bg-black/40 border-yellow-500/20 text-white placeholder:text-gray-500"
+                    className="bg-white/40 border-yellow-500/20 text-gray-900 placeholder:text-gray-500"
                   />
                   <Button
                     onClick={handleUpdateKey}
                     disabled={loading || !groqKey.trim()}
-                    className="bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-semibold hover:brightness-110 disabled:opacity-50"
+                    className="bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900 font-semibold hover:brightness-110 disabled:opacity-50"
                   >
                     {loading ? (
                       <>
@@ -132,7 +132,7 @@ function SettingsPanel() {
 
                 {/* Help Text */}
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-                  <div className="text-sm text-blue-400">
+                  <div className="text-sm text-blue-600">
                     <strong>ℹ️ How to get a Groq API key:</strong>
                     <ol className="mt-2 ml-4 space-y-1 list-decimal">
                       <li>Visit <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="underline">console.groq.com</a></li>
@@ -148,8 +148,8 @@ function SettingsPanel() {
 
           {/* Future Settings Sections */}
           <div className="border-t border-yellow-500/20 pt-6">
-            <h3 className="text-lg font-semibold text-yellow-500 mb-2">Additional Settings</h3>
-            <p className="text-sm text-gray-400">More configuration options coming soon...</p>
+            <h3 className="text-lg font-semibold text-yellow-600 mb-2">Additional Settings</h3>
+            <p className="text-sm text-gray-600">More configuration options coming soon...</p>
           </div>
         </CardContent>
       </Card>

@@ -160,8 +160,8 @@ function VoiceRecruiter({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 glass-dark z-50 flex items-center justify-center p-4 animate-fade-in">
-      <Card className="w-full max-w-2xl glass border-2 border-yellow-500/40 shadow-gold-lg animate-fade-in-up">
+    <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl bg-gradient-to-br from-gray-100 to-white border-2 border-yellow-500/50 shadow-2xl">
         <CardContent className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
@@ -172,22 +172,22 @@ function VoiceRecruiter({ onClose }) {
                 className="h-14 w-14 transition-smooth hover:scale-110"
               />
               <div>
-                <h2 className="text-2xl font-bold text-gradient-gold">AI Recruiter</h2>
-                <p className="text-sm text-yellow-400/70">Let's get you started!</p>
+                <h2 className="text-xl font-bold text-yellow-600">AI Recruiter</h2>
+                <p className="text-sm text-yellow-600/70">Let's get you started!</p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10"
+              className="text-yellow-600 hover:text-yellow-700"
             >
               ✕
             </Button>
           </div>
 
           {/* Messages */}
-          <div className="glass-dark rounded-xl p-4 h-72 overflow-y-auto mb-6 space-y-3 border border-yellow-500/20">
+          <div className="bg-white/40 rounded-lg p-4 h-64 overflow-y-auto mb-4 space-y-3">
             {messages.map((msg, idx) => (
               <div 
                 key={idx} 
@@ -196,8 +196,8 @@ function VoiceRecruiter({ onClose }) {
                 <div 
                   className={`max-w-[80%] p-4 rounded-xl transition-smooth ${
                     msg.role === 'user' 
-                      ? 'gradient-gold text-black font-medium shadow-gold'
-                      : 'glass-dark text-yellow-400 border border-yellow-500/30'
+                      ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900'
+                      : 'bg-gray-200 text-yellow-600 border border-yellow-500/30'
                   }`}
                 >
                   {msg.content}
@@ -205,11 +205,11 @@ function VoiceRecruiter({ onClose }) {
               </div>
             ))}
             {loading && (
-              <div className="flex justify-start animate-fade-in">
-                <div className="glass-dark text-yellow-400 p-4 rounded-xl border border-yellow-500/30">
+              <div className="flex justify-start">
+                <div className="bg-gray-200 text-yellow-600 p-3 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-yellow-400 border-t-transparent"></div>
-                    <span className="font-medium">Thinking...</span>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
+                    Thinking...
                   </div>
                 </div>
               </div>
@@ -239,13 +239,13 @@ function VoiceRecruiter({ onClose }) {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
               placeholder="Type your response..."
-              className="flex-1 glass-dark border-yellow-500/30 text-yellow-400 placeholder:text-yellow-400/50"
+              className="flex-1 bg-white border-yellow-500 text-yellow-600"
             />
 
             <Button
               onClick={() => sendMessage()}
               disabled={loading || !input.trim()}
-              className="gradient-gold text-black font-bold shadow-gold hover:shadow-gold-lg"
+              className="bg-gradient-to-r from-yellow-500 to-amber-600 text-gray-900"
             >
               Send
             </Button>
