@@ -170,7 +170,7 @@ function VoiceAssistantPanel() {
     try {
       setIsPlaying(true);
       
-      const audioData = `data:audio/mpeg;base64,${audioBase64}`;
+      const audioData = `data:audio/wav;base64,${audioBase64}`;
       const audio = new Audio(audioData);
       
       audio.onended = () => setIsPlaying(false);
@@ -193,33 +193,27 @@ function VoiceAssistantPanel() {
     setIsProcessing(true);
     
     try {
-      const response = await axios.post(`${API}/voice/tts`, {
+      const response = await axios.post(`${API}/tts/speak`, {
         text: command,
-        voice_type: 'coach',
-        user_context: {
-          user_id: 'current_user',
-          role: 'host'
-        }
+        voice: 'Fritz-PlayAI'
       });
       
       const result = response.data;
       
-      if (result.success) {
+      if (result.audio_base64) {
         const interaction = {
           id: Date.now(),
           timestamp: new Date(),
           transcription: command,
           bocadema_detected: command.toLowerCase(),
-          response_text: result.enhanced_text,
+          response_text: command,
           response_audio: result.audio_base64
         };
         
         setVoiceHistory(prev => [interaction, ...prev]);
         
         // Play audio response
-        if (result.audio_base64) {
-          await playAudioResponse(result.audio_base64);
-        }
+        await playAudioResponse(result.audio_base64);
         
         toast.success(`🎯 Command: "${command}"`);
       }

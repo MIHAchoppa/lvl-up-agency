@@ -17,7 +17,9 @@ function BigoAcademyPanel() {
   const [loading, setLoading] = useState(false);
   const [tutorials, setTutorials] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef(null);
+  const currentAudioRef = useRef(null);
 
   const categories = [
     { id: 'basics', name: '🎯 Basics', icon: '🎯' },
@@ -82,6 +84,9 @@ function BigoAcademyPanel() {
         }));
       }
 
+      // Generate voice for the tutorial
+      await speakText(data.tutorial);
+
       toast.success('Tutorial generated!');
     } catch (error) {
       console.error('Academy error:', error);
@@ -128,6 +133,51 @@ function BigoAcademyPanel() {
       'Cross-platform promotion',
       'Collaboration strategies'
     ]
+  };
+
+  const speakText = async (text) => {
+    try {
+      setIsSpeaking(true);
+      
+      // Limit text length for TTS (first 500 characters)
+      const textToSpeak = text.substring(0, 500);
+      
+      const { data } = await axios.post(`${API}/tts/speak`, {
+        text: textToSpeak,
+        voice: 'Fritz-PlayAI'
+      });
+
+      if (data.audio_base64) {
+        const audioData = `data:audio/wav;base64,${data.audio_base64}`;
+        const audio = new Audio(audioData);
+        
+        currentAudioRef.current = audio;
+        
+        audio.onended = () => {
+          setIsSpeaking(false);
+          currentAudioRef.current = null;
+        };
+
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          currentAudioRef.current = null;
+        };
+
+        await audio.play();
+      }
+    } catch (error) {
+      console.error('TTS error:', error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const stopSpeaking = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current.currentTime = 0;
+      currentAudioRef.current = null;
+    }
+    setIsSpeaking(false);
   };
 
   return (
@@ -206,6 +256,15 @@ function BigoAcademyPanel() {
                         className="flex-1"
                         disabled={loading}
                       />
+                      {isSpeaking && (
+                        <Button
+                          onClick={stopSpeaking}
+                          variant="outline"
+                          className="text-red-500"
+                        >
+                          🔇 Stop
+                        </Button>
+                      )}
                       <Button
                         onClick={() => generateTutorial(input)}
                         disabled={loading || !input.trim()}
