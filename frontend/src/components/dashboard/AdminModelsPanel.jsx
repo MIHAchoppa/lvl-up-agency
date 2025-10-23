@@ -20,19 +20,19 @@ export default function AdminModelsPanel() {
     return () => { mounted = false; };
   }, []);
 
-  if (loading) return <div className="text-gray-300">Loading models…</div>;
-  if (error) return <div className="text-red-400">{error}</div>;
+  if (loading) return <div className="text-gray-700">Loading models…</div>;
+  if (error) return <div className="text-red-600">{error}</div>;
 
   return (
     <div className="space-y-4">
-      <div className="text-lg font-semibold text-yellow-400">Groq Models</div>
+      <div className="text-lg font-semibold text-yellow-600">Groq Models</div>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {models.map((m) => (
-          <div key={m.id} className="p-4 rounded-lg bg-[#0b0b0b] border border-yellow-500/20">
-            <div className="font-semibold text-white">{m.id}</div>
-            <div className="text-sm text-gray-400 mt-1">Owned by: {m.owned_by}</div>
+          <div key={m.id} className="p-4 rounded-lg bg-white border border-yellow-500/20">
+            <div className="font-semibold text-gray-900">{m.id}</div>
+            <div className="text-sm text-gray-600 mt-1">Owned by: {m.owned_by}</div>
             {m.context_window && (
-              <div className="text-sm text-gray-400">Context: {m.context_window}</div>
+              <div className="text-sm text-gray-600">Context: {m.context_window}</div>
             )}
             <div className="text-xs text-gray-500 mt-2">Active: {String(m.active)}</div>
           </div>
