@@ -216,7 +216,7 @@ function BlogPostPage() {
       {/* Footer */}
       <footer className="border-t border-yellow-500/30 py-10 text-center text-gray-400 bg-black/50">
         <p className="text-sm font-medium">© {new Date().getFullYear()} Level Up Agency. All rights reserved.</p>
-        <p className="text-xs mt-2 text-yellow-500/50">Powered by BeanGenie™ AI Technology</p>
+        <p className="text-xs mt-2 text-yellow-500/50">Powered by LVL UP Coach AI Technology</p>
       </footer>
     </div>
   );

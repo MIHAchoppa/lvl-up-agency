@@ -6,7 +6,7 @@ function LvlUpRecruitr() {
     {
       icon: <Mic className="w-8 h-8" />,
       title: "AI Voice Coaching",
-      description: "Get personalized coaching from Bean Genie, your AI-powered voice assistant that helps you improve your streaming skills in real-time."
+      description: "Get personalized coaching from LVL UP Coach, your AI-powered voice assistant that helps you improve your streaming skills in real-time."
     },
     {
       icon: <Video className="w-8 h-8" />,
@@ -71,7 +71,7 @@ function LvlUpRecruitr() {
             Ready to Level Up?
           </h3>
           <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Start your journey with Bean Genie and join our community of successful BIGO Live hosts today.
+            Start your journey with LVL UP Coach and join our community of successful BIGO Live hosts today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="px-8 py-4 bg-white text-gold-600 rounded-lg font-semibold text-lg hover:bg-gray-50 transition-colors shadow-lg btn-glow">

@@ -167,8 +167,8 @@ function VoiceRecruiter({ onClose }) {
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
               <img 
-                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
-                alt="BeanGenie Recruiter" 
+                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+                alt="LVL UP Coach Recruiter" 
                 className="h-14 w-14 transition-smooth hover:scale-110"
               />
               <div>

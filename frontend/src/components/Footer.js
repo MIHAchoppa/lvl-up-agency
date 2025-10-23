@@ -21,11 +21,11 @@ function Footer() {
           <div className="flex items-center gap-2">
             <span className="text-gray-600 text-sm">Powered by</span>
             <img 
-              src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
-              alt="BeanGenie" 
+              src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+              alt="LVL UP Coach" 
               className="h-6 w-6 object-contain"
             />
-            <span className="text-gold-600 font-semibold text-sm">bean genie</span>
+            <span className="text-gold-600 font-semibold text-sm">LVL UP Coach</span>
           </div>
         </div>
       </div>
