@@ -1,0 +1,11 @@
+# robots.txt for Level Up Agency
+User-agent: *
+Allow: /
+Allow: /blog
+Allow: /blog/*
+Disallow: /dashboard
+Disallow: /login
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://levelupagency.com/sitemap.xml
