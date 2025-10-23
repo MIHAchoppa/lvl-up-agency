@@ -4,10 +4,13 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import VoiceRecruiter from '../components/VoiceRecruiter';
+import { getFeaturedArticles } from '../data/blogData';
+import { Calendar, Clock, ArrowRight } from 'lucide-react';
 
 function LandingPage() {
   const navigate = useNavigate();
   const [showRecruiter, setShowRecruiter] = useState(false);
+  const featuredArticles = getFeaturedArticles(3);
 
   useEffect(() => {
     // Auto-show recruiter after 2 seconds
@@ -39,6 +42,7 @@ function LandingPage() {
           <nav className="flex items-center gap-3 sm:gap-6 text-sm">
             <a href="#features" className="hidden sm:inline text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Features</a>
             <a href="#how" className="hidden md:inline text-gray-300 hover:text-yellow-400 transition-smooth font-medium">How it works</a>
+            <Link to="/blog" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Blog</Link>
             <Link to="/login" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Login</Link>
             <button 
               onClick={() => navigate('/dashboard')} 
@@ -125,6 +129,70 @@ function LandingPage() {
                   <p className="text-gray-300 leading-relaxed">{feature.desc}</p>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Blog Section */}
+        <section id="blog" className="py-20 border-t border-yellow-500/20 bg-gradient-to-b from-transparent to-black/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-gradient-gold mb-4">
+                Learn from the Best
+              </h2>
+              <p className="text-gray-300 text-lg max-w-2xl mx-auto">
+                Expert insights, proven strategies, and success stories to help you thrive as a BIGO Live host
+              </p>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-6 lg:gap-8 mb-8">
+              {featuredArticles.map((article, i) => (
+                <Link
+                  key={article.id}
+                  to={`/blog/${article.slug}`}
+                  className="group rounded-2xl border border-yellow-500/30 glass overflow-hidden hover-lift transition-smooth hover:border-yellow-500/50 animate-fade-in-up"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                >
+                  <div className="aspect-video overflow-hidden bg-gradient-to-br from-yellow-500/20 to-amber-500/20">
+                    <img 
+                      src={article.image} 
+                      alt={article.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                  
+                  <div className="p-6">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                      {article.category}
+                    </span>
+                    
+                    <h3 className="text-xl font-bold text-white mt-3 mb-2 group-hover:text-gradient-gold transition-colors line-clamp-2">
+                      {article.title}
+                    </h3>
+                    
+                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                      {article.excerpt}
+                    </p>
+                    
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{article.readTime}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            
+            <div className="text-center">
+              <Link 
+                to="/blog" 
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl gradient-gold text-black font-bold shadow-gold-lg transition-smooth hover:scale-105"
+              >
+                View All Articles
+                <ArrowRight className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         </section>
