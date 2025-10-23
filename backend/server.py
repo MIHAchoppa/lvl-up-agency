@@ -27,6 +27,7 @@ from contextlib import asynccontextmanager
 from services.ai_service import ai_service
 from services.voice_service import voice_service  
 from services.websocket_service import connection_manager
+from services.lead_scanner_service import lead_scanner_service
 # from routers.voice_router import voice_router
 # from routers.admin_assistant_router import admin_assistant_router
 
@@ -1613,6 +1614,285 @@ async def send_outreach_emails(outreach_data: dict, current_user: User = Depends
         "failed_count": failed_count,
         "message": f"Outreach completed: {contacted_count} emails sent, {failed_count} failed"
     }
+
+# ============================================
+# LEAD SCANNER AGENT ENDPOINTS
+# ============================================
+
+class ScanRequest(BaseModel):
+    platforms: List[str] = ["instagram", "tiktok", "youtube"]
+    keywords: List[str]
+    min_followers: int = 5000
+    max_results: int = 50
+    auto_enrich: bool = True
+
+@api_router.post("/recruitment/scan")
+async def scan_for_leads(
+    scan_request: ScanRequest,
+    current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))
+):
+    """
+    Scan the internet for potential leads using the Lead Scanner Agent
+    Admin/Owner only endpoint
+    """
+    try:
+        # Validate input
+        if not scan_request.keywords:
+            raise HTTPException(status_code=400, detail="At least one keyword required")
+        
+        if scan_request.min_followers < 1000:
+            raise HTTPException(status_code=400, detail="Minimum followers must be at least 1000")
+        
+        # Create scan record
+        scan_id = str(uuid.uuid4())
+        scan_doc = {
+            "id": scan_id,
+            "initiated_by": current_user.id,
+            "initiated_by_name": current_user.name,
+            "status": "running",
+            "platforms": scan_request.platforms,
+            "keywords": scan_request.keywords,
+            "filters": {
+                "min_followers": scan_request.min_followers,
+                "max_results": scan_request.max_results
+            },
+            "started_at": datetime.now(timezone.utc),
+            "completed_at": None,
+            "results": {
+                "total_found": 0,
+                "total_saved": 0,
+                "total_duplicates": 0
+            }
+        }
+        await db.lead_scans.insert_one(scan_doc)
+        
+        # Run the scan
+        logger.info(f"Starting lead scan {scan_id} with keywords: {scan_request.keywords}")
+        
+        scan_results = await lead_scanner_service.scan_for_leads(
+            platforms=scan_request.platforms,
+            keywords=scan_request.keywords,
+            min_followers=scan_request.min_followers,
+            max_results=scan_request.max_results
+        )
+        
+        # Process and save leads
+        saved_count = 0
+        duplicate_count = 0
+        
+        for lead_data in scan_results.get('leads', []):
+            try:
+                # Enrich lead if requested
+                if scan_request.auto_enrich:
+                    lead_data = await lead_scanner_service.enrich_lead(lead_data)
+                
+                # Validate lead
+                if not await lead_scanner_service.validate_lead(lead_data):
+                    continue
+                
+                # Check for duplicates (by username and platform)
+                existing = await db.influencer_leads.find_one({
+                    "username": lead_data['username'],
+                    "platform": lead_data['platform']
+                })
+                
+                if existing:
+                    duplicate_count += 1
+                    continue
+                
+                # Create influencer lead
+                lead = InfluencerLead(
+                    name=lead_data.get('name', 'Unknown'),
+                    platform=lead_data.get('platform', 'unknown'),
+                    username=lead_data.get('username', ''),
+                    follower_count=lead_data.get('follower_count'),
+                    engagement_rate=lead_data.get('engagement_rate'),
+                    email=lead_data.get('email'),
+                    phone=lead_data.get('phone'),
+                    bio=lead_data.get('bio'),
+                    profile_url=lead_data.get('profile_url', ''),
+                    notes=lead_data.get('notes', f"Discovered via scan {scan_id}")
+                )
+                
+                lead_dict = lead.dict()
+                lead_dict['scan_id'] = scan_id
+                lead_dict['quality_score'] = lead_data.get('quality_score', 50)
+                
+                await db.influencer_leads.insert_one(lead_dict)
+                saved_count += 1
+                
+            except Exception as e:
+                logger.error(f"Error saving lead: {e}")
+                continue
+        
+        # Update scan record
+        await db.lead_scans.update_one(
+            {"id": scan_id},
+            {
+                "$set": {
+                    "status": "completed",
+                    "completed_at": datetime.now(timezone.utc),
+                    "results": {
+                        "total_found": scan_results.get('total_found', 0),
+                        "total_saved": saved_count,
+                        "total_duplicates": duplicate_count,
+                        "by_platform": scan_results.get('by_platform', {})
+                    }
+                }
+            }
+        )
+        
+        logger.info(f"Scan {scan_id} completed: {saved_count} leads saved, {duplicate_count} duplicates")
+        
+        return {
+            "success": True,
+            "scan_id": scan_id,
+            "results": {
+                "total_found": scan_results.get('total_found', 0),
+                "total_saved": saved_count,
+                "total_duplicates": duplicate_count,
+                "by_platform": scan_results.get('by_platform', {})
+            },
+            "message": f"Scan completed successfully. Found {scan_results.get('total_found', 0)} leads, saved {saved_count} new leads."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Lead scan error: {e}")
+        # Update scan status to failed
+        if 'scan_id' in locals():
+            await db.lead_scans.update_one(
+                {"id": scan_id},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "error": str(e),
+                        "completed_at": datetime.now(timezone.utc)
+                    }
+                }
+            )
+        raise HTTPException(status_code=500, detail=f"Scan failed: {str(e)}")
+
+@api_router.get("/recruitment/scans")
+async def get_scan_history(
+    limit: int = 50,
+    current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))
+):
+    """Get history of lead scans"""
+    try:
+        scans = await db.lead_scans.find({}).sort("started_at", -1).limit(limit).to_list(limit)
+        return {
+            "scans": scans,
+            "total": len(scans)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/recruitment/scans/{scan_id}")
+async def get_scan_details(
+    scan_id: str,
+    current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))
+):
+    """Get details of a specific scan"""
+    try:
+        scan = await db.lead_scans.find_one({"id": scan_id})
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        # Get leads from this scan
+        leads = await db.influencer_leads.find({"scan_id": scan_id}).to_list(1000)
+        
+        return {
+            "scan": scan,
+            "leads": [InfluencerLead(**lead) for lead in leads]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/recruitment/scans/{scan_id}")
+async def delete_scan(
+    scan_id: str,
+    delete_leads: bool = False,
+    current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))
+):
+    """Delete a scan record and optionally its leads"""
+    try:
+        scan = await db.lead_scans.find_one({"id": scan_id})
+        if not scan:
+            raise HTTPException(status_code=404, detail="Scan not found")
+        
+        # Delete scan record
+        await db.lead_scans.delete_one({"id": scan_id})
+        
+        # Optionally delete associated leads
+        leads_deleted = 0
+        if delete_leads:
+            result = await db.influencer_leads.delete_many({"scan_id": scan_id})
+            leads_deleted = result.deleted_count
+        
+        return {
+            "success": True,
+            "message": f"Scan deleted successfully",
+            "leads_deleted": leads_deleted
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/recruitment/stats")
+async def get_recruitment_stats(
+    current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))
+):
+    """Get recruitment and lead statistics"""
+    try:
+        # Total leads
+        total_leads = await db.influencer_leads.count_documents({})
+        
+        # Leads by status
+        status_pipeline = [
+            {"$group": {"_id": "$status", "count": {"$sum": 1}}}
+        ]
+        status_counts = await db.influencer_leads.aggregate(status_pipeline).to_list(10)
+        status_breakdown = {item['_id']: item['count'] for item in status_counts}
+        
+        # Leads by platform
+        platform_pipeline = [
+            {"$group": {"_id": "$platform", "count": {"$sum": 1}}}
+        ]
+        platform_counts = await db.influencer_leads.aggregate(platform_pipeline).to_list(10)
+        platform_breakdown = {item['_id']: item['count'] for item in platform_counts}
+        
+        # Recent scans
+        recent_scans = await db.lead_scans.count_documents({
+            "started_at": {"$gte": datetime.now(timezone.utc) - timedelta(days=7)}
+        })
+        
+        # Quality metrics
+        quality_pipeline = [
+            {"$match": {"quality_score": {"$exists": True}}},
+            {"$group": {
+                "_id": None,
+                "avg_quality": {"$avg": "$quality_score"},
+                "high_quality": {"$sum": {"$cond": [{"$gte": ["$quality_score", 70]}, 1, 0]}}
+            }}
+        ]
+        quality_result = await db.influencer_leads.aggregate(quality_pipeline).to_list(1)
+        quality_metrics = quality_result[0] if quality_result else {"avg_quality": 0, "high_quality": 0}
+        
+        return {
+            "total_leads": total_leads,
+            "status_breakdown": status_breakdown,
+            "platform_breakdown": platform_breakdown,
+            "recent_scans_7d": recent_scans,
+            "avg_quality_score": round(quality_metrics.get('avg_quality', 0), 1),
+            "high_quality_leads": quality_metrics.get('high_quality', 0)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Calendar RSVP and visibility
 @api_router.post("/events/{event_id}/rsvp")
