@@ -26,7 +26,7 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('ai-coach');
   
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
+    <div className="min-h-screen bg-gray-50 text-gray-900">
       <Toaster />
       {/* Header */}
       <header className="glass-dark border-b border-yellow-500/30 sticky top-0 z-40 shadow-gold">
@@ -48,9 +48,9 @@ function Dashboard() {
             </div>
             <div className="flex items-center gap-4">
               <div className="px-4 py-2 rounded-lg glass border border-yellow-500/20">
-                <span className="text-sm font-medium text-gray-200">
+                <span className="text-sm font-medium text-gray-900">
                   👋 {user?.name} 
-                  <span className="text-yellow-400 ml-2">({user?.role})</span>
+                  <span className="text-yellow-600 ml-2">({user?.role})</span>
                 </span>
               </div>
               <button 

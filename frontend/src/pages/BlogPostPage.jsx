@@ -26,10 +26,10 @@ function BlogPostPage() {
 
   if (!article) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-4xl font-bold text-gradient-gold mb-4">Article Not Found</h1>
-          <p className="text-gray-400 mb-8">The article you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-8">The article you're looking for doesn't exist.</p>
           <Link 
             to="/blog" 
             className="px-6 py-3 rounded-xl gradient-gold text-black font-bold inline-flex items-center gap-2"
@@ -57,7 +57,7 @@ function BlogPostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
       <header className="border-b border-yellow-500/20 sticky top-0 glass-dark z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -70,12 +70,12 @@ function BlogPostPage() {
             <span className="font-bold text-base sm:text-lg">Level Up Agency</span>
           </div>
           <nav className="flex items-center gap-3 sm:gap-6 text-sm">
-            <Link to="/blog" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium flex items-center gap-2">
+            <Link to="/blog" className="text-gray-700 hover:text-yellow-600 transition-smooth font-medium flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Back to Blog</span>
               <span className="sm:hidden">Blog</span>
             </Link>
-            <Link to="/login" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Login</Link>
+            <Link to="/login" className="text-gray-700 hover:text-yellow-600 transition-smooth font-medium">Login</Link>
           </nav>
         </div>
       </header>
@@ -86,19 +86,19 @@ function BlogPostPage() {
         <div className="flex items-center gap-2 mb-6">
           <Link 
             to="/blog" 
-            className="px-4 py-2 rounded-full text-sm font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/30 transition-colors"
+            className="px-4 py-2 rounded-full text-sm font-medium bg-yellow-500/20 text-yellow-600 border border-yellow-500/30 hover:bg-yellow-500/30 transition-colors"
           >
             {article.category}
           </Link>
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-6">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-6 text-gray-900">
           {article.title}
         </h1>
 
         {/* Meta Info */}
-        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-400 mb-8 pb-8 border-b border-yellow-500/20">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600 mb-8 pb-8 border-b border-yellow-500/20">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             <span>{new Date(article.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
@@ -112,7 +112,7 @@ function BlogPostPage() {
           </div>
           <button 
             onClick={handleShare}
-            className="flex items-center gap-2 ml-auto text-yellow-400 hover:text-yellow-300 transition-colors"
+            className="flex items-center gap-2 ml-auto text-yellow-600 hover:text-yellow-700 transition-colors"
             aria-label="Share article"
           >
             <Share2 className="w-4 h-4" />
@@ -130,18 +130,18 @@ function BlogPostPage() {
         </div>
 
         {/* Article Content */}
-        <div className="prose prose-invert prose-lg max-w-none">
-          <div className="text-gray-300 leading-relaxed space-y-6">
+        <div className="prose prose-lg max-w-none">
+          <div className="text-gray-700 leading-relaxed space-y-6">
             {article.content.split('\n\n').map((paragraph, index) => {
               // Handle markdown headings
               if (paragraph.startsWith('# ')) {
-                return <h1 key={index} className="text-3xl font-bold text-white mt-12 mb-6">{paragraph.substring(2)}</h1>;
+                return <h1 key={index} className="text-3xl font-bold text-gray-900 mt-12 mb-6">{paragraph.substring(2)}</h1>;
               }
               if (paragraph.startsWith('## ')) {
                 return <h2 key={index} className="text-2xl font-bold text-gradient-gold mt-10 mb-4">{paragraph.substring(3)}</h2>;
               }
               if (paragraph.startsWith('### ')) {
-                return <h3 key={index} className="text-xl font-bold text-yellow-400 mt-8 mb-3">{paragraph.substring(4)}</h3>;
+                return <h3 key={index} className="text-xl font-bold text-yellow-600 mt-8 mb-3">{paragraph.substring(4)}</h3>;
               }
               
               // Handle lists
