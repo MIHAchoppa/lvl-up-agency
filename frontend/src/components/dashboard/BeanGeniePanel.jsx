@@ -102,7 +102,7 @@ function BeanGeniePanel() {
     // Initial greeting
     setMessages([{
       role: 'assistant',
-      content: "🧞‍♂️ Hey Boss! I'm BeanGenie™ - your AI coach and strategic partner! I'll help you with:\n\n💪 Growth & Strategy\n🎯 Bigo Wheel Management (gift-to-spin prizes!)\n📊 Performance Coaching\n💰 Monetization Tips\n🎬 Content Planning\n\nWhat do you need help with today?",
+      content: "🎯 Hey Boss! I'm your LVL UP Coach - your AI coach and strategic partner! I'll help you with:\n\n💪 Growth & Strategy\n🎯 Bigo Wheel Management (gift-to-spin prizes!)\n📊 Performance Coaching\n💰 Monetization Tips\n🎬 Content Planning\n\nWhat do you need help with today?",
       timestamp: new Date()
     }]);
   }, []);
@@ -124,7 +124,7 @@ function BeanGeniePanel() {
       setNotes(data.notes || '');
       updateAnalytics(data);
     } catch (error) {
-      console.error('Error loading BeanGenie data:', error);
+      console.error('Error loading LVL UP Coach data:', error);
     }
   };
 
@@ -178,14 +178,14 @@ function BeanGeniePanel() {
       }
       
     } catch (error) {
-      console.error('BeanGenie error:', error);
+      console.error('LVL UP Coach error:', error);
       const errorMessage = {
         role: 'assistant',
-        content: '⚠️ Error connecting to BeanGenie: ' + (error.response?.data?.detail || error.message),
+        content: '⚠️ Error connecting to LVL UP Coach: ' + (error.response?.data?.detail || error.message),
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
-      toast.error('BeanGenie error');
+      toast.error('LVL UP Coach error');
     } finally {
       setLoading(false);
     }
@@ -194,7 +194,7 @@ function BeanGeniePanel() {
   const speakText = async (text) => {
     try {
       setIsSpeaking(true);
-      setVoiceStatus('🗣️ BeanGenie speaks...');
+      setVoiceStatus('🗣️ Coach speaks...');
 
       const { data } = await axios.post(`${API}/beangenie/tts`, {
         text: text.substring(0, 500) // Limit length
@@ -508,16 +508,16 @@ function BeanGeniePanel() {
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
-      {/* Header with BeanGenie Logo */}
+      {/* Header with LVL UP Coach Logo */}
       <div className="p-4 text-center border-b border-yellow-500/30">
         <div className="flex items-center justify-center gap-3 mb-2">
           <img 
-            src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
-            alt="BeanGenie" 
+            src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+            alt="LVL UP Coach" 
             className="h-16 w-16 object-contain"
           />
           <h2 className="text-2xl font-bold bg-gradient-to-r from-yellow-400 via-yellow-300 to-orange-400 bg-clip-text text-transparent">
-            BeanGenie™ Master Assistant
+            LVL UP Coach
           </h2>
         </div>
         {voiceStatus && (
@@ -575,7 +575,7 @@ function BeanGeniePanel() {
                 <div className="inline-block px-4 py-2 rounded-2xl bg-gray-100 text-yellow-600">
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-600"></div>
-                    Consulting BeanGenie...
+                    Consulting Coach...
                   </div>
                 </div>
               </div>
@@ -609,7 +609,7 @@ function BeanGeniePanel() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if(e.key === 'Enter') sendMessage(); }}
-              placeholder="Command the genie..."
+              placeholder="Ask your coach..."
               className="flex-1 bg-white border-yellow-500 text-yellow-600"
             />
 

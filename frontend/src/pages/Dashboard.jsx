@@ -41,8 +41,8 @@ function Dashboard() {
               <h1 className="text-xl font-bold text-gradient-gold">Level Up Agency</h1>
               <span className="text-yellow-500/40">•</span>
               <img 
-                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
-                alt="BeanGenie" 
+                src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+                alt="LVL UP Coach" 
                 className="h-7 w-7 object-contain transition-smooth hover:scale-110"
               />
             </div>
@@ -72,7 +72,7 @@ function Dashboard() {
               value="beangenie" 
               className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
             >
-              🧞‍♂️ BeanGenie
+              🎯 LVL UP Coach
             </TabsTrigger>
             <TabsTrigger 
               value="academy" 

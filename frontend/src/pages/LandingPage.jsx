@@ -33,11 +33,11 @@ function LandingPage() {
             <span className="font-bold text-base sm:text-lg">Level Up Agency</span>
             <span className="hidden sm:inline text-yellow-500/50">|</span>
             <img 
-              src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/uzty33em_bean_genie_no_bg.webp" 
-              alt="BeanGenie" 
+              src="https://customer-assets.emergentagent.com/job_admin-key-updater/artifacts/15cfdrzj_IMG_6004.webp" 
+              alt="LVL UP Coach" 
               className="hidden sm:block h-8 w-8 object-contain transition-smooth hover:scale-110"
             />
-            <span className="hidden md:inline text-sm text-gradient-gold font-medium">Powered by BeanGenie™</span>
+            <span className="hidden md:inline text-sm text-gradient-gold font-medium">Powered by LVL UP Coach</span>
           </div>
           <nav className="flex items-center gap-3 sm:gap-6 text-sm">
             <a href="#features" className="hidden sm:inline text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Features</a>
@@ -68,7 +68,7 @@ function LandingPage() {
                 <span className="text-white">with AI coaching</span>
               </h1>
               <p className="mt-6 text-gray-300 text-lg md:text-xl leading-relaxed">
-                Audition, learn, and grow with Bean Genie and our AI-powered platform. Strategy, events, PK prep, and more.
+                Audition, learn, and grow with LVL UP Coach and our AI-powered platform. Strategy, events, PK prep, and more.
               </p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <button 
@@ -93,7 +93,7 @@ function LandingPage() {
                 </div>
                 <div className="p-5 rounded-xl glass-dark border border-yellow-500/30 hover-lift transition-smooth hover:border-yellow-500/50">
                   <div className="text-3xl font-bold text-gradient-gold mb-2">Voice</div>
-                  <div className="text-gray-400 text-sm">Bean Genie calls</div>
+                  <div className="text-gray-400 text-sm">AI Coach calls</div>
                 </div>
                 <div className="p-5 rounded-xl glass-dark border border-yellow-500/30 hover-lift transition-smooth hover:border-yellow-500/50">
                   <div className="text-3xl font-bold text-gradient-gold mb-2">Auditions</div>
@@ -200,7 +200,7 @@ function LandingPage() {
 
       <footer className="border-t border-yellow-500/30 py-10 text-center text-gray-400 bg-black/50">
         <p className="text-sm font-medium">© {new Date().getFullYear()} Level Up Agency. All rights reserved.</p>
-        <p className="text-xs mt-2 text-yellow-500/50">Powered by BeanGenie™ AI Technology</p>
+        <p className="text-xs mt-2 text-yellow-500/50">Powered by LVL UP Coach AI Technology</p>
       </footer>
       {/* Voice Recruiter Modal */}
       {showRecruiter && (
