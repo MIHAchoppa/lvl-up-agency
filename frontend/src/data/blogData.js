@@ -60,7 +60,7 @@ Working with an agency like Level Up Agency provides:
 - Higher revenue share
 - Event opportunities
 - Community support
-- AI-powered guidance with BeanGenie™
+- AI-powered guidance with LVL UP Coach
 
 ### 4. Prepare for Your Audition
 - Test your equipment and internet connection
@@ -97,7 +97,7 @@ Once approved:
 
 Level Up Agency offers comprehensive support for new BIGO hosts:
 
-- **AI Coaching**: Get personalized guidance from BeanGenie™
+- **AI Coaching**: Get personalized guidance from LVL UP Coach
 - **Audition Support**: Professional feedback on your audition
 - **Training Programs**: Learn best practices and advanced techniques
 - **Event Coordination**: Participate in exclusive events
@@ -116,7 +116,7 @@ Ready to start your BIGO Live hosting journey?
 
 ## Conclusion
 
-Becoming a successful BIGO Live host requires dedication, consistency, and the right support system. With Level Up Agency and our AI-powered BeanGenie™ platform, you'll have all the tools and guidance needed to thrive.
+Becoming a successful BIGO Live host requires dedication, consistency, and the right support system. With Level Up Agency and our AI-powered LVL UP Coach platform, you'll have all the tools and guidance needed to thrive.
 
 Start your journey today and unlock your potential as a top-earning BIGO Live host!
 
@@ -208,7 +208,7 @@ Level Up Agency offers performance-based bonuses for consistency, growth achieve
 
 ## Level Up Agency Support
 
-Our agency helps maximize your earnings through BeanGenie™ AI Coaching, training programs, and exclusive event opportunities.
+Our agency helps maximize your earnings through LVL UP Coach AI Coaching, training programs, and exclusive event opportunities.
 
 *Ready to increase your BIGO earnings? Access advanced training and AI coaching in your Level Up Agency dashboard!*
     `,
