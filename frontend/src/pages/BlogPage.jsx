@@ -7,7 +7,7 @@ function BlogPage() {
   const articles = getAllArticles();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-gray-100">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
       <header className="border-b border-yellow-500/20 sticky top-0 glass-dark z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -20,12 +20,12 @@ function BlogPage() {
             <span className="font-bold text-base sm:text-lg">Level Up Agency</span>
           </div>
           <nav className="flex items-center gap-3 sm:gap-6 text-sm">
-            <Link to="/" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium flex items-center gap-2">
+            <Link to="/" className="text-gray-700 hover:text-yellow-600 transition-smooth font-medium flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Back to Home</span>
               <span className="sm:hidden">Home</span>
             </Link>
-            <Link to="/login" className="text-gray-300 hover:text-yellow-400 transition-smooth font-medium">Login</Link>
+            <Link to="/login" className="text-gray-700 hover:text-yellow-600 transition-smooth font-medium">Login</Link>
           </nav>
         </div>
       </header>
@@ -37,9 +37,9 @@ function BlogPage() {
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
             <span className="text-gradient-gold">BIGO Live Host</span>
             <br />
-            <span className="text-white">Resources & Guides</span>
+            <span className="text-gray-900">Resources & Guides</span>
           </h1>
-          <p className="text-gray-300 text-lg md:text-xl max-w-3xl mx-auto">
+          <p className="text-gray-700 text-lg md:text-xl max-w-3xl mx-auto">
             Expert insights, proven strategies, and success stories to help you thrive as a BIGO Live host
           </p>
         </div>
@@ -69,18 +69,18 @@ function BlogPage() {
                 <div className="p-6">
                   {/* Category Badge */}
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-600 border border-yellow-500/30">
                       {article.category}
                     </span>
                   </div>
 
                   {/* Title */}
-                  <h2 className="text-xl font-bold text-white mb-3 group-hover:text-gradient-gold transition-colors">
+                  <h2 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-gradient-gold transition-colors">
                     {article.title}
                   </h2>
 
                   {/* Excerpt */}
-                  <p className="text-gray-400 text-sm mb-4 line-clamp-3">
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                     {article.excerpt}
                   </p>
 
@@ -98,7 +98,7 @@ function BlogPage() {
 
                   {/* Read More Link */}
                   <div className="mt-4 pt-4 border-t border-yellow-500/20">
-                    <span className="text-yellow-400 text-sm font-medium group-hover:text-yellow-300 transition-colors">
+                    <span className="text-yellow-600 text-sm font-medium group-hover:text-yellow-700 transition-colors">
                       Read Full Article →
                     </span>
                   </div>
@@ -115,7 +115,7 @@ function BlogPage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-gradient-gold mb-6">
             Ready to Start Your BIGO Journey?
           </h2>
-          <p className="text-gray-300 text-lg mb-8">
+          <p className="text-gray-700 text-lg mb-8">
             Join Level Up Agency and get access to AI coaching, professional training, and a supportive community
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
