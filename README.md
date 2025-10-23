@@ -148,6 +148,7 @@ lvl-up-agency/
 
 - **🤖 AI-Powered Coaching** - Intelligent guidance for BIGO Live hosts using Bean Genie
 - **🎤 Voice Recruiting** - Interactive voice-based talent recruitment system
+- **🔍 Lead Scanner Agent** - Automated internet scanning to discover potential BIGO Live hosts
 - **📹 Audition Management** - Upload and review host audition videos
 - **📅 Event Calendar** - Schedule and manage events with RSVP functionality
 - **💬 Real-time Chat** - Group messaging and communication tools
