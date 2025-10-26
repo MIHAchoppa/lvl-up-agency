@@ -2771,7 +2771,7 @@ class BigoWheel(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     user_id: str
     name: str
-    gift_cost: int = 100
+    gift_cost: int = Field(default=100, gt=0)
     gift_type: str = "beans"
     active: bool = True
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -2784,7 +2784,7 @@ class BigoWheelPrize(BaseModel):
     name: str
     description: str = ""
     icon: str = "🎁"
-    probability: int = 1
+    probability: int = Field(default=1, gt=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class BigoWheelSpin(BaseModel):
@@ -2841,7 +2841,6 @@ async def get_beangenie_data(current_user: User = Depends(get_current_user)):
             "notes": notes_doc.get("content", "") if notes_doc else ""
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/beangenie/chat")
@@ -3261,6 +3260,11 @@ async def add_wheel_prize(wheel_id: str, prize_data: dict, current_user: User = 
         if prize_type not in ["task", "physical", "content"]:
             raise HTTPException(status_code=400, detail="Invalid prize type. Must be: task, physical, or content")
         
+        # Validate probability
+        probability = prize_data.get("probability", 1)
+        if probability <= 0:
+            raise HTTPException(status_code=400, detail="Probability must be greater than 0")
+        
         prize_doc = {
             "id": str(uuid.uuid4()),
             "wheel_id": wheel_id,
@@ -3269,7 +3273,7 @@ async def add_wheel_prize(wheel_id: str, prize_data: dict, current_user: User = 
             "name": name,
             "description": prize_data.get("description", ""),
             "icon": prize_data.get("icon", "🎁"),
-            "probability": max(1, prize_data.get("probability", 1)),
+            "probability": probability,
             "created_at": datetime.now(timezone.utc)
         }
         await db.bigo_wheel_prizes.insert_one(prize_doc)
