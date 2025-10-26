@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
 from dotenv import load_dotenv
@@ -1967,12 +1967,48 @@ async def post_channel_message(channel_id: str, body: dict, current_user: User =
     # prevent guests - but guests cannot auth, so safe
     msg = Message(channel_id=channel_id, user_id=current_user.id, body=body.get("body", ""))
     await db.messages.insert_one(msg.dict())
-    return msg
+    
+    # Get sender info to include in response
+    sender_user = await db.users.find_one({"id": current_user.id})
+    enriched_msg = {
+        **msg.dict(),
+        "sender": {
+            "id": current_user.id,
+            "bigo_id": sender_user.get("bigo_id") if sender_user else "Unknown",
+            "name": sender_user.get("name") if sender_user else "Unknown"
+        }
+    }
+    
+    # Broadcast to channel via WebSocket
+    await connection_manager.broadcast_to_room(
+        {
+            "type": "channel_message",
+            "message": enriched_msg
+        },
+        channel_id
+    )
+    
+    return enriched_msg
 
 @api_router.get("/chat/channels/{channel_id}/messages")
 async def list_channel_messages(channel_id: str, current_user: User = Depends(get_current_user)):
     msgs = await db.messages.find({"channel_id": channel_id}).sort("created_at", 1).to_list(1000)
-    return [Message(**m) for m in msgs]
+    
+    # Enrich messages with sender info
+    enriched_messages = []
+    for m in msgs:
+        sender_user = await db.users.find_one({"id": m.get("user_id")})
+        enriched_msg = {
+            **m,
+            "sender": {
+                "id": m.get("user_id"),
+                "bigo_id": sender_user.get("bigo_id") if sender_user else "Unknown",
+                "name": sender_user.get("name") if sender_user else "Unknown"
+            }
+        }
+        enriched_messages.append(enriched_msg)
+    
+    return enriched_messages
 
 @api_router.get("/recruitment/export")
 async def export_leads_spreadsheet(current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
@@ -2318,7 +2354,45 @@ async def redeem_reward(reward_id: str, current_user: User = Depends(get_current
 async def send_message(message_data: dict, current_user: User = Depends(get_current_user)):
     message = PrivateMessage(**message_data, sender_id=current_user.id)
     await db.private_messages.insert_one(message.dict())
-    return message
+    
+    # Get sender and recipient user info to include in the message
+    sender_user = await db.users.find_one({"id": current_user.id})
+    recipient_user = await db.users.find_one({"id": message_data.get("recipient_id")})
+    
+    # Create enriched message object with sender info
+    enriched_message = {
+        **message.dict(),
+        "sender": {
+            "id": current_user.id,
+            "bigo_id": sender_user.get("bigo_id") if sender_user else "Unknown",
+            "name": sender_user.get("name") if sender_user else "Unknown"
+        },
+        "recipient": {
+            "id": message_data.get("recipient_id"),
+            "bigo_id": recipient_user.get("bigo_id") if recipient_user else "Unknown",
+            "name": recipient_user.get("name") if recipient_user else "Unknown"
+        }
+    }
+    
+    # Send to recipient via WebSocket
+    await connection_manager.send_user_message(
+        {
+            "type": "private_message",
+            "message": enriched_message
+        },
+        message_data.get("recipient_id")
+    )
+    
+    # Send to sender via WebSocket so they see their own message
+    await connection_manager.send_user_message(
+        {
+            "type": "private_message",
+            "message": enriched_message
+        },
+        current_user.id
+    )
+    
+    return enriched_message
 
 @api_router.get("/messages")
 async def get_messages(current_user: User = Depends(get_current_user)):
@@ -2328,7 +2402,29 @@ async def get_messages(current_user: User = Depends(get_current_user)):
             {"recipient_id": current_user.id}
         ]
     }).sort("sent_at", -1).to_list(1000)
-    return [PrivateMessage(**msg) for msg in messages]
+    
+    # Enrich messages with sender and recipient info
+    enriched_messages = []
+    for msg in messages:
+        sender_user = await db.users.find_one({"id": msg.get("sender_id")})
+        recipient_user = await db.users.find_one({"id": msg.get("recipient_id")})
+        
+        enriched_msg = {
+            **msg,
+            "sender": {
+                "id": msg.get("sender_id"),
+                "bigo_id": sender_user.get("bigo_id") if sender_user else "Unknown",
+                "name": sender_user.get("name") if sender_user else "Unknown"
+            },
+            "recipient": {
+                "id": msg.get("recipient_id"),
+                "bigo_id": recipient_user.get("bigo_id") if recipient_user else "Unknown",
+                "name": recipient_user.get("name") if recipient_user else "Unknown"
+            }
+        }
+        enriched_messages.append(enriched_msg)
+    
+    return enriched_messages
 
 @api_router.put("/messages/{message_id}/read")
 async def mark_message_read(message_id: str, current_user: User = Depends(get_current_user)):
@@ -3526,6 +3622,62 @@ app.include_router(api_router)
 app.include_router(blog_router.router)
 # app.include_router(voice_router)
 # app.include_router(admin_assistant_router)
+
+# WebSocket endpoint for real-time messaging
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, token: Optional[str] = Query(None)):
+    """WebSocket endpoint for real-time features including private messaging"""
+    connection_id = str(uuid.uuid4())
+    user_id = None
+    
+    try:
+        # Authenticate user from token
+        if token:
+            try:
+                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                user_id = payload.get("sub")
+            except jwt.PyJWTError:
+                await websocket.close(code=1008, reason="Invalid authentication token")
+                return
+        
+        # Accept connection
+        await connection_manager.connect(websocket, connection_id, user_id)
+        
+        try:
+            while True:
+                # Receive messages from client
+                data = await websocket.receive_text()
+                message_data = json.loads(data)
+                
+                message_type = message_data.get("type")
+                
+                if message_type == "ping":
+                    # Respond to ping with pong
+                    await connection_manager.send_personal_message(
+                        {"type": "pong", "timestamp": datetime.now(timezone.utc).isoformat()},
+                        connection_id
+                    )
+                elif message_type == "chat_message":
+                    # Handle chat message
+                    await connection_manager.handle_chat_message(connection_id, message_data)
+                elif message_type == "join_room":
+                    # Join a room
+                    room_id = message_data.get("room_id")
+                    if room_id:
+                        await connection_manager.join_room(connection_id, room_id)
+                elif message_type == "leave_room":
+                    # Leave a room
+                    room_id = message_data.get("room_id")
+                    if room_id:
+                        await connection_manager.leave_room(connection_id, room_id)
+                        
+        except WebSocketDisconnect:
+            pass
+            
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+    finally:
+        await connection_manager.disconnect(connection_id)
 
 # Health check endpoint
 @app.get("/health")
