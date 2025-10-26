@@ -77,21 +77,19 @@ async def main():
     print("\n\nKEY VERIFICATION:")
     print("-" * 80)
     
-    # Test "yo" specifically
+    # Verify key scenarios
     result = await ai_service.classify_intent("yo")
     if result['intent'] == 'greeting' and not result['is_bigo_related']:
         print("✅ PASS: 'yo' correctly identified as greeting, not BIGO feature")
     else:
         print(f"❌ FAIL: 'yo' classified as {result['intent']}, BIGO-related={result['is_bigo_related']}")
     
-    # Test off-topic redirect
     result = await ai_service.classify_intent("What's the weather?")
     if result['intent'] == 'off_topic' and not result['is_bigo_related']:
         print("✅ PASS: Off-topic question correctly identified and redirected")
     else:
         print(f"❌ FAIL: Off-topic not detected, classified as {result['intent']}")
     
-    # Test BIGO question
     result = await ai_service.classify_intent("How do I earn more beans?")
     if result['intent'] == 'question' and result['is_bigo_related']:
         print("✅ PASS: BIGO question correctly identified")

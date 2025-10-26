@@ -11,14 +11,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from backend.services.ai_service import ai_service
 
 
-# Simulating the BeanGenie chat endpoint logic
-
-
-class MockUser:
-    id = "test-user-123"
-    name = "Test User"
-
-
 async def simulate_beangenie_chat(message: str):
     """Simulate what happens in beangenie_chat endpoint"""
     
