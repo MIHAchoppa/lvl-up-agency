@@ -723,7 +723,7 @@ function BeanGeniePanel() {
             {/* Financial Tracking */}
             <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader className="bg-gray-50 flex flex-row items-center justify-between py-3">
-                <CardTitle className="text-gray-700 text-base">💰 Financial Tracking</CardTitle>
+                <CardTitle className="text-gray-700 text-base">💰 Bean Tracking</CardTitle>
                 <Button size="sm" onClick={() => addDebtEntry()} className="bg-blue-500 text-white hover:bg-blue-600">
                   Add Debt
                 </Button>
