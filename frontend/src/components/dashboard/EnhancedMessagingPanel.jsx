@@ -57,9 +57,76 @@ function EnhancedMessagingPanel() {
   }, []);
 
   const initializeWebSocket = () => {
-    // In a real implementation, this would connect to the WebSocket endpoint
-    // For now, we'll simulate with polling
-    console.log('WebSocket connection would be initialized here');
+    // Get auth token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('No auth token available for WebSocket connection');
+      return;
+    }
+
+    // Construct WebSocket URL
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsHost = BACKEND_URL.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProtocol}//${wsHost}/ws?token=${token}`;
+
+    try {
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        setWsConnection(ws);
+        
+        // Send ping to keep connection alive
+        const pingInterval = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }));
+          } else {
+            clearInterval(pingInterval);
+          }
+        }, 30000);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === 'private_message') {
+            // Add private message to list
+            setPrivateMessages(prev => [data.message, ...prev]);
+            
+            // Show notification
+            const senderBigoId = data.message.sender?.bigo_id || 'Unknown';
+            toast.info(`New message from @${senderBigoId}`);
+          } else if (data.type === 'channel_message') {
+            // Add channel message to current channel
+            if (data.message.channel_id === selectedChannel?.id) {
+              setMessages(prev => [...prev, data.message]);
+              scrollToBottom();
+            }
+          } else if (data.type === 'pong') {
+            // Pong received
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        setWsConnection(null);
+        
+        // Attempt to reconnect after 5 seconds
+        setTimeout(() => {
+          initializeWebSocket();
+        }, 5000);
+      };
+    } catch (error) {
+      console.error('Failed to create WebSocket connection:', error);
+    }
   };
 
   const fetchInitialData = async () => {
@@ -336,17 +403,32 @@ function EnhancedMessagingPanel() {
     }
   };
 
-  const getUserDisplayName = (userId) => {
-    // In a real app, this would map user IDs to display names
+  const getUserDisplayName = (message) => {
+    // Prefer bigo_id from sender object if available
+    if (message?.sender?.bigo_id) {
+      return `@${message.sender.bigo_id}`;
+    }
+    
+    // Fallback to finding user in allUsers by user_id
+    if (message?.user_id) {
+      const user = allUsers.find(u => u.id === message.user_id);
+      if (user?.bigo_id) {
+        return `@${user.bigo_id}`;
+      }
+      return `👤 ${message.user_id}`;
+    }
+    
+    // Legacy fallback for backwards compatibility
+    const userId = typeof message === 'string' ? message : message?.user_id;
     const userMap = {
-      'admin': '🛡️ Admin',
-      'coach1': '🏆 Coach Sarah',
-      'coach2': '🏆 Coach Mike',
+      'admin': '@Admin',
+      'coach1': '@Coach1',
+      'coach2': '@Coach2',
       'current_user': '👤 You',
-      'host1': '⭐ Host Amanda',
-      'host2': '⭐ Host David'
+      'host1': '@Host1',
+      'host2': '@Host2'
     };
-    return userMap[userId] || `👤 ${userId}`;
+    return userMap[userId] || `@${userId}`;
   };
 
   const getChannelIcon = (channelName) => {
@@ -495,12 +577,12 @@ function EnhancedMessagingPanel() {
                           messages.map((message) => (
                             <div key={message.id} className="flex items-start gap-3">
                               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                {message.user_id[0]?.toUpperCase() || '?'}
+                                {(message.sender?.bigo_id || message.user_id)?.[0]?.toUpperCase() || '?'}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <span className="font-medium text-sm">
-                                    {getUserDisplayName(message.user_id)}
+                                    {getUserDisplayName(message)}
                                   </span>
                                   <span className="text-xs text-gray-500">
                                     {formatMessageTime(message.created_at)}
@@ -630,7 +712,11 @@ function EnhancedMessagingPanel() {
                                 <div>
                                   <div className="flex items-center gap-2 mb-1">
                                     <span className="font-semibold text-sm">
-                                      {msg.sender_id === 'current_user_id' ? 'You' : getUserDisplayName(msg.sender_id)}
+                                      {msg.sender_id === user?.id 
+                                        ? 'You' 
+                                        : (msg.sender?.bigo_id 
+                                          ? `@${msg.sender.bigo_id}` 
+                                          : getUserDisplayName(msg))}
                                     </span>
                                     <Badge variant={msg.status === 'read' ? 'secondary' : 'default'} size="sm">
                                       {msg.status}
