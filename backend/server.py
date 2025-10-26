@@ -65,7 +65,8 @@ async def lifespan(app: FastAPI):
     # Create text index on BIGO knowledge base for search
     try:
         existing_indexes = await db.bigo_knowledge.list_indexes().to_list(100)
-        has_text_index = any(idx.get("name") == "content_text_title_text" for idx in existing_indexes)
+        # Check for text index by looking for the 'weights' field which indicates a text index
+        has_text_index = any('weights' in idx or idx.get('key', {}).get('_fts') == 'text' for idx in existing_indexes)
         if not has_text_index:
             await db.bigo_knowledge.create_index([("content", "text"), ("title", "text")])
             logging.getLogger(__name__).info("Created text index on bigo_knowledge collection")
