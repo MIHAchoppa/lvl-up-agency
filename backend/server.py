@@ -453,6 +453,13 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def clean_mongo_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove MongoDB-specific fields like _id and convert to JSON-serializable format"""
+    if doc is None:
+        return None
+    cleaned = {k: v for k, v in doc.items() if k != '_id'}
+    return cleaned
+
 async def search_bigo_knowledge(query: str, limit: int = 5) -> List[Dict[str, Any]]:
     """Search BIGO knowledge base using text search"""
     try:
@@ -2856,6 +2863,38 @@ class BeanGenieDebt(BaseModel):
     dueDate: str
     dateAdded: str
 
+class BigoWheel(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    name: str
+    gift_cost: int = Field(default=100, gt=0)
+    gift_type: str = "beans"
+    active: bool = True
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class BigoWheelPrize(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    wheel_id: str
+    user_id: str
+    type: str  # task, physical, content
+    name: str
+    description: str = ""
+    icon: str = "🎁"
+    probability: int = Field(default=1, gt=0)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class BigoWheelSpin(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    wheel_id: str
+    user_id: str
+    winner_id: Optional[str] = None
+    winner_name: str = "Anonymous"
+    prize_id: Optional[str] = None
+    prize_name: Optional[str] = None
+    fulfilled: bool = False
+    spun_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    fulfilled_at: Optional[datetime] = None
+
 @api_router.get("/beangenie/data")
 async def get_beangenie_data(current_user: User = Depends(get_current_user)):
     """Get all BeanGenie data for current user"""
@@ -2882,9 +2921,13 @@ async def get_beangenie_data(current_user: User = Depends(get_current_user)):
                     "metadata": panel.get("metadata", {})
                 })
         
-        # Get legacy data
-        raffles = await db.beangenie_raffles.find({"user_id": current_user.id}).to_list(100)
-        debts = await db.beangenie_debts.find({"user_id": current_user.id}).to_list(100)
+        # Get legacy data - clean MongoDB docs
+        raffles_raw = await db.beangenie_raffles.find({"user_id": current_user.id}).to_list(100)
+        raffles = [clean_mongo_doc(r) for r in raffles_raw]
+        
+        debts_raw = await db.beangenie_debts.find({"user_id": current_user.id}).to_list(100)
+        debts = [clean_mongo_doc(d) for d in debts_raw]
+        
         notes_doc = await db.beangenie_notes.find_one({"user_id": current_user.id})
         
         return {
@@ -3058,15 +3101,24 @@ async def save_beangenie_strategy(strategy: BeanGenieStrategy, current_user: Use
 async def add_beangenie_raffle(raffle: BeanGenieRaffle, current_user: User = Depends(get_current_user)):
     """Add raffle entry"""
     try:
+        # Validate input
+        if not raffle.name or not raffle.name.strip():
+            raise HTTPException(status_code=400, detail="Raffle name is required")
+        if raffle.tickets <= 0:
+            raise HTTPException(status_code=400, detail="Tickets must be greater than 0")
+        
         doc = {
             "id": str(uuid.uuid4()),
             "user_id": current_user.id,
-            "name": raffle.name,
+            "name": raffle.name.strip(),
             "tickets": raffle.tickets,
             "dateAdded": raffle.dateAdded
         }
         await db.beangenie_raffles.insert_one(doc)
-        return doc
+        # Return cleaned document without _id
+        return clean_mongo_doc(doc)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -3087,16 +3139,25 @@ async def delete_beangenie_raffle(raffle_id: str, current_user: User = Depends(g
 async def add_beangenie_debt(debt: BeanGenieDebt, current_user: User = Depends(get_current_user)):
     """Add debt entry"""
     try:
+        # Validate input
+        if not debt.name or not debt.name.strip():
+            raise HTTPException(status_code=400, detail="Debtor name is required")
+        if debt.amount <= 0:
+            raise HTTPException(status_code=400, detail="Amount must be greater than 0")
+        
         doc = {
             "id": str(uuid.uuid4()),
             "user_id": current_user.id,
-            "name": debt.name,
+            "name": debt.name.strip(),
             "amount": debt.amount,
             "dueDate": debt.dueDate,
             "dateAdded": debt.dateAdded
         }
         await db.beangenie_debts.insert_one(doc)
-        return doc
+        # Return cleaned document without _id
+        return clean_mongo_doc(doc)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -3247,17 +3308,33 @@ async def delete_beangenie_panel(category_key: str, current_user: User = Depends
 async def create_bigo_wheel(wheel_data: dict, current_user: User = Depends(get_current_user)):
     """Create a new raffle picker"""
     try:
+        # Validate input
+        name = wheel_data.get("name", "").strip()
+        if not name:
+            name = "My Raffle Picker"
+        
+        gift_cost = wheel_data.get("gift_cost", 100)
+        if gift_cost <= 0:
+            raise HTTPException(status_code=400, detail="Gift cost must be greater than 0")
+        
+        # Check if user already has an active wheel
+        existing = await db.bigo_wheels.find_one({"user_id": current_user.id, "active": True})
+        if existing:
+            raise HTTPException(status_code=400, detail="You already have an active raffle picker. Deactivate it first.")
+        
         wheel_doc = {
             "id": str(uuid.uuid4()),
             "user_id": current_user.id,
-            "name": wheel_data.get("name", "My Raffle Picker"),
-            "gift_cost": wheel_data.get("gift_cost", 100),
+            "name": name,
+            "gift_cost": gift_cost,
             "gift_type": wheel_data.get("gift_type", "beans"),
             "active": True,
             "created_at": datetime.now(timezone.utc)
         }
         await db.bigo_wheels.insert_one(wheel_doc)
-        return wheel_doc
+        return clean_mongo_doc(wheel_doc)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -3265,19 +3342,40 @@ async def create_bigo_wheel(wheel_data: dict, current_user: User = Depends(get_c
 async def add_wheel_prize(wheel_id: str, prize_data: dict, current_user: User = Depends(get_current_user)):
     """Add prize to raffle picker"""
     try:
+        # Verify wheel exists and belongs to user
+        wheel = await db.bigo_wheels.find_one({"id": wheel_id, "user_id": current_user.id})
+        if not wheel:
+            raise HTTPException(status_code=404, detail="Raffle picker not found or you don't have permission")
+        
+        # Validate prize data
+        name = prize_data.get("name", "").strip()
+        if not name:
+            raise HTTPException(status_code=400, detail="Prize name is required")
+        
+        prize_type = prize_data.get("type", "task")
+        if prize_type not in ["task", "physical", "content"]:
+            raise HTTPException(status_code=400, detail="Invalid prize type. Must be: task, physical, or content")
+        
+        # Validate probability
+        probability = prize_data.get("probability", 1)
+        if probability <= 0:
+            raise HTTPException(status_code=400, detail="Probability must be greater than 0")
+        
         prize_doc = {
             "id": str(uuid.uuid4()),
             "wheel_id": wheel_id,
             "user_id": current_user.id,
-            "type": prize_data.get("type", "task"),  # task, physical, content
-            "name": prize_data.get("name"),
+            "type": prize_type,
+            "name": name,
             "description": prize_data.get("description", ""),
             "icon": prize_data.get("icon", "🎁"),
-            "probability": prize_data.get("probability", 1),
+            "probability": probability,
             "created_at": datetime.now(timezone.utc)
         }
         await db.bigo_wheel_prizes.insert_one(prize_doc)
-        return prize_doc
+        return clean_mongo_doc(prize_doc)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -3285,19 +3383,35 @@ async def add_wheel_prize(wheel_id: str, prize_data: dict, current_user: User = 
 async def record_wheel_spin(wheel_id: str, spin_data: dict, current_user: User = Depends(get_current_user)):
     """Record a raffle draw/winner"""
     try:
+        # Verify wheel exists and belongs to user
+        wheel = await db.bigo_wheels.find_one({"id": wheel_id, "user_id": current_user.id})
+        if not wheel:
+            raise HTTPException(status_code=404, detail="Raffle picker not found or you don't have permission")
+        
+        # Validate required fields
+        winner_name = spin_data.get("winner_name", "").strip()
+        if not winner_name:
+            winner_name = "Anonymous"
+        
+        prize_name = spin_data.get("prize_name", "").strip()
+        if not prize_name:
+            raise HTTPException(status_code=400, detail="Prize name is required")
+        
         spin_doc = {
             "id": str(uuid.uuid4()),
             "wheel_id": wheel_id,
             "user_id": current_user.id,
             "winner_id": spin_data.get("winner_id"),
-            "winner_name": spin_data.get("winner_name", "Anonymous"),
+            "winner_name": winner_name,
             "prize_id": spin_data.get("prize_id"),
-            "prize_name": spin_data.get("prize_name"),
+            "prize_name": prize_name,
             "fulfilled": spin_data.get("fulfilled", False),
             "spun_at": datetime.now(timezone.utc)
         }
         await db.bigo_wheel_spins.insert_one(spin_doc)
-        return spin_doc
+        return clean_mongo_doc(spin_doc)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -3309,10 +3423,18 @@ async def get_active_wheel(current_user: User = Depends(get_current_user)):
         if not wheel:
             return {"wheel": None, "prizes": [], "spins": []}
         
-        prizes = await db.bigo_wheel_prizes.find({"wheel_id": wheel["id"]}).to_list(100)
-        spins = await db.bigo_wheel_spins.find({"wheel_id": wheel["id"]}).sort("spun_at", -1).limit(20).to_list(20)
+        # Clean wheel document
+        wheel_clean = clean_mongo_doc(wheel)
         
-        return {"wheel": wheel, "prizes": prizes, "spins": spins}
+        # Get prizes and clean them
+        prizes_raw = await db.bigo_wheel_prizes.find({"wheel_id": wheel["id"]}).to_list(100)
+        prizes = [clean_mongo_doc(p) for p in prizes_raw]
+        
+        # Get spins and clean them
+        spins_raw = await db.bigo_wheel_spins.find({"wheel_id": wheel["id"]}).sort("spun_at", -1).limit(20).to_list(20)
+        spins = [clean_mongo_doc(s) for s in spins_raw]
+        
+        return {"wheel": wheel_clean, "prizes": prizes, "spins": spins}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -3320,11 +3442,106 @@ async def get_active_wheel(current_user: User = Depends(get_current_user)):
 async def mark_spin_fulfilled(wheel_id: str, spin_id: str, current_user: User = Depends(get_current_user)):
     """Mark a raffle draw as fulfilled"""
     try:
+        # Verify wheel exists and belongs to user
+        wheel = await db.bigo_wheels.find_one({"id": wheel_id, "user_id": current_user.id})
+        if not wheel:
+            raise HTTPException(status_code=404, detail="Raffle picker not found or you don't have permission")
+        
+        # Verify spin exists and belongs to this wheel
+        spin = await db.bigo_wheel_spins.find_one({"id": spin_id, "wheel_id": wheel_id, "user_id": current_user.id})
+        if not spin:
+            raise HTTPException(status_code=404, detail="Spin not found")
+        
         result = await db.bigo_wheel_spins.update_one(
             {"id": spin_id, "user_id": current_user.id},
             {"$set": {"fulfilled": True, "fulfilled_at": datetime.now(timezone.utc)}}
         )
-        return {"success": result.modified_count > 0}
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Failed to update spin status")
+        
+        return {"success": True, "message": "Spin marked as fulfilled"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/beangenie/wheel/{wheel_id}/deactivate")
+async def deactivate_wheel(wheel_id: str, current_user: User = Depends(get_current_user)):
+    """Deactivate a raffle picker"""
+    try:
+        # Verify wheel exists and belongs to user
+        wheel = await db.bigo_wheels.find_one({"id": wheel_id, "user_id": current_user.id})
+        if not wheel:
+            raise HTTPException(status_code=404, detail="Raffle picker not found or you don't have permission")
+        
+        result = await db.bigo_wheels.update_one(
+            {"id": wheel_id, "user_id": current_user.id},
+            {"$set": {"active": False}}
+        )
+        
+        if result.modified_count == 0:
+            raise HTTPException(status_code=400, detail="Failed to deactivate raffle picker")
+        
+        return {"success": True, "message": "Raffle picker deactivated"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/beangenie/wheel/{wheel_id}/prize/{prize_id}")
+async def delete_wheel_prize(wheel_id: str, prize_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a prize from raffle picker"""
+    try:
+        # Verify wheel exists and belongs to user
+        wheel = await db.bigo_wheels.find_one({"id": wheel_id, "user_id": current_user.id})
+        if not wheel:
+            raise HTTPException(status_code=404, detail="Raffle picker not found or you don't have permission")
+        
+        # Delete the prize
+        result = await db.bigo_wheel_prizes.delete_one({
+            "id": prize_id,
+            "wheel_id": wheel_id,
+            "user_id": current_user.id
+        })
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Prize not found")
+        
+        return {"success": True, "message": "Prize deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/beangenie/wheel/{wheel_id}")
+async def get_wheel_details(wheel_id: str, current_user: User = Depends(get_current_user)):
+    """Get specific raffle picker details"""
+    try:
+        wheel = await db.bigo_wheels.find_one({"id": wheel_id, "user_id": current_user.id})
+        if not wheel:
+            raise HTTPException(status_code=404, detail="Raffle picker not found or you don't have permission")
+        
+        # Get prizes
+        prizes_raw = await db.bigo_wheel_prizes.find({"wheel_id": wheel_id}).to_list(100)
+        prizes = [clean_mongo_doc(p) for p in prizes_raw]
+        
+        # Get spins
+        spins_raw = await db.bigo_wheel_spins.find({"wheel_id": wheel_id}).sort("spun_at", -1).limit(50).to_list(50)
+        spins = [clean_mongo_doc(s) for s in spins_raw]
+        
+        return {
+            "wheel": clean_mongo_doc(wheel),
+            "prizes": prizes,
+            "spins": spins,
+            "stats": {
+                "total_prizes": len(prizes),
+                "total_spins": len(spins),
+                "pending_fulfillments": len([s for s in spins if not s.get("fulfilled", False)])
+            }
+        }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
