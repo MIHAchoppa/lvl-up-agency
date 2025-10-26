@@ -29,12 +29,16 @@ Implemented smart text truncation that:
 4. **Ensures minimum content** - Falls back to 2000 char limit if no good sentence boundary found after 500 chars
 
 #### Files Modified
-- `frontend/src/components/dashboard/BeanGeniePanel.jsx`
-- `frontend/src/components/dashboard/EnhancedAdminAssistantPanel.jsx`
-- `frontend/src/components/dashboard/BigoAcademyPanel.jsx`
-- `frontend/src/components/VoiceRecruiter.jsx`
+- `frontend/src/components/dashboard/BeanGeniePanel.jsx` - Implements source removal + smart truncation
+- `frontend/src/components/dashboard/EnhancedAdminAssistantPanel.jsx` - Implements smart truncation only
+- `frontend/src/components/dashboard/BigoAcademyPanel.jsx` - Implements smart truncation only
+- `frontend/src/components/VoiceRecruiter.jsx` - Implements smart truncation only
+
+**Note**: Only BeanGeniePanel implements source removal since it's the only component that receives responses with inline citations from the BIGO knowledge base. The other components use different endpoints and don't have source citations to remove.
 
 #### Code Changes
+
+**BeanGeniePanel.jsx - With Source Removal:**
 **Before:**
 ```javascript
 const { data } = await axios.post(`${API}/beangenie/tts`, {
@@ -48,7 +52,7 @@ const { data } = await axios.post(`${API}/beangenie/tts`, {
 let textToSpeak = text;
 
 // Remove "Sources:" section as it shouldn't be spoken
-const sourcesIndex = text.search(/\n\n?Sources?:/i);
+const sourcesIndex = text.search(/\n\n?Sources:/i);
 if (sourcesIndex > 0) {
   textToSpeak = text.substring(0, sourcesIndex).trim();
 }
@@ -71,6 +75,44 @@ if (textToSpeak.length > 2000) {
 
 const { data } = await axios.post(`${API}/beangenie/tts`, {
   text: textToSpeak
+});
+```
+
+**Other Components (EnhancedAdminAssistantPanel, BigoAcademyPanel, VoiceRecruiter) - Smart Truncation Only:**
+**Before:**
+```javascript
+const textToSpeak = text.substring(0, 500);
+
+const { data } = await axios.post(`${API}/tts/speak`, {  // or beangenie/tts for VoiceRecruiter
+  text: textToSpeak,
+  voice: 'Fritz-PlayAI'
+});
+```
+
+**After:**
+```javascript
+// Prepare text for TTS: smartly truncate to avoid cutting mid-sentence
+let textToSpeak = text;
+
+// If too long, truncate at sentence boundary (max ~2000 chars for reasonable TTS length)
+if (textToSpeak.length > 2000) {
+  const truncated = textToSpeak.substring(0, 2000);
+  // Find last sentence ending (period, exclamation, or question mark followed by space or end)
+  const lastSentenceEnd = Math.max(
+    truncated.lastIndexOf('. '),
+    truncated.lastIndexOf('! '),
+    truncated.lastIndexOf('? ')
+  );
+  if (lastSentenceEnd > 500) { // Ensure we have substantial content
+    textToSpeak = truncated.substring(0, lastSentenceEnd + 1).trim();
+  } else {
+    textToSpeak = truncated.trim();
+  }
+}
+
+const { data } = await axios.post(`${API}/tts/speak`, {  // or beangenie/tts for VoiceRecruiter
+  text: textToSpeak,
+  voice: 'Fritz-PlayAI'  // not present in VoiceRecruiter
 });
 ```
 
