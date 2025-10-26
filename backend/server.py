@@ -2993,30 +2993,60 @@ async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_curre
         raise HTTPException(status_code=400, detail="Message required")
     
     try:
-        # Search BIGO knowledge base with intelligent query expansion
+        # Step 1: Classify intent before doing knowledge search
+        intent_result = await ai_service.classify_intent(message)
+        
+        # Step 2: Handle greetings and casual messages with friendly redirect
+        if intent_result["intent"] in ["greeting", "casual"] and not intent_result["is_bigo_related"]:
+            return {
+                "response": intent_result["suggested_response"],
+                "sources": [],
+                "session_id": session_id,
+                "intent": intent_result["intent"]
+            }
+        
+        # Step 3: Handle off-topic questions with gentle redirect
+        if intent_result["intent"] == "off_topic" and not intent_result["is_bigo_related"]:
+            return {
+                "response": intent_result["suggested_response"],
+                "sources": [],
+                "session_id": session_id,
+                "intent": "off_topic"
+            }
+        
+        # Step 4: For BIGO-related questions, search knowledge base
         knowledge_results = await search_bigo_knowledge(message, limit=10)
         
         # If no relevant sources found, provide intelligent fallback
         if not knowledge_results:
-            # Try to determine topic and provide helpful redirect
-            message_lower = message.lower()
-            if any(word in message_lower for word in ['bean', 'money', 'earn', 'diamond', 'currency', 'payment']):
-                topic_hint = "Try asking about 'BIGO beans and earnings' or 'how to make money on BIGO Live'"
-            elif any(word in message_lower for word in ['pk', 'battle', 'compete', 'versus']):
-                topic_hint = "Try asking about 'BIGO PK battles' or 'how to win PK battles'"
-            elif any(word in message_lower for word in ['tier', 'rank', 'level', 's1', 's25']):
-                topic_hint = "Try asking about 'BIGO tier system' or 'how to rank up on BIGO'"
-            elif any(word in message_lower for word in ['stream', 'schedule', 'time', 'when']):
-                topic_hint = "Try asking about 'best streaming schedule' or 'when to stream on BIGO'"
-            elif any(word in message_lower for word in ['gift', 'viewer', 'audience', 'fan']):
-                topic_hint = "Try asking about 'BIGO gifts' or 'audience engagement strategies'"
-            else:
-                topic_hint = "Try asking about BIGO beans, streaming, PK battles, tier progression, or monetization"
+            # Provide context-aware fallback based on intent
+            fallback_response = f"""🔍 I'm your BIGO Live expert, Boss! I specialize in helping hosts succeed on the platform.
+
+I couldn't find specific information for "{message}" in my knowledge base. Let me help you find what you need!
+
+**I can help you with:**
+• 💰 **Bean Earnings** - How to maximize your income on BIGO Live
+• 🎯 **Tier System** - Understanding and climbing S1-S25 rankings
+• ⚔️ **PK Battles** - Winning strategies and tactics
+• 📅 **Streaming Schedules** - Best times to stream and grow
+• 🎁 **Gift Strategies** - Maximizing viewer gifts and revenue
+• 👥 **Audience Engagement** - Building loyal fans and community
+• 📹 **Streaming Setup** - Equipment and technical tips
+• 📊 **Content Strategy** - What to stream for maximum success
+
+**Try asking me something like:**
+• "How do I earn more beans on BIGO Live?"
+• "What's the best PK battle strategy?"
+• "How do I rank up to S10?"
+• "When should I stream to get more viewers?"
+
+What would you like to know about BIGO Live? 🚀"""
             
             return {
-                "response": f"🔍 I'm your BIGO Live expert, Boss! I specialize in helping hosts succeed on the platform.\n\nI couldn't find specific information for that query in my knowledge base. {topic_hint}.\n\nI can help you with:\n• 💰 Bean earnings and monetization\n• 🎯 Tier system (S1-S25) progression  \n• ⚔️ PK battle strategies\n• 📅 Streaming schedules and optimization\n• 🎁 Gift strategies and revenue\n• 👥 Audience engagement tactics\n• 📹 Streaming setup and equipment\n• 📊 Content strategy and planning\n\nWhat would you like to know about BIGO Live?",
+                "response": fallback_response,
                 "sources": [],
-                "session_id": session_id
+                "session_id": session_id,
+                "intent": "no_results"
             }
         
         # Build comprehensive context from knowledge sources (use more content for better intelligence)
