@@ -3480,6 +3480,23 @@ app.include_router(api_router)
 # app.include_router(voice_router)
 # app.include_router(admin_assistant_router)
 
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring and container orchestration"""
+    try:
+        # Check database connection
+        await db.command("ping")
+        return {
+            "status": "healthy",
+            "service": "lvl-up-agency-backend",
+            "version": "2.0.0",
+            "database": "connected"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail="Service unavailable")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

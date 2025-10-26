@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: lvl-up-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    environment:
+      MONGO_INITDB_DATABASE: lvl_up_agency
+    networks:
+      - lvl-up-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: lvl-up-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=lvl_up_agency
+      - JWT_SECRET=${JWT_SECRET:-levelup-bigo-hosts-secret-2025}
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:80
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - lvl-up-network
+    volumes:
+      - ./backend:/app
+    command: uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+
+  # Node.js Backend (if needed)
+  backend-node:
+    build:
+      context: ./backend-node
+      dockerfile: Dockerfile
+    container_name: lvl-up-backend-node
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=lvl_up_agency
+      - JWT_SECRET=${JWT_SECRET:-levelup-bigo-hosts-secret-2025}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - lvl-up-network
+    volumes:
+      - ./backend-node:/app
+      - /app/node_modules
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lvl-up-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - backend-node
+    networks:
+      - lvl-up-network
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  lvl-up-network:
+    driver: bridge

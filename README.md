@@ -176,6 +176,52 @@ python tests/comprehensive_backend_test.py
 bash tests/test_auth_and_data.sh
 ```
 
+## 🚀 Deployment
+
+### Quick Deploy with Docker
+
+The easiest way to deploy the entire stack:
+
+```bash
+# Clone the repository
+git clone https://github.com/MIHAchoppa/lvl-up-agency.git
+cd lvl-up-agency
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# Start all services with Docker Compose
+docker-compose up -d
+```
+
+Access the application:
+- **Frontend**: http://localhost
+- **Backend API**: http://localhost:8000
+- **Backend Node**: http://localhost:3001
+
+### CI/CD with GitHub Actions
+
+The project includes automated workflows:
+- **Frontend CI**: Builds and tests React application
+- **Backend CI**: Lints and tests Python backend
+- **Docker Build**: Builds and pushes images to GitHub Container Registry
+
+Images are automatically built and pushed to GHCR on:
+- Push to `main` branch
+- New version tags (e.g., `v1.0.0`)
+
+### Production Deployment Options
+
+- **GitHub Container Registry**: Pre-built Docker images
+- **DigitalOcean App Platform**: One-click deployment
+- **AWS ECS/Fargate**: Scalable container orchestration
+- **Google Cloud Run**: Serverless containers
+- **Azure Container Instances**: Simple container deployment
+- **Self-hosted VPS**: Full control deployment
+
+For detailed deployment instructions, see [DEPLOY.md](DEPLOY.md).
+
 ## 🤝 Contributing
 
 1. Fork the repository
