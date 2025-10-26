@@ -2,6 +2,32 @@
 
 A modern, AI-powered platform for managing BIGO Live hosts, featuring intelligent coaching, audition management, event scheduling, and voice-enabled recruiting powered by BeanGenie™.
 
+## ⚡ Quick Start
+
+### Using Docker (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/MIHAchoppa/lvl-up-agency.git
+cd lvl-up-agency
+
+# Set up environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Deploy with one command
+./deploy.sh
+```
+
+Access the application:
+- **Frontend**: http://localhost
+- **Backend API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+
+### Manual Setup
+
+See the [detailed setup instructions](#-setup-instructions) below.
+
 ## 🚀 Tech Stack
 
 ### Frontend
@@ -15,15 +41,18 @@ A modern, AI-powered platform for managing BIGO Live hosts, featuring intelligen
 
 ### Backend
 - **FastAPI** - Modern Python web framework for building APIs
-- **SQLAlchemy** - SQL toolkit and ORM
-- **PostgreSQL** - Relational database
+- **MongoDB** - NoSQL database for flexible data storage
 - **JWT Authentication** - Secure token-based authentication
 - **WebSockets** - Real-time bidirectional communication
 - **ElevenLabs API** - AI voice synthesis integration
 
 ### Infrastructure
-- **Node.js & npm/yarn** - Frontend build tooling
-- **Python 3.x** - Backend runtime
+- **Docker & Docker Compose** - Containerization and orchestration
+- **Node.js 20+** - Frontend build tooling
+- **Python 3.11+** - Backend runtime
+- **MongoDB 7.0** - Database
+- **Nginx** - Web server and reverse proxy
+- **GitHub Actions** - CI/CD automation
 - **Git** - Version control
 
 ## 📁 Project Structure
@@ -77,9 +106,16 @@ lvl-up-agency/
 ## 🛠️ Setup Instructions
 
 ### Prerequisites
-- **Node.js** (v16 or higher) and npm/yarn
-- **Python** (3.8 or higher)
-- **PostgreSQL** (12 or higher)
+
+**For Docker Deployment (Recommended):**
+- **Docker** (20.10 or higher)
+- **Docker Compose** (2.0 or higher)
+- **Git**
+
+**For Manual Development:**
+- **Node.js** (v20 or higher) and npm
+- **Python** (3.11 or higher)
+- **MongoDB** (7.0 or higher)
 - **Git**
 
 ### Frontend Setup
@@ -125,21 +161,26 @@ lvl-up-agency/
    pip install -r requirements.txt
    ```
 
-3. Set up environment variables (create `.env` file):
-   ```
-   DATABASE_URL=postgresql://user:password@localhost/lvl_up_agency
-   JWT_SECRET_KEY=your-secret-key
+3. Set up environment variables (create `.env` file in project root):
+   ```bash
+   MONGO_URL=mongodb://localhost:27017
+   DB_NAME=lvl_up_agency
+   JWT_SECRET=your-secret-key
    ELEVENLABS_API_KEY=your-elevenlabs-key
    ```
 
-4. Initialize the database:
+4. Ensure MongoDB is running:
    ```bash
-   python scripts/seed_data.py
+   # If using Docker
+   docker run -d -p 27017:27017 --name mongodb mongo:7.0
+   
+   # Or use local MongoDB installation
+   mongod
    ```
 
 5. Run the backend server:
    ```bash
-   python backend/server.py
+   uvicorn backend.server:app --reload
    ```
 
    The API will be available at `http://localhost:8000`
