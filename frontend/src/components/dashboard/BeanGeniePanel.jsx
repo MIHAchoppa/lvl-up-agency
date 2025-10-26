@@ -720,7 +720,7 @@ function BeanGeniePanel() {
               </CardContent>
             </Card>
 
-            {/* Financial Tracking */}
+            {/* Bean Tracking */}
             <Card className="bg-white border border-gray-200 shadow-sm">
               <CardHeader className="bg-gray-50 flex flex-row items-center justify-between py-3">
                 <CardTitle className="text-gray-700 text-base">💰 Bean Tracking</CardTitle>
