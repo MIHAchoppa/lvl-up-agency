@@ -3055,7 +3055,7 @@ For each relevant category, provide:
 
 Common categories:
 - organic_strategies: Natural growth tactics
-- bigo_wheel: Wheel spinning strategies
+- raffle_picker: Raffle picker / random draw strategies
 - content_ideas: Stream content suggestions
 - scheduling: Timing and schedule recommendations
 - performance_metrics: Numbers, goals, KPIs
@@ -3142,17 +3142,19 @@ async def delete_beangenie_panel(category_key: str, current_user: User = Depends
         raise HTTPException(status_code=500, detail=str(e))
 
 # ============================================
-# BIGO WHEEL ENDPOINTS
+# RAFFLE PICKER ENDPOINTS
 # ============================================
+# Note: Endpoints retain "wheel" naming for backward compatibility
+# but the feature is now a raffle picker to comply with platform policies
 
 @api_router.post("/beangenie/wheel")
 async def create_bigo_wheel(wheel_data: dict, current_user: User = Depends(get_current_user)):
-    """Create a new Bigo wheel"""
+    """Create a new raffle picker"""
     try:
         wheel_doc = {
             "id": str(uuid.uuid4()),
             "user_id": current_user.id,
-            "name": wheel_data.get("name", "My Wheel"),
+            "name": wheel_data.get("name", "My Raffle Picker"),
             "gift_cost": wheel_data.get("gift_cost", 100),
             "gift_type": wheel_data.get("gift_type", "beans"),
             "active": True,
@@ -3165,7 +3167,7 @@ async def create_bigo_wheel(wheel_data: dict, current_user: User = Depends(get_c
 
 @api_router.post("/beangenie/wheel/{wheel_id}/prize")
 async def add_wheel_prize(wheel_id: str, prize_data: dict, current_user: User = Depends(get_current_user)):
-    """Add prize to wheel"""
+    """Add prize to raffle picker"""
     try:
         prize_doc = {
             "id": str(uuid.uuid4()),
@@ -3185,7 +3187,7 @@ async def add_wheel_prize(wheel_id: str, prize_data: dict, current_user: User = 
 
 @api_router.post("/beangenie/wheel/{wheel_id}/spin")
 async def record_wheel_spin(wheel_id: str, spin_data: dict, current_user: User = Depends(get_current_user)):
-    """Record a wheel spin"""
+    """Record a raffle draw/winner"""
     try:
         spin_doc = {
             "id": str(uuid.uuid4()),
@@ -3205,7 +3207,7 @@ async def record_wheel_spin(wheel_id: str, spin_data: dict, current_user: User =
 
 @api_router.get("/beangenie/wheel/active")
 async def get_active_wheel(current_user: User = Depends(get_current_user)):
-    """Get active wheel with prizes and spins"""
+    """Get active raffle picker with prizes and draws"""
     try:
         wheel = await db.bigo_wheels.find_one({"user_id": current_user.id, "active": True})
         if not wheel:
@@ -3220,7 +3222,7 @@ async def get_active_wheel(current_user: User = Depends(get_current_user)):
 
 @api_router.put("/beangenie/wheel/{wheel_id}/spin/{spin_id}/fulfill")
 async def mark_spin_fulfilled(wheel_id: str, spin_id: str, current_user: User = Depends(get_current_user)):
-    """Mark a spin as fulfilled"""
+    """Mark a raffle draw as fulfilled"""
     try:
         result = await db.bigo_wheel_spins.update_one(
             {"id": spin_id, "user_id": current_user.id},
