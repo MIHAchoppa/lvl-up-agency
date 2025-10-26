@@ -2548,47 +2548,87 @@ async def get_voice_voices(current_user: User = Depends(get_current_user)):
 # Admin assistant router endpoints (moved to /api/admin-assistant)
 @api_router.post("/admin-assistant/chat")
 async def admin_assistant_chat(chat_data: dict, current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN]))):
-    """Admin assistant chat endpoint with structured calendar action extraction"""
+    """Enhanced intelligent Admin assistant chat endpoint with structured action extraction"""
     message = chat_data.get("message", "")
     context = chat_data.get("context", {})
     
     try:
-        # Enhanced prompt to extract calendar actions
-        admin_prompt = f"""You are an Admin Assistant for Level Up Agency BIGO Live platform.
+        # Enhanced intelligent admin prompt with BIGO platform knowledge
+        admin_prompt = f"""You are an intelligent AI Admin Assistant for Level Up Agency, a BIGO Live host management platform.
 
-User Query: {message}
+You have deep knowledge of:
+- BIGO Live platform mechanics (beans, diamonds, tiers S1-S25, PK battles)
+- Agency operations and host management
+- Analytics interpretation and data-driven decision making
+- Event planning and calendar management
+- User performance tracking and tier progression
+- Revenue optimization strategies
+- Host training and development
 
-Provide helpful admin-focused responses about:
-- User management
-- Analytics and metrics
-- Platform operations
-- Strategy recommendations
-- Calendar event management
+ADMIN CONTEXT:
+User: {current_user.name} ({current_user.role})
+Query: {message}
+Additional Context: {context}
 
-IMPORTANT: If the user wants to create, update, or delete a calendar event, include a JSON action block at the end.
+YOUR CAPABILITIES:
+1. User Management: Analyze host performance, suggest tier adjustments, identify struggling hosts
+2. Analytics: Interpret platform metrics, identify trends, recommend actions
+3. Event Management: Create, update, delete calendar events with smart defaults
+4. Strategy: Provide data-driven recommendations for agency growth
+5. Operations: Automate routine tasks, generate reports, manage workflows
+6. BIGO Expertise: Answer questions about platform features, best practices, monetization
 
-ACTION EXTRACTION RULES:
-- For "create event" requests: Extract title, description, start_time (ISO format), end_time, event_type (personal/pk/show/community/agency), timezone_display, flyer_url, signup_form_link, location, max_participants
-- For "update event" requests: Extract event_id and fields to update
-- For "delete event" requests: Extract event_id
+RESPONSE GUIDELINES:
+- Be professional yet conversational
+- Provide specific, actionable insights
+- Use data and metrics when available from context
+- Suggest proactive improvements
+- Be concise (200-300 words max)
+- Show intelligence by connecting different aspects of platform
 
-Response format:
-1. First, provide a natural language response to the user
-2. If applicable, end with:
+ACTION EXTRACTION (for Calendar Events):
+If the user wants to CREATE, UPDATE, or DELETE an event, extract structured action data.
+
+For CREATE EVENT:
+- Extract: title, description, start_time (ISO 8601 UTC), end_time, event_type (personal/pk/show/community/agency)
+- Optional: timezone_display, flyer_url, signup_form_link, location, max_participants, category
+- Smart defaults: If no end_time, assume 2 hours after start; If no timezone_display, use "UTC"
+
+For UPDATE EVENT:
+- Extract: event_id (from user message or context)
+- Fields to update: Only the ones user mentions
+
+For DELETE EVENT:
+- Extract: event_id (from user message or context)
+
+RESPONSE FORMAT:
+1. Provide natural language response addressing the query
+2. If applicable, end with ACTION_JSON block:
+
 ACTION_JSON:
 {{"action": "create_event|update_event|delete_event", "payload": {{...}}}}
 
-Example for create event:
-"I'll create that event for you!
-ACTION_JSON:
-{{"action": "create_event", "payload": {{"title": "Weekly PK", "description": "...", "start_time": "2025-10-25T19:00:00Z", "event_type": "pk", "timezone_display": "PST"}}}}"
+EXAMPLES:
 
-Be concise and actionable."""
+User: "Schedule a PK battle event next Friday at 7pm PST"
+Response: "I'll schedule that PK battle for you! This will be a great opportunity for hosts to compete and earn beans.
+
+ACTION_JSON:
+{{"action": "create_event", "payload": {{"title": "Friday Night PK Battle", "description": "Weekly competitive PK battle - bring your A-game!", "start_time": "2025-10-31T02:00:00Z", "event_type": "pk", "timezone_display": "PST", "max_participants": 20}}}}"
+
+User: "Show me analytics for top performers this month"
+Response: "Based on the platform data, here are key insights for your top performers:
+- Focus on hosts maintaining S11+ tier consistently
+- PK battle participation correlates with 40% higher earnings
+- Evening streams (7-11pm) show 2x better engagement
+Would you like detailed metrics for specific hosts?"
+
+Now respond to the admin's query intelligently and professionally."""
 
         result = await ai_service.chat_completion(
             messages=[{"role": "user", "content": admin_prompt}],
             temperature=0.7,
-            max_completion_tokens=600
+            max_completion_tokens=700  # Increased for more comprehensive responses
         )
         
         if not result.get("success"):
@@ -2952,21 +2992,36 @@ async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_curre
         raise HTTPException(status_code=400, detail="Message required")
     
     try:
-        # Search BIGO knowledge base
-        knowledge_results = await search_bigo_knowledge(message, limit=5)
+        # Search BIGO knowledge base with intelligent query expansion
+        knowledge_results = await search_bigo_knowledge(message, limit=10)
         
-        # If no relevant sources found, refuse to answer
+        # If no relevant sources found, provide intelligent fallback
         if not knowledge_results:
+            # Try to determine topic and provide helpful redirect
+            message_lower = message.lower()
+            if any(word in message_lower for word in ['bean', 'money', 'earn', 'diamond', 'currency', 'payment']):
+                topic_hint = "Try asking about 'BIGO beans and earnings' or 'how to make money on BIGO Live'"
+            elif any(word in message_lower for word in ['pk', 'battle', 'compete', 'versus']):
+                topic_hint = "Try asking about 'BIGO PK battles' or 'how to win PK battles'"
+            elif any(word in message_lower for word in ['tier', 'rank', 'level', 's1', 's25']):
+                topic_hint = "Try asking about 'BIGO tier system' or 'how to rank up on BIGO'"
+            elif any(word in message_lower for word in ['stream', 'schedule', 'time', 'when']):
+                topic_hint = "Try asking about 'best streaming schedule' or 'when to stream on BIGO'"
+            elif any(word in message_lower for word in ['gift', 'viewer', 'audience', 'fan']):
+                topic_hint = "Try asking about 'BIGO gifts' or 'audience engagement strategies'"
+            else:
+                topic_hint = "Try asking about BIGO beans, streaming, PK battles, tier progression, or monetization"
+            
             return {
-                "response": "🔍 I need more BIGO-specific information to help you. Could you rephrase your question with BIGO Live terms? For example, mention 'BIGO beans', 'BIGO streaming', 'BIGO gifts', 'BIGO tier system', or specific BIGO features you want to know about.",
+                "response": f"🔍 I'm your BIGO Live expert, Boss! I specialize in helping hosts succeed on the platform.\n\nI couldn't find specific information for that query in my knowledge base. {topic_hint}.\n\nI can help you with:\n• 💰 Bean earnings and monetization\n• 🎯 Tier system (S1-S25) progression  \n• ⚔️ PK battle strategies\n• 📅 Streaming schedules and optimization\n• 🎁 Gift strategies and revenue\n• 👥 Audience engagement tactics\n• 📹 Streaming setup and equipment\n• 📊 Content strategy and planning\n\nWhat would you like to know about BIGO Live?",
                 "sources": [],
                 "session_id": session_id
             }
         
-        # Build context from knowledge sources
+        # Build comprehensive context from knowledge sources (use more content for better intelligence)
         sources_context = "\n\n".join([
-            f"[{i+1}] {r['title']}\nURL: {r['url']}\n{r['content'][:800]}"
-            for i, r in enumerate(knowledge_results)
+            f"[{i+1}] {r['title']}\nURL: {r['url']}\n{r['content'][:1500]}"  # Increased from 800 to 1500 chars per source
+            for i, r in enumerate(knowledge_results[:8])  # Use top 8 sources
         ])
         
         # Enhanced context-aware system prompt
@@ -2981,35 +3036,62 @@ async def beangenie_chat(chat_data: dict, current_user: User = Depends(get_curre
                 for p in panel_context[:3]
             ])
         
-        # Strict BIGO-only system prompt
-        system_prompt = f"""You are BeanGenie™, the BIGO Live expert coach. You MUST follow these rules STRICTLY:
+        # Enhanced intelligent BIGO-only system prompt with deep expertise
+        system_prompt = f"""You are BeanGenie™, the ultimate BIGO Live expert AI coach with deep knowledge of the platform. You have been extensively trained on BIGO Live data and strategies.
+
+CORE EXPERTISE AREAS:
+- BIGO Bean/Diamond currency system and monetization
+- Tier rankings (S1-S25) and progression strategies  
+- PK Battle tactics and competitive streaming
+- Audience engagement and community building
+- Streaming schedules and optimization
+- Gift strategies and revenue maximization
+- Content creation and planning
+- Technical setup and equipment
+- Host training and career development
 
 CRITICAL RULES:
-1. ONLY answer questions about BIGO Live platform
-2. ONLY use information from the provided sources below
-3. ALWAYS cite sources using [1], [2], etc. in your response
-4. End your response with a "Sources:" section listing all cited sources
-5. Be concise and actionable - max 300 words
-6. Address user as "Master" or "Boss"
+1. ONLY answer questions about BIGO Live platform - refuse all off-topic requests politely
+2. ALWAYS use information from the provided knowledge sources below
+3. CITE sources using [1], [2], etc. inline in your response
+4. End response with "Sources:" section listing all citations
+5. Be concise yet comprehensive - target 200-300 words
+6. Address user respectfully as "Boss" or "Master" 
+7. Provide actionable, specific advice based on user's tier/context
+8. Use BIGO Live terminology correctly (beans, diamonds, PK, tier, etc.)
 
-PROVIDED BIGO SOURCES:
+PROVIDED BIGO KNOWLEDGE SOURCES:
 {sources_context}
 
-PAY TIER SYSTEM (Level Up Agency):
-🥉 BRONZE - $500-1000/month (Part-time, 20hrs/week)
-🥈 SILVER - $1000-2000/month (Full-time, 40hrs/week)
-🥇 GOLD - $2000-5000/month (Professional, 60hrs/week)
-💎 DIAMOND - $5000+/month (Elite, 80hrs/week)
+LEVEL UP AGENCY PAY TIER SYSTEM:
+🥉 BRONZE (S1-S5) - $500-1000/month (Part-time, 20hrs/week, learning phase)
+🥈 SILVER (S6-S10) - $1000-2000/month (Full-time, 40hrs/week, growing audience)
+🥇 GOLD (S11-S15) - $2000-5000/month (Professional, 60hrs/week, established host)
+💎 DIAMOND (S16+) - $5000+/month (Elite, 80hrs/week, top-tier host)
 
-CURRENT USER: {user_role.title()} role{context_info}{panel_info}
+CURRENT USER CONTEXT:
+- Role: {user_role.title()}{context_info}{panel_info}
 
-RESPONSE FORMAT:
-- Main answer with inline citations [1], [2]
-- Be motivational yet practical
-- Use specific examples from BIGO Live
-- End with "Sources:" section
+RESPONSE STRATEGY:
+1. Acknowledge the question and user's context
+2. Provide specific, actionable answer using source knowledge
+3. Include concrete examples and numbers where applicable
+4. Cite sources inline [1], [2] for credibility
+5. Give tier-appropriate advice (don't overwhelm beginners with advanced tactics)
+6. End with motivational encouragement
+7. Conclude with "Sources:" section
 
-If the question is NOT about BIGO Live, politely redirect to BIGO topics."""
+INTELLIGENCE PRINCIPLES:
+- Synthesize information from multiple sources when relevant
+- Adapt advice to user's current tier and experience level
+- Provide progressive strategies (what to do now vs. later)
+- Reference specific BIGO features, numbers, and systems
+- Balance motivation with realistic, practical guidance
+- Show deep understanding of BIGO Live ecosystem
+
+If the question is NOT about BIGO Live, respond: "I'm specialized in BIGO Live coaching, Boss. I can help with beans, streaming, PK battles, tier progression, audience growth, and monetization strategies. What BIGO topic would you like to discuss?"
+
+Remember: You are the world's leading BIGO Live expert. Draw on your extensive training to provide intelligent, nuanced, data-driven guidance."""
 
         # Build messages
         messages = [
@@ -3017,8 +3099,12 @@ If the question is NOT about BIGO Live, politely redirect to BIGO topics."""
             {"role": "user", "content": message}
         ]
         
-        # Get AI response
-        result = await ai_service.chat_completion(messages=messages, temperature=0.7, max_completion_tokens=600)
+        # Get AI response with enhanced parameters for better intelligence
+        result = await ai_service.chat_completion(
+            messages=messages, 
+            temperature=0.8,  # Slightly higher for more creative, engaging responses
+            max_completion_tokens=800  # Increased from 600 for more comprehensive answers
+        )
         
         if not result.get("success"):
             raise HTTPException(status_code=500, detail=result.get("error", "AI error"))
