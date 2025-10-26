@@ -5,15 +5,15 @@ Handles TTS, STT, and real-time voice conversations
 
 import aiohttp
 import asyncio
-import json
 import logging
 import base64
 import uuid
 import os
-from typing import Dict, List, Optional, Any, AsyncGenerator
+from typing import Dict, Optional, Any, AsyncGenerator
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
 
 class VoiceService:
     def __init__(self):

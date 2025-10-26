@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 GROQ_BASE = "https://api.groq.com/openai/v1"
 
+
 class AIService:
     def __init__(self):
         self.chat_url = f"{GROQ_BASE}/chat/completions"
@@ -145,7 +146,7 @@ class AIService:
                         return {"success": False, "error": detail}
                     data = await r.read()
                     audio_b64 = base64.b64encode(data).decode("utf-8")
-                    mime = f"audio/{'wav' if response_format=='wav' else response_format}"
+                    mime = f"audio/{'wav' if response_format == 'wav' else response_format}"
                     return {"success": True, "audio_base64": audio_b64, "mime": mime}
         except Exception as e:
             return {"success": False, "error": str(e)}
