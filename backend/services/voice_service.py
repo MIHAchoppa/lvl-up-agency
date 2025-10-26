@@ -138,7 +138,33 @@ class VoiceService:
 
     async def speech_to_text(self, audio_file_path: str) -> Dict[str, Any]:
         """
-        Convert speech to text using ElevenLabs STT
+        Convert speech to text using Groq Whisper API
+        """
+        try:
+            # Use Groq Whisper for STT
+            from services.ai_service import ai_service
+            
+            result = await ai_service.stt_transcribe_file(audio_file_path)
+            
+            if result.get("success"):
+                return {
+                    "success": True,
+                    "transcription": result.get("text", ""),
+                    "confidence": 0.95,  # Groq Whisper has high confidence
+                    "language": "en"
+                }
+            else:
+                # Fallback to ElevenLabs if Groq fails
+                logger.warning(f"Groq STT failed, trying ElevenLabs: {result.get('error')}")
+                return await self._elevenlabs_stt_fallback(audio_file_path)
+                        
+        except Exception as e:
+            logger.error(f"STT error: {str(e)}")
+            return {"success": False, "error": str(e)}
+    
+    async def _elevenlabs_stt_fallback(self, audio_file_path: str) -> Dict[str, Any]:
+        """
+        Fallback to ElevenLabs STT if Groq fails
         """
         try:
             data = aiohttp.FormData()
@@ -165,11 +191,11 @@ class VoiceService:
                         }
                     else:
                         error_text = await response.text()
-                        logger.error(f"STT error {response.status}: {error_text}")
+                        logger.error(f"ElevenLabs STT error {response.status}: {error_text}")
                         return {"success": False, "error": f"STT failed: {response.status}"}
                         
         except Exception as e:
-            logger.error(f"STT error: {str(e)}")
+            logger.error(f"ElevenLabs STT error: {str(e)}")
             return {"success": False, "error": str(e)}
 
     async def get_conversation_signed_url(self, agent_id: Optional[str] = None) -> Dict[str, Any]:
