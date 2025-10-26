@@ -77,91 +77,16 @@ agenthub/agents/youtube/db
 .cache/
 
 # Mobile development
-android-sdk/ -e 
+android-sdk/
+
 # Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
--e 
-# Environment files
-*.env
-*.env.*
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+!.env.example
+!.env.*.example

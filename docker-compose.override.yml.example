@@ -1,0 +1,46 @@
+# Docker Compose Override for Development
+# This file is automatically used alongside docker-compose.yml when running:
+# docker-compose up
+#
+# It provides development-specific settings like:
+# - Volume mounts for live code reloading
+# - Exposed debug ports
+# - Development environment variables
+
+version: '3.8'
+
+services:
+  backend:
+    # Mount source code for live reloading
+    volumes:
+      - ./backend:/app:ro
+    # Override to use development server with reload
+    command: uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=DEBUG
+  
+  backend-node:
+    # Mount source code for live reloading
+    volumes:
+      - ./backend-node:/app
+      - /app/node_modules
+    # Override to use nodemon
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+  
+  frontend:
+    # For development, expose the development server directly
+    # Comment out the build and use a dev server instead
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - CHOKIDAR_USEPOLLING=true
