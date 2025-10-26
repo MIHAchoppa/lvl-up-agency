@@ -40,6 +40,7 @@ The Level Up Agency platform now includes a comprehensive AI-powered blog genera
 #### Public Endpoints
 ```
 GET  /api/blogs/                    # Get published blogs
+     Query params: ?status=published&category=Strategy&limit=50&offset=0
 GET  /api/blogs/{slug}              # Get single blog by slug
 ```
 
@@ -66,7 +67,7 @@ GET    /api/admin/blogs/scheduler-status    # Get scheduler status
   "content": "markdown string",
   "author": "string",
   "author_id": "string",
-  "author_bigo_id": "string",
+  "author_bigo_id": "string (optional)",
   "status": "draft|published|scheduled|archived",
   "category": "string",
   "tags": ["array of strings"],
@@ -150,9 +151,10 @@ Admins can:
 - Links to relevant platform pages based on content keywords
 
 ### BIGO Profile Links
-- Detects BIGO IDs in content
+- Extracts BIGO profile links from content (e.g., bigo.tv/{id})
 - Formats as: `https://bigo.tv/{bigo_id}`
 - Tracks all BIGO profile links in blog metadata
+- Note: Links must be present in content or added manually
 
 ### Link Pyramid
 The system builds a link pyramid by:
@@ -259,7 +261,7 @@ Admin assistants have the same access as admins for blog management, allowing th
 ### Environment Variables
 ```bash
 # Required for AI generation
-GROQ_API_KEY=your_groq_api_key
+GROQ_API_KEY=your_groq_api_key  # Keep this secure! Do NOT commit to version control
 
 # Database
 MONGO_URL=mongodb://...
@@ -268,6 +270,8 @@ DB_NAME=lvl_up_agency
 # Frontend
 REACT_APP_API_URL=http://localhost:8000
 ```
+
+**Security Note**: Always store sensitive credentials in `.env` files and ensure they are listed in `.gitignore`. Never commit API keys or secrets to version control.
 
 ### Scheduler Configuration
 Located in `blog_scheduler_service.py`:
