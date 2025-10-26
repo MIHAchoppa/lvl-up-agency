@@ -449,6 +449,95 @@ Generate only the announcement text, no additional commentary."""
         except Exception as e:
             logger.error(f"Announcement generation error: {e}")
             return f"{key_message} Stay tuned for more updates!"
+    
+    async def classify_intent(self, message: str) -> Dict[str, Any]:
+        """
+        Classify user message intent
+        Returns: {
+            "intent": "greeting" | "question" | "off_topic" | "casual",
+            "confidence": float,
+            "is_bigo_related": bool,
+            "suggested_response": str (for greetings/casual)
+        }
+        """
+        try:
+            # Quick pattern matching for common cases
+            message_lower = message.lower().strip()
+            
+            # First, check for BIGO-related keywords (most important check)
+            bigo_keywords = [
+                'bean', 'bigo', 'pk', 'tier', 'stream', 'streaming', 'diamond', 'gift', 
+                'host', 'broadcast', 'viewer', 'audience', 'fan', 'earn', 'money',
+                'level', 'rank', 's1', 's25', 'battle', 'live'
+            ]
+            is_bigo_related = any(keyword in message_lower for keyword in bigo_keywords)
+            
+            # Check for question indicators
+            question_indicators = ['?', 'how', 'what', 'when', 'where', 'why', 'who', 'can', 'should', 'do i', 'help me', 'tell me']
+            is_question = '?' in message or any(indicator in message_lower for indicator in question_indicators)
+            
+            # Common greetings - only if it's JUST a greeting (no BIGO content)
+            greetings = ['hi', 'hello', 'hey', 'yo', 'sup', 'what\'s up', 'whats up', 'hola', 'greetings']
+            is_pure_greeting = (message_lower in greetings or 
+                               (any(message_lower.startswith(g + ' ') or message_lower.startswith(g + ',') for g in greetings) 
+                                and not is_bigo_related))
+            
+            if is_pure_greeting and not is_bigo_related:
+                return {
+                    "intent": "greeting",
+                    "confidence": 0.95,
+                    "is_bigo_related": False,
+                    "suggested_response": "Hey there! 👋 I'm BeanGenie, your BIGO Live expert assistant. I'm here to help you learn about streaming, earning beans, PK battles, tier progression, and more. What would you like to know about BIGO Live?"
+                }
+            
+            # Very short messages (likely casual/unclear) - only if not BIGO-related
+            if len(message.split()) <= 2 and '?' not in message and not is_bigo_related:
+                return {
+                    "intent": "casual",
+                    "confidence": 0.85,
+                    "is_bigo_related": False,
+                    "suggested_response": "Hi! 😊 I'm your BIGO Live learning assistant. I can help you with:\n• 💰 Bean earnings and monetization\n• 🎯 Tier system progression\n• ⚔️ PK battle strategies\n• 📅 Streaming schedules\n• 🎁 Gift strategies\n\nWhat BIGO Live topic would you like to explore?"
+                }
+            
+            # Classify based on patterns (prioritize BIGO-related content)
+            if is_bigo_related and is_question:
+                return {
+                    "intent": "question",
+                    "confidence": 0.9,
+                    "is_bigo_related": True,
+                    "suggested_response": None
+                }
+            elif is_question and not is_bigo_related:
+                return {
+                    "intent": "off_topic",
+                    "confidence": 0.8,
+                    "is_bigo_related": False,
+                    "suggested_response": "I'm specialized in BIGO Live coaching, Boss! 🎯 I can help you with beans, streaming strategies, PK battles, tier progression, audience growth, and monetization. What BIGO topic would you like to discuss?"
+                }
+            elif is_bigo_related:
+                return {
+                    "intent": "question",
+                    "confidence": 0.75,
+                    "is_bigo_related": True,
+                    "suggested_response": None
+                }
+            else:
+                return {
+                    "intent": "off_topic",
+                    "confidence": 0.7,
+                    "is_bigo_related": False,
+                    "suggested_response": "Hey! I'm your BIGO Live expert. 💡 While I'd love to chat about everything, I specialize in helping hosts succeed on BIGO Live. Ask me about bean earnings, PK strategies, streaming tips, or tier progression!"
+                }
+                
+        except Exception as e:
+            logger.error(f"Intent classification error: {e}")
+            # Default to question if classification fails
+            return {
+                "intent": "question",
+                "confidence": 0.5,
+                "is_bigo_related": True,
+                "suggested_response": None
+            }
 
 # Global AI service instance
 ai_service = AIService()
