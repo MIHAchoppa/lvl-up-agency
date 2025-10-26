@@ -18,6 +18,7 @@ import AdminModelsPanel from '../components/dashboard/AdminModelsPanel';
 import SettingsPanel from '../components/dashboard/SettingsPanel';
 import BeanGeniePanel from '../components/dashboard/BeanGeniePanel';
 import BigoAcademyPanel from '../components/dashboard/BigoAcademyPanel';
+import BlogsPanel from '../components/dashboard/BlogsPanel';
 
 import QuotaPanel from '../components/dashboard/QuotaPanel';
 
@@ -95,6 +96,12 @@ function Dashboard() {
                   🤖 Admin AI
                 </TabsTrigger>
                 <TabsTrigger 
+                  value="blogs" 
+                  className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
+                >
+                  📝 Blogs
+                </TabsTrigger>
+                <TabsTrigger 
                   value="models" 
                   className="data-[state=active]:text-black data-[state=active]:gradient-gold data-[state=active]:shadow-gold transition-smooth font-semibold text-sm hover:bg-yellow-500/10 rounded-lg"
                 >
@@ -146,6 +153,7 @@ function Dashboard() {
           {(user?.role === 'admin' || user?.role === 'owner') && (
             <>
               <TabsContent value="admin-assistant"><EnhancedAdminAssistantPanel /></TabsContent>
+              <TabsContent value="blogs"><BlogsPanel token={localStorage.getItem('token')} /></TabsContent>
               <TabsContent value="models"><AdminModelsPanel /></TabsContent>
               <TabsContent value="settings"><SettingsPanel /></TabsContent>
             </>

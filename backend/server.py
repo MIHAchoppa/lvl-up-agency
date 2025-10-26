@@ -28,8 +28,10 @@ from services.ai_service import ai_service
 from services.voice_service import voice_service  
 from services.websocket_service import connection_manager
 from services.lead_scanner_service import lead_scanner_service
+from services.blog_scheduler_service import blog_scheduler
 # from routers.voice_router import voice_router
 # from routers.admin_assistant_router import admin_assistant_router
+from routers import blog_router
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -70,8 +72,24 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logging.getLogger(__name__).warning(f"Could not create bigo_knowledge text index: {e}")
     
+    # Create indexes for blogs collection
+    try:
+        await db.blogs.create_index([("slug", 1)], unique=True)
+        await db.blogs.create_index([("status", 1)])
+        await db.blogs.create_index([("category", 1)])
+        await db.blogs.create_index([("published_at", -1)])
+        logging.getLogger(__name__).info("Created indexes on blogs collection")
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Could not create blogs indexes: {e}")
+    
+    # Initialize blog scheduler
+    blog_scheduler.set_dependencies(db, ai_service)
+    await blog_scheduler.start()
+    logging.getLogger(__name__).info("Blog scheduler started")
+    
     yield
     # shutdown code
+    await blog_scheduler.stop()
     client.close()
 
 # Admins collection sync and rebuild
@@ -3475,8 +3493,35 @@ Make it actionable, engaging, and easy to follow!"""
         logger.error(f"Academy tutorial error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============================================
+# BLOG SCHEDULER CONTROL ENDPOINTS
+# ============================================
+
+@api_router.post("/admin/blogs/generate-now")
+async def trigger_blog_generation(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.OWNER]))):
+    """Manually trigger blog generation (admin/owner only)"""
+    try:
+        # Trigger blog generation immediately
+        await blog_scheduler.generate_now()
+        return {"message": "Blog generation triggered successfully"}
+    except Exception as e:
+        logger.error(f"Manual blog generation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/blogs/scheduler-status")
+async def get_scheduler_status(current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.OWNER]))):
+    """Get blog scheduler status"""
+    return {
+        "running": blog_scheduler.running,
+        "next_scheduled_time": blog_scheduler._get_next_scheduled_time().isoformat() if blog_scheduler.running else None
+    }
+
+# Initialize blog router with dependencies
+blog_router.init_blog_router(db, ai_service, get_current_user, require_role, UserRole)
+
 # Include all routers in the main app
 app.include_router(api_router)
+app.include_router(blog_router.router)
 # app.include_router(voice_router)
 # app.include_router(admin_assistant_router)
 

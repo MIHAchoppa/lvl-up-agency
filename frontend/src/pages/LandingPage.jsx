@@ -4,13 +4,15 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import VoiceRecruiter from '../components/VoiceRecruiter';
-import { getFeaturedArticles } from '../data/blogData';
 import { Calendar, Clock, ArrowRight } from 'lucide-react';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function LandingPage() {
   const navigate = useNavigate();
   const [showRecruiter, setShowRecruiter] = useState(false);
-  const featuredArticles = getFeaturedArticles(3);
+  const [featuredArticles, setFeaturedArticles] = useState([]);
 
   useEffect(() => {
     // Auto-show recruiter after 2 seconds
@@ -18,8 +20,21 @@ function LandingPage() {
       setShowRecruiter(true);
     }, 2000);
 
+    // Fetch featured blog articles
+    fetchFeaturedBlogs();
+
     return () => clearTimeout(timer);
   }, []);
+
+  const fetchFeaturedBlogs = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/blogs/?limit=3`);
+      setFeaturedArticles(response.data.blogs || []);
+    } catch (err) {
+      console.error('Error fetching featured blogs:', err);
+      setFeaturedArticles([]);
+    }
+  };
   return (
     <div className="min-h-screen bg-white text-gray-900">
       <header className="border-b border-yellow-500/20 sticky top-0 glass-dark z-50 transition-smooth">
@@ -177,7 +192,7 @@ function LandingPage() {
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        <span>{article.readTime}</span>
+                        <span>{article.read_time}</span>
                       </div>
                     </div>
                   </div>
