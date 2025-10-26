@@ -197,8 +197,33 @@ function BeanGeniePanel() {
       setIsSpeaking(true);
       setVoiceStatus('🗣️ Coach speaks...');
 
+      // Prepare text for TTS: remove sources section and smartly truncate
+      let textToSpeak = text;
+      
+      // Remove "Sources:" section as it shouldn't be spoken
+      const sourcesIndex = text.search(/\n\n?Sources?:/i);
+      if (sourcesIndex > 0) {
+        textToSpeak = text.substring(0, sourcesIndex).trim();
+      }
+      
+      // If still too long, truncate at sentence boundary (max ~2000 chars for reasonable TTS length)
+      if (textToSpeak.length > 2000) {
+        const truncated = textToSpeak.substring(0, 2000);
+        // Find last sentence ending (period, exclamation, or question mark followed by space or end)
+        const lastSentenceEnd = Math.max(
+          truncated.lastIndexOf('. '),
+          truncated.lastIndexOf('! '),
+          truncated.lastIndexOf('? ')
+        );
+        if (lastSentenceEnd > 500) { // Ensure we have substantial content
+          textToSpeak = truncated.substring(0, lastSentenceEnd + 1).trim();
+        } else {
+          textToSpeak = truncated.trim();
+        }
+      }
+
       const { data } = await axios.post(`${API}/beangenie/tts`, {
-        text: text.substring(0, 500) // Limit length
+        text: textToSpeak
       });
 
       if (data.audio_base64) {
