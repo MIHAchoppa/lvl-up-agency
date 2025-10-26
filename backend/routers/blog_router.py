@@ -113,15 +113,25 @@ def extract_links(content: str) -> tuple[List[str], List[str]]:
     bigo_links = []
     internal_links = []
     
+    # Limit content length to prevent ReDoS
+    if len(content) > 100000:  # 100KB max
+        content = content[:100000]
+    
     # Find BIGO profile links: bigo.tv/[id]
     bigo_pattern = r'bigo\.tv/([a-zA-Z0-9_-]+)'
     bigo_matches = re.findall(bigo_pattern, content)
     bigo_links = [match for match in bigo_matches]
     
     # Find internal links: /blog/[slug] or other pages
-    internal_pattern = r'\[([^\]]+)\]\((/[^\)]+)\)'
-    internal_matches = re.findall(internal_pattern, content)
-    internal_links = [{"text": match[0], "url": match[1]} for match in internal_matches]
+    # Using a simpler, non-catastrophic regex pattern
+    # Match markdown links: [text](url)
+    internal_pattern = r'\[([^\]]{1,200})\]\((/[^\)]{1,500})\)'
+    try:
+        internal_matches = re.findall(internal_pattern, content, re.MULTILINE)
+        internal_links = [{"text": match[0], "url": match[1]} for match in internal_matches]
+    except re.error:
+        # Fallback if regex fails
+        internal_links = []
     
     return bigo_links, internal_links
 
