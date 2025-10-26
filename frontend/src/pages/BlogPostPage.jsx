@@ -1,35 +1,66 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { getArticleBySlug } from '../data/blogData';
-import { ArrowLeft, Calendar, Clock, Tag, Share2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Tag, Share2, Loader } from 'lucide-react';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function BlogPostPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const article = getArticleBySlug(slug);
+  const [article, setArticle] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Scroll to top when article loads
-    window.scrollTo(0, 0);
-    
-    // Update page title and meta description for SEO
-    if (article) {
-      document.title = `${article.title} | Level Up Agency Blog`;
-      
-      // Update meta description
-      const metaDescription = document.querySelector('meta[name="description"]');
-      if (metaDescription) {
-        metaDescription.setAttribute('content', article.seo.metaDescription);
-      }
-    }
-  }, [article]);
+    fetchArticle();
+  }, [slug]);
 
-  if (!article) {
+  const fetchArticle = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/blogs/${slug}`);
+      setArticle(response.data);
+      setError(null);
+      
+      // Scroll to top when article loads
+      window.scrollTo(0, 0);
+      
+      // Update page title and meta description for SEO
+      if (response.data) {
+        document.title = `${response.data.title} | Level Up Agency Blog`;
+        
+        // Update meta description
+        const metaDescription = document.querySelector('meta[name="description"]');
+        if (metaDescription && response.data.meta_description) {
+          metaDescription.setAttribute('content', response.data.meta_description);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching article:', err);
+      setError(err.response?.status === 404 ? 'Article not found' : 'Failed to load article');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <Loader className="w-8 h-8 animate-spin text-yellow-600" />
+          <span className="text-gray-600">Loading article...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !article) {
     return (
       <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gradient-gold mb-4">Article Not Found</h1>
-          <p className="text-gray-600 mb-8">The article you're looking for doesn't exist.</p>
+          <h1 className="text-4xl font-bold text-gradient-gold mb-4">{error || 'Article Not Found'}</h1>
+          <p className="text-gray-600 mb-8">The article you're looking for doesn't exist or couldn't be loaded.</p>
           <Link 
             to="/blog" 
             className="px-6 py-3 rounded-xl gradient-gold text-black font-bold inline-flex items-center gap-2"
@@ -101,11 +132,11 @@ function BlogPostPage() {
         <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600 mb-8 pb-8 border-b border-yellow-500/20">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            <span>{new Date(article.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+            <span>{new Date(article.published_at || article.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
-            <span>{article.readTime}</span>
+            <span>{article.read_time}</span>
           </div>
           <div className="flex items-center gap-2">
             <span>By {article.author}</span>
@@ -121,13 +152,15 @@ function BlogPostPage() {
         </div>
 
         {/* Featured Image */}
-        <div className="mb-12 rounded-2xl overflow-hidden border border-yellow-500/30">
-          <img 
-            src={article.image} 
-            alt={article.title}
-            className="w-full aspect-video object-cover"
-          />
-        </div>
+        {article.image && (
+          <div className="mb-12 rounded-2xl overflow-hidden border border-yellow-500/30">
+            <img 
+              src={article.image} 
+              alt={article.title}
+              className="w-full aspect-video object-cover"
+            />
+          </div>
+        )}
 
         {/* Article Content */}
         <div className="prose prose-lg max-w-none">
@@ -206,11 +239,13 @@ function BlogPostPage() {
         </div>
 
         {/* SEO Keywords (hidden) */}
-        <div className="hidden">
-          {article.seo.keywords.map((keyword, index) => (
-            <span key={index}>{keyword}</span>
-          ))}
-        </div>
+        {article.seo_keywords && article.seo_keywords.length > 0 && (
+          <div className="hidden">
+            {article.seo_keywords.map((keyword, index) => (
+              <span key={index}>{keyword}</span>
+            ))}
+          </div>
+        )}
       </article>
 
       {/* Footer */}
