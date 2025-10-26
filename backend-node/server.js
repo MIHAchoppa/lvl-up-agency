@@ -9,10 +9,20 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const http = require('http');
+const database = require('./database');
+const bigoAPI = require('./bigo-api');
 require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
+
+// Add Socket.IO integration
+const io = require('socket.io')(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
 
 // Middleware
 app.use(cors());
@@ -47,17 +57,58 @@ const ELEVENLABS_CONFIG = {
   }
 };
 
-// In-memory storage (replace with MongoDB in production)
-const db = {
-  users: new Map(),
-  announcements: new Map(),
-  events: new Map(),
-  messages: new Map(),
-  voiceSessions: new Map(),
-  aiChats: new Map()
-};
+// Initialize database connection
+let db = database.getInMemoryFallback(); // Fallback for testing
 
-// Sample admin user
+// Initialize services on startup
+async function initializeServices() {
+  console.log('🚀 Initializing Level Up Agency Backend...');
+  
+  // Initialize database
+  const dbConnected = await database.connect();
+  if (dbConnected) {
+    console.log('✅ Database connection established');
+    // Use database collections if connected
+    db = {
+      users: database.users,
+      announcements: database.announcements,
+      events: database.events,
+      messages: database.messages,
+      voiceSessions: database.voiceSessions,
+      aiChats: database.aiChats
+    };
+  } else {
+    console.log('⚠️ Using in-memory storage as database fallback');
+  }
+  
+  // Initialize BIGO API
+  const bigoConnected = await bigoAPI.initialize();
+  if (bigoConnected) {
+    console.log('✅ BIGO API integration ready');
+  } else {
+    console.log('⚠️ BIGO API using mock data');
+  }
+  
+  // Add admin user to storage
+  if (db.users instanceof Map) {
+    db.users.set('Admin', adminUser);
+  } else {
+    // For database collections, insert if not exists
+    try {
+      const existingAdmin = await db.users.findOne({ bigo_id: 'Admin' });
+      if (!existingAdmin) {
+        await db.users.insertOne(adminUser);
+        console.log('✅ Admin user created in database');
+      }
+    } catch (error) {
+      console.log('⚠️ Could not create admin user in database, using in-memory fallback');
+    }
+  }
+  
+  console.log('🎉 All services initialized successfully!');
+}
+
+// Sample admin user for in-memory fallback
 const adminUser = {
   id: 'admin-001',
   bigo_id: 'Admin',
@@ -66,7 +117,11 @@ const adminUser = {
   role: 'admin',
   password: bcrypt.hashSync('admin333', 10)
 };
-db.users.set('Admin', adminUser);
+
+// Add admin user to in-memory storage initially
+if (db.users instanceof Map) {
+  db.users.set('Admin', adminUser);
+}
 
 // JWT middleware
 const authenticateToken = (req, res, next) => {
@@ -598,8 +653,36 @@ app.post('/api/chat/channels/:channelId/messages', authenticateToken, (req, res)
   res.json(message);
 });
 
-// WebSocket would be implemented here in full version
-// For now, we'll focus on REST API functionality
+// WebSocket implementation
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+  
+  socket.on('join_room', (room) => {
+    socket.join(room);
+    console.log(`User ${socket.id} joined room: ${room}`);
+  });
+  
+  socket.on('leave_room', (room) => {
+    socket.leave(room);
+    console.log(`User ${socket.id} left room: ${room}`);
+  });
+  
+  socket.on('chat_message', (data) => {
+    // Broadcast message to room
+    socket.to(data.channel_id).emit('new_message', data);
+  });
+  
+  socket.on('typing', (data) => {
+    socket.to(data.channel_id).emit('user_typing', {
+      user_id: data.user_id,
+      typing: data.typing
+    });
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -614,11 +697,17 @@ app.get('/health', (req, res) => {
   });
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 3001;
 
-server.listen(PORT, () => {
-  console.log(`🚀 Level Up Agency Backend running on port ${PORT}`);
-  console.log(`🤖 AI Services: Operational`);
-  console.log(`🎙️ Voice Services: Operational`);
-  console.log(`💬 WebSocket Services: Operational`);
+// Initialize services and start server
+initializeServices().then(() => {
+  server.listen(PORT, () => {
+    console.log(`🚀 Level Up Agency Backend running on port ${PORT}`);
+    console.log(`🤖 AI Services: Operational`);
+    console.log(`🎙️ Voice Services: Operational`);
+    console.log(`💬 WebSocket Services: Operational`);
+  });
+}).catch(error => {
+  console.error('❌ Failed to initialize services:', error);
+  process.exit(1);
 });

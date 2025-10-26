@@ -3,8 +3,10 @@ import axios from 'axios';
 
 const AuthContext = createContext(null);
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
+const NODE_BACKEND_URL = process.env.REACT_APP_NODE_BACKEND_URL || 'http://localhost:3001';
 const API = `${BACKEND_URL}/api`;
+const NODE_API = `${NODE_BACKEND_URL}/api`;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
