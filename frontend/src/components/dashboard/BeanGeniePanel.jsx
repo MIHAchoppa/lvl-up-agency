@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
@@ -23,7 +24,7 @@ function BeanGeniePanel() {
   const [dynamicPanels, setDynamicPanels] = useState({});
   const [activePanels, setActivePanels] = useState([
     'organic_strategies',
-    'bigo_wheel',
+    'raffle_picker',
     'raffles',
     'financial',
     'analytics',
@@ -40,11 +41,11 @@ function BeanGeniePanel() {
     activeStrategies: 0
   });
 
-  // Bigo Wheel states
-  const [activeWheel, setActiveWheel] = useState(null);
-  const [wheelPrizes, setWheelPrizes] = useState([]);
-  const [spinHistory, setSpinHistory] = useState([]);
-  const [showWheelConfig, setShowWheelConfig] = useState(false);
+  // Raffle Picker states
+  const [activePicker, setActivePicker] = useState(null);
+  const [pickerPrizes, setPickerPrizes] = useState([]);
+  const [drawHistory, setDrawHistory] = useState([]);
+  const [showPickerConfig, setShowPickerConfig] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   const messagesEndRef = useRef(null);
@@ -96,13 +97,13 @@ function BeanGeniePanel() {
     // Load initial data
     loadBeanGenieData();
     
-    // Load wheel data
-    loadWheelData();
+    // Load raffle picker data
+    loadPickerData();
     
     // Initial greeting
     setMessages([{
       role: 'assistant',
-      content: "🎯 Hey Boss! I'm your LVL UP Coach - your AI coach and strategic partner! I'll help you with:\n\n💪 Growth & Strategy\n🎯 Bigo Wheel Management (gift-to-spin prizes!)\n📊 Performance Coaching\n💰 Monetization Tips\n🎬 Content Planning\n\nWhat do you need help with today?",
+      content: "🎯 Hey Boss! I'm your LVL UP Coach - your AI coach and strategic partner! I'll help you with:\n\n💪 Growth & Strategy\n🎯 Raffle Picker Management (gift-to-win prizes!)\n📊 Performance Coaching\n💰 Monetization Tips\n🎬 Content Planning\n\nWhat do you need help with today?",
       timestamp: new Date()
     }]);
   }, []);
@@ -457,52 +458,52 @@ function BeanGeniePanel() {
     }
   };
 
-  // Bigo Wheel Management
-  const createWheel = async (wheelData) => {
+  // Raffle Picker Management
+  const createPicker = async (pickerData) => {
     try {
-      const { data } = await axios.post(`${API}/beangenie/wheel`, wheelData);
-      setActiveWheel(data);
-      setWheelPrizes(data.prizes || []);
-      toast.success('Wheel created!');
-      setShowWheelConfig(false);
+      const { data } = await axios.post(`${API}/beangenie/wheel`, pickerData);
+      setActivePicker(data);
+      setPickerPrizes(data.prizes || []);
+      toast.success('Raffle Picker created!');
+      setShowPickerConfig(false);
     } catch (error) {
-      toast.error('Failed to create wheel');
+      toast.error('Failed to create raffle picker');
     }
   };
 
-  const addWheelPrize = async (prize) => {
+  const addPickerPrize = async (prize) => {
     try {
-      const { data } = await axios.post(`${API}/beangenie/wheel/${activeWheel.id}/prize`, prize);
-      setWheelPrizes(prev => [...prev, data]);
+      const { data } = await axios.post(`${API}/beangenie/wheel/${activePicker.id}/prize`, prize);
+      setPickerPrizes(prev => [...prev, data]);
       toast.success('Prize added');
     } catch (error) {
       toast.error('Failed to add prize');
     }
   };
 
-  const recordSpin = async (winnerId, prizeId) => {
+  const recordDraw = async (winnerId, prizeId) => {
     try {
-      const { data } = await axios.post(`${API}/beangenie/wheel/${activeWheel.id}/spin`, {
+      const { data } = await axios.post(`${API}/beangenie/wheel/${activePicker.id}/spin`, {
         winner_id: winnerId,
         prize_id: prizeId
       });
-      setSpinHistory(prev => [data, ...prev]);
-      toast.success('Spin recorded!');
+      setDrawHistory(prev => [data, ...prev]);
+      toast.success('Winner recorded!');
     } catch (error) {
-      toast.error('Failed to record spin');
+      toast.error('Failed to record draw');
     }
   };
 
-  const loadWheelData = async () => {
+  const loadPickerData = async () => {
     try {
       const { data } = await axios.get(`${API}/beangenie/wheel/active`);
       if (data.wheel) {
-        setActiveWheel(data.wheel);
-        setWheelPrizes(data.prizes || []);
-        setSpinHistory(data.spins || []);
+        setActivePicker(data.wheel);
+        setPickerPrizes(data.prizes || []);
+        setDrawHistory(data.spins || []);
       }
     } catch (error) {
-      console.error('Failed to load wheel data:', error);
+      console.error('Failed to load raffle picker data:', error);
     }
   };
 
@@ -789,36 +790,36 @@ function BeanGeniePanel() {
               </CardContent>
             </Card>
 
-            {/* Bigo Wheel Management */}
+            {/* Raffle Picker Management */}
             <Card className="bg-white border border-gray-200 shadow-sm lg:col-span-2">
               <CardHeader className="bg-gray-50 flex flex-row items-center justify-between py-3">
-                <CardTitle className="text-gray-700 text-base">🎯 Bigo Wheel Manager</CardTitle>
+                <CardTitle className="text-gray-700 text-base">🎯 Raffle Picker Manager</CardTitle>
                 <Button 
                   size="sm" 
-                  onClick={() => setShowWheelConfig(true)}
+                  onClick={() => setShowPickerConfig(true)}
                   className="bg-blue-500 hover:bg-blue-600 text-white"
                 >
-                  {activeWheel ? 'Edit Wheel' : '+ Create Wheel'}
+                  {activePicker ? 'Edit Picker' : '+ Create Picker'}
                 </Button>
               </CardHeader>
               <CardContent className="p-4">
-                {!activeWheel ? (
+                {!activePicker ? (
                   <div className="text-center py-8">
-                    <div className="text-6xl mb-4">🎡</div>
-                    <p className="text-gray-600 mb-2">No active wheel</p>
+                    <div className="text-6xl mb-4">🎫</div>
+                    <p className="text-gray-600 mb-2">No active raffle picker</p>
                     <p className="text-sm text-gray-500">
-                      Create a digital spin wheel! Viewers send gifts to spin for prizes like tasks, rewards, or challenges.
+                      Create a raffle picker! Viewers send gifts to enter for a chance to win prizes like tasks, rewards, or challenges.
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Wheel Info */}
+                    {/* Picker Info */}
                     <div className="bg-white/50 p-4 rounded-lg border border-yellow-500/20">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="text-lg font-bold text-yellow-600">{activeWheel.name}</h3>
+                          <h3 className="text-lg font-bold text-yellow-600">{activePicker.name}</h3>
                           <p className="text-sm text-yellow-600/70">
-                            Cost: {activeWheel.gift_cost} {activeWheel.gift_type}
+                            Entry Cost: {activePicker.gift_cost} {activePicker.gift_type}
                           </p>
                         </div>
                         <Badge className="bg-green-500 text-white">Active</Badge>
@@ -828,7 +829,7 @@ function BeanGeniePanel() {
                     {/* Prizes List */}
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-sm font-semibold text-yellow-600">Prizes ({wheelPrizes.length})</h4>
+                        <h4 className="text-sm font-semibold text-yellow-600">Prizes ({pickerPrizes.length})</h4>
                         <Button 
                           size="sm" 
                           variant="outline" 
@@ -836,7 +837,7 @@ function BeanGeniePanel() {
                             const name = prompt('Prize name:');
                             const type = prompt('Type (task/physical/content):');
                             if (name && type) {
-                              addWheelPrize({ name, type, icon: type === 'task' ? '🎭' : type === 'physical' ? '🎁' : '📹' });
+                              addPickerPrize({ name, type, icon: type === 'task' ? '🎭' : type === 'physical' ? '🎁' : '📹' });
                             }
                           }}
                           className="text-xs"
@@ -845,10 +846,10 @@ function BeanGeniePanel() {
                         </Button>
                       </div>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {wheelPrizes.length === 0 ? (
+                        {pickerPrizes.length === 0 ? (
                           <p className="text-xs text-yellow-600/50 text-center py-4">No prizes yet</p>
                         ) : (
-                          wheelPrizes.map((prize) => (
+                          pickerPrizes.map((prize) => (
                             <div key={prize.id} className="bg-white/30 p-2 rounded flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="text-xl">{prize.icon}</span>
@@ -863,21 +864,21 @@ function BeanGeniePanel() {
                       </div>
                     </div>
 
-                    {/* Recent Spins */}
+                    {/* Recent Draws */}
                     <div>
-                      <h4 className="text-sm font-semibold text-yellow-600 mb-2">Recent Spins ({spinHistory.length})</h4>
+                      <h4 className="text-sm font-semibold text-yellow-600 mb-2">Recent Draws ({drawHistory.length})</h4>
                       <div className="space-y-1 max-h-32 overflow-y-auto">
-                        {spinHistory.length === 0 ? (
-                          <p className="text-xs text-yellow-600/50 text-center py-2">No spins yet</p>
+                        {drawHistory.length === 0 ? (
+                          <p className="text-xs text-yellow-600/50 text-center py-2">No draws yet</p>
                         ) : (
-                          spinHistory.slice(0, 5).map((spin) => (
-                            <div key={spin.id} className="bg-white/30 p-2 rounded text-xs flex justify-between items-center">
+                          drawHistory.slice(0, 5).map((draw) => (
+                            <div key={draw.id} className="bg-white/30 p-2 rounded text-xs flex justify-between items-center">
                               <div>
-                                <span className="text-yellow-600">{spin.winner_name}</span>
+                                <span className="text-yellow-600">{draw.winner_name}</span>
                                 <span className="text-yellow-600/50"> won </span>
-                                <span className="text-yellow-600">{spin.prize_name}</span>
+                                <span className="text-yellow-600">{draw.prize_name}</span>
                               </div>
-                              {!spin.fulfilled && (
+                              {!draw.fulfilled && (
                                 <Badge variant="outline" className="text-xs">Pending</Badge>
                               )}
                             </div>
