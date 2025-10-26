@@ -6,6 +6,7 @@ import asyncio
 import sys
 import os
 from pathlib import Path
+import logging
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
@@ -16,11 +17,20 @@ os.environ['DB_NAME'] = os.environ.get('DB_NAME', 'bigo_agency')
 
 from motor.motor_asyncio import AsyncIOMotorClient
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger(__name__)
+
+# Quality thresholds
+CONTENT_LENGTH_THRESHOLD = 0.8  # 80% of entries should have >1000 chars
+TAG_COVERAGE_THRESHOLD = 0.9    # 90% of entries should have tags
+URL_COVERAGE_THRESHOLD = 1.0    # 100% of entries should have URLs
+
 async def test_knowledge_base():
     """Test that BIGO knowledge base contains comprehensive data"""
-    print("\n" + "="*60)
-    print("TEST 1: BIGO Knowledge Base Content")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("TEST 1: BIGO Knowledge Base Content")
+    logger.info("="*60)
     
     client = AsyncIOMotorClient(os.environ['MONGO_URL'])
     db = client[os.environ['DB_NAME']]
@@ -28,10 +38,10 @@ async def test_knowledge_base():
     try:
         # Count total knowledge entries
         count = await db.bigo_knowledge.count_documents({})
-        print(f"✓ Total knowledge entries: {count}")
+        logger.info(f"✓ Total knowledge entries: {count}")
         
         if count == 0:
-            print("⚠ WARNING: Knowledge base is empty. Run 'python scripts/seed_bigo_knowledge.py' to populate it.")
+            logger.warning("⚠ WARNING: Knowledge base is empty. Run 'python scripts/seed_bigo_knowledge.py' to populate it.")
             return False
         
         # Check for key topics
@@ -55,35 +65,41 @@ async def test_knowledge_base():
                 ]
             })
             if result:
-                print(f"✓ Found topic: {topic_name}")
+                logger.info(f"✓ Found topic: {topic_name}")
                 topics_found += 1
             else:
-                print(f"✗ Missing topic: {topic_name}")
+                logger.info(f"✗ Missing topic: {topic_name}")
         
-        print(f"\nTopics coverage: {topics_found}/{len(key_topics)}")
+        logger.info(f"\nTopics coverage: {topics_found}/{len(key_topics)}")
         
-        # Check text index exists
+        # Check text index exists with proper structure check
         indexes = await db.bigo_knowledge.list_indexes().to_list(100)
-        has_text_index = any("text" in str(idx) for idx in indexes)
+        has_text_index = False
+        for idx in indexes:
+            # Check if index has a 'weights' field indicating text index
+            if 'weights' in idx or idx.get('key', {}).get('_fts') == 'text':
+                has_text_index = True
+                break
+        
         if has_text_index:
-            print("✓ Text search index exists")
+            logger.info("✓ Text search index exists")
         else:
-            print("✗ Text search index missing")
+            logger.info("✗ Text search index missing")
         
         success = topics_found >= 6 and has_text_index
         return success
         
     except Exception as e:
-        print(f"✗ Error testing knowledge base: {e}")
+        logger.error(f"✗ Error testing knowledge base: {e}")
         return False
     finally:
         client.close()
 
 async def test_knowledge_search():
     """Test that knowledge search returns relevant results"""
-    print("\n" + "="*60)
-    print("TEST 2: Knowledge Search Functionality")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("TEST 2: Knowledge Search Functionality")
+    logger.info("="*60)
     
     client = AsyncIOMotorClient(os.environ['MONGO_URL'])
     db = client[os.environ['DB_NAME']]
@@ -105,26 +121,26 @@ async def test_knowledge_search():
             ).sort([("score", {"$meta": "textScore"})]).limit(3).to_list(3)
             
             if results and len(results) > 0:
-                print(f"✓ Query '{query}' found {len(results)} results")
-                print(f"  Top result: {results[0]['title'][:50]}...")
+                logger.info(f"✓ Query '{query}' found {len(results)} results")
+                logger.info(f"  Top result: {results[0]['title'][:50]}...")
                 passed += 1
             else:
-                print(f"✗ Query '{query}' found no results")
+                logger.info(f"✗ Query '{query}' found no results")
         
-        print(f"\nSearch tests passed: {passed}/{len(test_queries)}")
+        logger.info(f"\nSearch tests passed: {passed}/{len(test_queries)}")
         return passed >= 4
         
     except Exception as e:
-        print(f"✗ Error testing search: {e}")
+        logger.info(f"✗ Error testing search: {e}")
         return False
     finally:
         client.close()
 
 async def test_knowledge_content_quality():
     """Test that knowledge entries contain substantial content"""
-    print("\n" + "="*60)
-    print("TEST 3: Knowledge Content Quality")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("TEST 3: Knowledge Content Quality")
+    logger.info("="*60)
     
     client = AsyncIOMotorClient(os.environ['MONGO_URL'])
     db = client[os.environ['DB_NAME']]
@@ -133,7 +149,7 @@ async def test_knowledge_content_quality():
         entries = await db.bigo_knowledge.find({}).to_list(100)
         
         if not entries:
-            print("⚠ No entries to test")
+            logger.info("⚠ No entries to test")
             return False
         
         quality_checks = {
@@ -159,40 +175,40 @@ async def test_knowledge_content_quality():
                 quality_checks["has_title"] += 1
         
         total = len(entries)
-        print(f"Total entries analyzed: {total}")
-        print(f"✓ Entries with sufficient content (>1000 chars): {quality_checks['sufficient_length']}/{total}")
-        print(f"✓ Entries with comprehensive content (>3000 chars): {quality_checks['comprehensive']}/{total}")
-        print(f"✓ Entries with tags: {quality_checks['has_tags']}/{total}")
-        print(f"✓ Entries with URLs: {quality_checks['has_url']}/{total}")
-        print(f"✓ Entries with titles: {quality_checks['has_title']}/{total}")
+        logger.info(f"Total entries analyzed: {total}")
+        logger.info(f"✓ Entries with sufficient content (>1000 chars): {quality_checks['sufficient_length']}/{total}")
+        logger.info(f"✓ Entries with comprehensive content (>3000 chars): {quality_checks['comprehensive']}/{total}")
+        logger.info(f"✓ Entries with tags: {quality_checks['has_tags']}/{total}")
+        logger.info(f"✓ Entries with URLs: {quality_checks['has_url']}/{total}")
+        logger.info(f"✓ Entries with titles: {quality_checks['has_title']}/{total}")
         
         # Sample content snippet
         if entries:
             sample = entries[0]
-            print(f"\nSample entry: {sample['title']}")
-            print(f"Content length: {len(sample.get('content', ''))} chars")
-            print(f"Tags: {', '.join(sample.get('tags', []))}")
-            print(f"Content preview: {sample.get('content', '')[:200]}...")
+            logger.info(f"\nSample entry: {sample['title']}")
+            logger.info(f"Content length: {len(sample.get('content', ''))} chars")
+            logger.info(f"Tags: {', '.join(sample.get('tags', []))}")
+            logger.info(f"Content preview: {sample.get('content', '')[:200]}...")
         
         success = (
-            quality_checks['sufficient_length'] >= total * 0.8 and
-            quality_checks['has_tags'] >= total * 0.9 and
-            quality_checks['has_url'] == total
+            quality_checks['sufficient_length'] >= total * CONTENT_LENGTH_THRESHOLD and
+            quality_checks['has_tags'] >= total * TAG_COVERAGE_THRESHOLD and
+            quality_checks['has_url'] == total * URL_COVERAGE_THRESHOLD
         )
         
         return success
         
     except Exception as e:
-        print(f"✗ Error testing content quality: {e}")
+        logger.info(f"✗ Error testing content quality: {e}")
         return False
     finally:
         client.close()
 
 def test_enhanced_prompts():
     """Test that enhanced prompts are present in server.py"""
-    print("\n" + "="*60)
-    print("TEST 4: Enhanced Bot Intelligence (Prompts)")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("TEST 4: Enhanced Bot Intelligence (Prompts)")
+    logger.info("="*60)
     
     try:
         server_path = Path(__file__).parent.parent / 'backend' / 'server.py'
@@ -213,23 +229,23 @@ def test_enhanced_prompts():
         found = 0
         for marker, description in intelligence_markers:
             if marker in content:
-                print(f"✓ Found: {description}")
+                logger.info(f"✓ Found: {description}")
                 found += 1
             else:
-                print(f"✗ Missing: {description}")
+                logger.info(f"✗ Missing: {description}")
         
-        print(f"\nIntelligence markers found: {found}/{len(intelligence_markers)}")
+        logger.info(f"\nIntelligence markers found: {found}/{len(intelligence_markers)}")
         return found >= 6
         
     except Exception as e:
-        print(f"✗ Error testing prompts: {e}")
+        logger.info(f"✗ Error testing prompts: {e}")
         return False
 
 def test_knowledge_data_structure():
     """Test that seed script contains comprehensive knowledge data"""
-    print("\n" + "="*60)
-    print("TEST 5: Knowledge Data Structure")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("TEST 5: Knowledge Data Structure")
+    logger.info("="*60)
     
     try:
         seed_path = Path(__file__).parent.parent / 'scripts' / 'seed_bigo_knowledge.py'
@@ -251,10 +267,10 @@ def test_knowledge_data_structure():
         found = 0
         for element, description in required_elements:
             if element in content:
-                print(f"✓ Found: {description}")
+                logger.info(f"✓ Found: {description}")
                 found += 1
             else:
-                print(f"✗ Missing: {description}")
+                logger.info(f"✗ Missing: {description}")
         
         # Check for substantial content in knowledge data
         if "BIGO_KNOWLEDGE_DATA" in content:
@@ -270,24 +286,24 @@ def test_knowledge_data_structure():
             
             knowledge_section = content[start_idx:end_idx]
             word_count = len(knowledge_section.split())
-            print(f"\n✓ Knowledge data section: ~{word_count} words")
+            logger.info(f"\n✓ Knowledge data section: ~{word_count} words")
             
             if word_count > 5000:
-                print("✓ Comprehensive knowledge data detected (>5000 words)")
+                logger.info("✓ Comprehensive knowledge data detected (>5000 words)")
                 found += 1
         
-        print(f"\nData structure elements found: {found}/{len(required_elements) + 1}")
+        logger.info(f"\nData structure elements found: {found}/{len(required_elements) + 1}")
         return found >= 8
         
     except Exception as e:
-        print(f"✗ Error testing data structure: {e}")
+        logger.info(f"✗ Error testing data structure: {e}")
         return False
 
 async def run_all_tests():
     """Run all BIGO intelligence tests"""
-    print("\n" + "="*60)
-    print("BIGO API DATA INTEGRATION & INTELLIGENCE TEST SUITE")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("BIGO API DATA INTEGRATION & INTELLIGENCE TEST SUITE")
+    logger.info("="*60)
     
     results = {}
     
@@ -307,29 +323,29 @@ async def run_all_tests():
     results['data_structure'] = test_knowledge_data_structure()
     
     # Summary
-    print("\n" + "="*60)
-    print("TEST SUMMARY")
-    print("="*60)
+    logger.info("\n" + "="*60)
+    logger.info("TEST SUMMARY")
+    logger.info("="*60)
     
     passed = sum(1 for v in results.values() if v)
     total = len(results)
     
     for test_name, result in results.items():
         status = "✓ PASS" if result else "✗ FAIL"
-        print(f"{status}: {test_name}")
+        logger.info(f"{status}: {test_name}")
     
-    print(f"\nTotal: {passed}/{total} tests passed")
+    logger.info(f"\nTotal: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 ALL TESTS PASSED! BIGO API integration is complete and intelligent!")
+        logger.info("\n🎉 ALL TESTS PASSED! BIGO API integration is complete and intelligent!")
     elif passed >= total * 0.8:
-        print("\n✓ Most tests passed. BIGO intelligence implementation is good.")
+        logger.info("\n✓ Most tests passed. BIGO intelligence implementation is good.")
     else:
-        print("\n⚠ Some tests failed. Review the implementation.")
+        logger.info("\n⚠ Some tests failed. Review the implementation.")
     
-    print("\nNOTE: If knowledge base tests failed, run:")
-    print("  python scripts/seed_bigo_knowledge.py")
-    print("\nThis will populate the database with comprehensive BIGO knowledge.")
+    logger.info("\nNOTE: If knowledge base tests failed, run:")
+    logger.info("  python scripts/seed_bigo_knowledge.py")
+    logger.info("\nThis will populate the database with comprehensive BIGO knowledge.")
     
     return passed == total
 
