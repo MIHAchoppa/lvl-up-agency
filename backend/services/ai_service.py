@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 GROQ_BASE = "https://api.groq.com/openai/v1"
 
+
 class AIService:
     def __init__(self):
         self.chat_url = f"{GROQ_BASE}/chat/completions"
@@ -145,7 +146,7 @@ class AIService:
                         return {"success": False, "error": detail}
                     data = await r.read()
                     audio_b64 = base64.b64encode(data).decode("utf-8")
-                    mime = f"audio/{'wav' if response_format=='wav' else response_format}"
+                    mime = f"audio/{'wav' if response_format == 'wav' else response_format}"
                     return {"success": True, "audio_base64": audio_b64, "mime": mime}
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -307,6 +308,147 @@ class AIService:
         except Exception as e:
             logger.error(f"AI assist error: {e}")
             return {"success": False, "error": str(e)}
+    
+    async def get_bigo_strategy_response(self, query: str, user_context: Dict[str, Any] = None) -> str:
+        """Get BIGO Live strategy advice from AI"""
+        try:
+            context_str = ""
+            if user_context:
+                tier = user_context.get("tier", "Unknown")
+                beans = user_context.get("beans", 0)
+                context_str = f"\nUser Context: Tier {tier}, {beans} beans this month."
+            
+            system_prompt = """You are a BIGO Live strategy expert coach. Provide actionable advice on:
+- Bean/tier system optimization (S1-S25)
+- PK battle strategies
+- Streaming schedules and timing
+- Gift accumulation techniques
+- Audience engagement tactics
+
+Keep responses concise, motivational, and focused on profit maximization."""
+            
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": query + context_str}
+            ]
+            
+            result = await self.chat_completion(
+                messages=messages,
+                max_completion_tokens=500,
+                temperature=0.7
+            )
+            
+            if result.get("success"):
+                return result.get("content", "I'm here to help with BIGO Live strategies!")
+            else:
+                return "Strategy advice temporarily unavailable. Please try again."
+        except Exception as e:
+            logger.error(f"BIGO strategy error: {e}")
+            return "Unable to provide strategy advice at the moment."
+    
+    async def get_admin_assistant_response(self, message: str, available_actions: List[str] = None) -> Dict[str, Any]:
+        """Get admin assistant response with action detection"""
+        try:
+            system_prompt = f"""You are an AI admin assistant for a BIGO Live agency platform. 
+Help admins manage the platform through natural language commands.
+
+Available actions: {', '.join(available_actions or [])}
+
+Respond helpfully and suggest actions when appropriate. Detect if the user wants to:
+- Create announcements or events
+- Analyze user data or performance
+- Manage users or settings
+- Generate reports
+
+Be concise and actionable."""
+            
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ]
+            
+            result = await self.chat_completion(
+                messages=messages,
+                max_completion_tokens=500,
+                temperature=0.7
+            )
+            
+            if result.get("success"):
+                response_text = result.get("content", "")
+                
+                # Simple action detection
+                detected_action = None
+                requires_confirmation = False
+                
+                message_lower = message.lower()
+                if "announce" in message_lower or "announcement" in message_lower:
+                    detected_action = "system_announcement"
+                    requires_confirmation = True
+                elif "event" in message_lower and "create" in message_lower:
+                    detected_action = "create_event"
+                    requires_confirmation = True
+                elif "user" in message_lower and ("analytics" in message_lower or "report" in message_lower):
+                    detected_action = "user_analytics"
+                
+                return {
+                    "success": True,
+                    "response": response_text,
+                    "detected_action": detected_action,
+                    "requires_confirmation": requires_confirmation
+                }
+            else:
+                return {
+                    "success": False,
+                    "response": "Admin assistant temporarily unavailable.",
+                    "error": result.get("error")
+                }
+        except Exception as e:
+            logger.error(f"Admin assistant error: {e}")
+            return {
+                "success": False,
+                "response": "An error occurred processing your request.",
+                "error": str(e)
+            }
+    
+    async def generate_announcement_content(
+        self, 
+        announcement_type: str, 
+        target_audience: str, 
+        key_message: str
+    ) -> str:
+        """Generate AI-powered announcement content"""
+        try:
+            prompt = f"""Create an engaging announcement for a BIGO Live agency platform.
+
+Type: {announcement_type}
+Target Audience: {target_audience}
+Key Message: {key_message}
+
+Requirements:
+- Professional yet friendly tone
+- Motivational and encouraging
+- Include relevant emojis
+- Keep it concise (2-3 sentences max)
+- Make it actionable
+
+Generate only the announcement text, no additional commentary."""
+            
+            messages = [{"role": "user", "content": prompt}]
+            
+            result = await self.chat_completion(
+                messages=messages,
+                max_completion_tokens=300,
+                temperature=0.8
+            )
+            
+            if result.get("success"):
+                return result.get("content", "").strip()
+            else:
+                # Fallback content
+                return f"{key_message} 🚀 Let's keep pushing forward together!"
+        except Exception as e:
+            logger.error(f"Announcement generation error: {e}")
+            return f"{key_message} Stay tuned for more updates!"
 
 # Global AI service instance
 ai_service = AIService()
