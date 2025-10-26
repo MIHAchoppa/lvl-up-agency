@@ -183,7 +183,7 @@ function BlogPostPage() {
                 return (
                   <ul key={index} className="list-disc list-inside space-y-2 my-4">
                     {items.map((item, i) => (
-                      <li key={i} className="text-gray-300">{item.substring(2)}</li>
+                      <li key={i} className="text-gray-700">{item.substring(2)}</li>
                     ))}
                   </ul>
                 );
@@ -195,7 +195,7 @@ function BlogPostPage() {
                 return (
                   <ol key={index} className="list-decimal list-inside space-y-2 my-4">
                     {items.map((item, i) => (
-                      <li key={i} className="text-gray-300">{item.replace(/^\d+\.\s/, '')}</li>
+                      <li key={i} className="text-gray-700">{item.replace(/^\d+\.\s/, '')}</li>
                     ))}
                   </ol>
                 );
@@ -203,11 +203,11 @@ function BlogPostPage() {
               
               // Handle bold text and emphasis
               let processedParagraph = paragraph;
-              processedParagraph = processedParagraph.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>');
+              processedParagraph = processedParagraph.replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900 font-bold">$1</strong>');
               processedParagraph = processedParagraph.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
               
               // Regular paragraphs
-              return <p key={index} className="text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: processedParagraph }} />;
+              return <p key={index} className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: processedParagraph }} />;
             })}
           </div>
         </div>
@@ -218,7 +218,7 @@ function BlogPostPage() {
             <h3 className="text-2xl font-bold text-gradient-gold mb-4">
               Ready to Apply What You've Learned?
             </h3>
-            <p className="text-gray-300 mb-6">
+            <p className="text-gray-700 mb-6">
               Join Level Up Agency and get personalized AI coaching, professional training, and support from our community
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
