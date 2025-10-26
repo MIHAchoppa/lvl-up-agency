@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Global Output Schema",
+  "description": "Mandatory output schema for all AI Admin and AI Coach responses. Must be returned verbatim with no additional narrative outside the schema.",
+  "type": "object",
+  "required": ["status", "fetched_at", "data", "sources", "message"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["success", "not_available", "error"],
+      "description": "Indicates the overall status of the retrieval operation"
+    },
+    "fetched_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "UTC ISO8601 timestamp when the data was fetched (YYYY-MM-DDTHH:MM:SSZ)"
+    },
+    "data": {
+      "type": "object",
+      "description": "Key-value pairs of requested data; raw strings/arrays/objects exactly as fetched. For missing fields, use 'NOT_AVAILABLE' string value."
+    },
+    "sources": {
+      "type": "array",
+      "description": "Array of verifiable sources for all factual data returned",
+      "items": {
+        "type": "object",
+        "required": ["type", "url", "ref", "path"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["url", "git_blob", "git_tree"],
+            "description": "Type of source reference"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Full URL to the source (e.g., https://github.com/owner/repo/blob/branch/path/to/file)"
+          },
+          "ref": {
+            "type": "string",
+            "description": "Branch name or commit SHA used to fetch the data"
+          },
+          "path": {
+            "type": "string",
+            "description": "Path to the file within the repository (e.g., path/to/file)"
+          },
+          "blob_sha": {
+            "type": "string",
+            "description": "SHA of the blob if known (optional but recommended)"
+          },
+          "line_range": {
+            "type": "string",
+            "pattern": "^\\d+-\\d+$",
+            "description": "Line range in format 'start-end' (e.g., '10-25'), optional"
+          },
+          "raw_content_snippet": {
+            "type": "string",
+            "description": "Exact text snippet from the source (must match source verbatim)"
+          },
+          "used_default_branch": {
+            "type": "boolean",
+            "description": "True if the default branch was used because no ref was specified"
+          }
+        }
+      }
+    },
+    "message": {
+      "type": "string",
+      "description": "Optional short human-readable status message"
+    }
+  },
+  "examples": [
+    {
+      "status": "success",
+      "fetched_at": "2025-10-26T02:39:19Z",
+      "data": {
+        "file_content": "const express = require('express');\nconst app = express();",
+        "file_path": "src/server.js",
+        "lines_count": 2
+      },
+      "sources": [
+        {
+          "type": "git_blob",
+          "url": "https://github.com/MIHAchoppa/lvl-up-agency/blob/main/src/server.js",
+          "ref": "main",
+          "path": "src/server.js",
+          "blob_sha": "abc123def456",
+          "raw_content_snippet": "const express = require('express');\nconst app = express();"
+        }
+      ],
+      "message": "File retrieved successfully"
+    },
+    {
+      "status": "not_available",
+      "fetched_at": "2025-10-26T02:39:19Z",
+      "data": {},
+      "sources": [],
+      "message": "NOT_AVAILABLE: file not found at specified path"
+    },
+    {
+      "status": "not_available",
+      "fetched_at": "2025-10-26T02:39:19Z",
+      "data": {},
+      "sources": [],
+      "message": "NOT_AVAILABLE: access denied or requires authentication"
+    },
+    {
+      "status": "error",
+      "fetched_at": "2025-10-26T02:39:19Z",
+      "data": {},
+      "sources": [],
+      "message": "ERROR: invalid repository format or malformed request"
+    }
+  ]
+}
