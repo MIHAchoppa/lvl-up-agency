@@ -23,15 +23,13 @@ import re
 from contextlib import asynccontextmanager
 # Email imports removed - not used in current implementation
 
-# Import new services and routers
+# Import new services
 from services.ai_service import ai_service
 from services.voice_service import voice_service  
 from services.websocket_service import connection_manager
 from services.lead_scanner_service import lead_scanner_service
 from services.blog_scheduler_service import blog_scheduler
-# from routers.voice_router import voice_router
-# from routers.admin_assistant_router import admin_assistant_router
-from routers import blog_router
+# Note: Routers will be imported later after models are defined to avoid circular imports
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -3948,14 +3946,19 @@ async def get_scheduler_status(current_user: User = Depends(require_role([UserRo
         "next_scheduled_time": blog_scheduler._get_next_scheduled_time().isoformat() if blog_scheduler.running else None
     }
 
+# Import routers after all models and functions are defined to avoid circular imports
+from routers import blog_router
+from routers.voice_router import voice_router
+from routers.admin_assistant_router import admin_assistant_router
+
 # Initialize blog router with dependencies
 blog_router.init_blog_router(db, ai_service, get_current_user, require_role, UserRole)
 
 # Include all routers in the main app
 app.include_router(api_router)
 app.include_router(blog_router.router)
-# app.include_router(voice_router)
-# app.include_router(admin_assistant_router)
+app.include_router(voice_router)
+app.include_router(admin_assistant_router)
 
 # WebSocket endpoint for real-time messaging
 @app.websocket("/ws")
