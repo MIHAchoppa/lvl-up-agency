@@ -34,10 +34,11 @@ from services.blog_scheduler_service import blog_scheduler
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
+# MongoDB connection with fallbacks
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db_name = os.environ.get('DB_NAME', 'lvl_up_agency')
+db = client[db_name]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -1246,9 +1247,6 @@ async def register(user_data: UserCreate):
     existing_email = await db.users.find_one({"email": user_data.email})
     if existing_email:
         raise HTTPException(status_code=400, detail="Email already registered")
-    # sync admins table after any registration
-    await sync_admins_collection(rebuild=False)
-
     
     # Agency codes for special access
     AGENCY_CODES = {
