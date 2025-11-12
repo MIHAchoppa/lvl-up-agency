@@ -423,12 +423,26 @@ async def create_blog(
             bigo_profile_links=bigo_links
         )
         
-        result = await db.blogs.insert_one(blog.dict())
-        blog_dict = blog.dict()
-        blog_dict['_id'] = str(result.inserted_id)
+        try:
+            result = await db.blogs.insert_one(blog.dict())
+            blog_dict = blog.dict()
+            blog_dict['_id'] = str(result.inserted_id)
+            
+            return blog_dict
+        except Exception as insert_error:
+            # Handle duplicate key error (e.g., if slug already exists due to race condition)
+            if "duplicate key error" in str(insert_error).lower() or "11000" in str(insert_error):
+                # Retry with a new unique slug
+                blog.slug = f"{slug}-{str(uuid.uuid4())[:8]}"
+                result = await db.blogs.insert_one(blog.dict())
+                blog_dict = blog.dict()
+                blog_dict['_id'] = str(result.inserted_id)
+                return blog_dict
+            else:
+                raise
         
-        return blog_dict
-        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating blog: {str(e)}")
 
@@ -449,7 +463,13 @@ async def update_blog(
         
         # Update slug if title changed
         if "title" in update_data:
-            update_data["slug"] = generate_slug(update_data["title"])
+            new_slug = generate_slug(update_data["title"])
+            # Check if new slug conflicts with existing blogs (excluding current blog)
+            slug_conflict = await db.blogs.find_one({"slug": new_slug, "id": {"$ne": blog_id}})
+            if slug_conflict:
+                # Append unique identifier to make slug unique
+                new_slug = f"{new_slug}-{str(uuid.uuid4())[:8]}"
+            update_data["slug"] = new_slug
         
         # Update published_at if status changed to published
         if "status" in update_data and update_data["status"] == BlogStatus.PUBLISHED and not existing.get("published_at"):
@@ -534,12 +554,26 @@ async def generate_blog(
             bigo_profile_links=bigo_links
         )
         
-        result = await db.blogs.insert_one(blog.dict())
-        blog_dict = blog.dict()
-        blog_dict['_id'] = str(result.inserted_id)
+        try:
+            result = await db.blogs.insert_one(blog.dict())
+            blog_dict = blog.dict()
+            blog_dict['_id'] = str(result.inserted_id)
+            
+            return blog_dict
+        except Exception as insert_error:
+            # Handle duplicate key error (e.g., if slug already exists due to race condition)
+            if "duplicate key error" in str(insert_error).lower() or "11000" in str(insert_error):
+                # Retry with a new unique slug
+                blog.slug = f"{slug}-{str(uuid.uuid4())[:8]}"
+                result = await db.blogs.insert_one(blog.dict())
+                blog_dict = blog.dict()
+                blog_dict['_id'] = str(result.inserted_id)
+                return blog_dict
+            else:
+                raise
         
-        return blog_dict
-        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating blog: {str(e)}")
 
