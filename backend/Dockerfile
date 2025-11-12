@@ -16,9 +16,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
+# Create non-root user and set ownership
+RUN (getent group 1000 || groupadd -g 1000 appuser) && \
+    (getent passwd 1000 || useradd -m -u 1000 -g $(getent group 1000 | cut -d: -f1) appuser) && \
+    chown -R $(getent passwd 1000 | cut -d: -f1):$(getent group 1000 | cut -d: -f1) /app
+USER 1000:1000
 
 # Expose port
 EXPOSE 8000

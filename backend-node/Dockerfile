@@ -11,11 +11,11 @@ RUN npm ci --only=production
 # Copy application code
 COPY . .
 
-# Create non-root user
-RUN addgroup -g 1000 appuser && \
-    adduser -D -u 1000 -G appuser appuser && \
-    chown -R appuser:appuser /app
-USER appuser
+# Create non-root user and set ownership
+RUN (getent group 1000 || addgroup -g 1000 appuser) && \
+    (getent passwd 1000 || adduser -D -u 1000 -G $(getent group 1000 | cut -d: -f1) appuser) && \
+    chown -R $(getent passwd 1000 | cut -d: -f1):$(getent group 1000 | cut -d: -f1) /app
+USER 1000:1000
 
 # Expose port
 EXPOSE 3001
