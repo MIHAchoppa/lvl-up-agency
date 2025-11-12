@@ -230,8 +230,12 @@ Format the response as JSON with these fields:
             max_completion_tokens=2048
         )
         
+        # Check if AI request was successful
+        if not response.get('success'):
+            raise Exception(f"AI service error: {response.get('error', 'Unknown error')}")
+        
         # Parse the AI response
-        content = response['choices'][0]['message']['content']
+        content = response.get('content', '')
         
         # Try to extract JSON from the response
         import json
