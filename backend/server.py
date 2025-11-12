@@ -130,7 +130,19 @@ api_router = APIRouter(prefix="/api")
 # Security
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.environ.get("JWT_SECRET", "levelup-bigo-hosts-secret-2025")
+
+# JWT Secret - MUST be set via environment variable in production
+JWT_SECRET = os.environ.get("JWT_SECRET")
+if not JWT_SECRET:
+    # Use default only for development
+    if os.environ.get("ENVIRONMENT") == "production":
+        raise ValueError("JWT_SECRET environment variable is required in production")
+    logger.warning("JWT_SECRET not set, using default (NOT SECURE FOR PRODUCTION)")
+    JWT_SECRET = "levelup-bigo-hosts-secret-2025"
+elif len(JWT_SECRET) < 32:
+    raise ValueError("JWT_SECRET must be at least 32 characters long for security")
+
+SECRET_KEY = JWT_SECRET
 ALGORITHM = "HS256"
 
 # Groq AI Setup
@@ -4033,10 +4045,19 @@ async def health_check():
         logger.error(f"Health check failed: {e}")
         raise HTTPException(status_code=503, detail="Service unavailable")
 
+# CORS Configuration - Must be properly configured for production
+CORS_ORIGINS = os.environ.get('CORS_ORIGINS')
+if not CORS_ORIGINS:
+    # Use safe default for development only
+    if os.environ.get("ENVIRONMENT") == "production":
+        raise ValueError("CORS_ORIGINS environment variable is required in production")
+    logger.warning("CORS_ORIGINS not set, using localhost defaults (NOT SECURE FOR PRODUCTION)")
+    CORS_ORIGINS = "http://localhost:3000,http://localhost:80"
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=CORS_ORIGINS.split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )

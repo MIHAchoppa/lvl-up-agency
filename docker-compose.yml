@@ -13,6 +13,9 @@ services:
       - mongodb_config:/data/configdb
     environment:
       MONGO_INITDB_DATABASE: lvl_up_agency
+      # Uncomment for production (set in .env file)
+      # MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      # MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     networks:
       - lvl-up-network
     healthcheck:
