@@ -83,7 +83,7 @@ function VoiceRecruiter({ onClose }) {
       // Handle navigation based on intent
       if (data.action === 'audition') {
         setTimeout(() => {
-          navigate('/audition');
+          navigate('/dashboard');
           onClose();
         }, 3000);
       } else if (data.action === 'register') {
@@ -300,7 +300,7 @@ function VoiceRecruiter({ onClose }) {
                 sendMessage("I want to audition");
                 // Navigate after message or based on action
                 setTimeout(() => {
-                  navigate('/audition');
+                  navigate('/dashboard');
                   onClose();
                 }, 2000);
               }}
