@@ -5,16 +5,14 @@ Natural language admin commands and automated management
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
-import uuid
+from typing import Optional, Dict, Any
 import logging
 from datetime import datetime, timedelta, timezone
-import json
 
 from services.ai_service import ai_service
 from services.websocket_service import connection_manager
-from server import get_current_user, User, require_role, UserRole, db
-from server import Event, Announcement, AdminAction, execute_admin_action
+from server import User, require_role, UserRole, db
+from server import Event, Announcement, AdminAction
 
 logger = logging.getLogger(__name__)
 
@@ -269,7 +267,6 @@ async def create_smart_announcement(
         announcement_type = request.get("type", "general")
         target_audience = request.get("audience", "all")
         key_message = request.get("message", "")
-        tone = request.get("tone", "motivational")
         
         # Generate announcement content with AI
         content = await ai_service.generate_announcement_content(
@@ -546,7 +543,7 @@ async def _gather_analytics_data(start_date: datetime, end_date: datetime) -> Di
             messages_sent = await db.messages.count_documents({
                 "created_at": {"$gte": start_date, "$lte": end_date}
             })
-        except:
+        except Exception:
             messages_sent = 0
         
         return {

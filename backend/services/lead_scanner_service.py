@@ -2,14 +2,10 @@
 Lead Scanner Service
 Scans the internet for potential BIGO Live host leads from social media platforms
 """
-import asyncio
 import re
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 from datetime import datetime, timezone
-import aiohttp
-from bs4 import BeautifulSoup
-import json
 
 logger = logging.getLogger(__name__)
 

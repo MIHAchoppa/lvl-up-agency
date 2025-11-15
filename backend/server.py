@@ -1,6 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -14,7 +14,6 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 import jwt
 from enum import Enum
-import asyncio
 import json
 import aiofiles
 import openpyxl
@@ -25,7 +24,6 @@ from contextlib import asynccontextmanager
 
 # Import new services
 from services.ai_service import ai_service
-from services.voice_service import voice_service  
 from services.websocket_service import connection_manager
 from services.lead_scanner_service import lead_scanner_service
 from services.blog_scheduler_service import blog_scheduler
@@ -33,6 +31,13 @@ from services.blog_scheduler_service import blog_scheduler
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Configure logging early so it's available throughout the module
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # MongoDB connection with fallbacks
 mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
@@ -724,7 +729,6 @@ class AuditionSubmission(BaseModel):
 
 # GridFS setup for audition videos
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-import shutil
 import mimetypes
 
 gridfs_bucket = AsyncIOMotorGridFSBucket(db, bucket_name="audition_videos")
@@ -4059,13 +4063,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 # Removed redundant shutdown event since lifespan context manager handles client close
 # @app.on_event("shutdown")

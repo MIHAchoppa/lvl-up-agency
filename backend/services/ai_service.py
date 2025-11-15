@@ -227,7 +227,7 @@ class AIService:
             }
             
             # Update conversation
-            result = await self.db.conversations.update_one(
+            await self.db.conversations.update_one(
                 {"session_id": session_id, "user_id": user_id},
                 {
                     "$push": {"messages": {"$each": [turn, ai_turn]}},

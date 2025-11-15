@@ -313,7 +313,7 @@ Remember: You're helping hosts build successful BIGO Live careers!""",
             # Clean up temp file
             try:
                 os.remove(temp_file)
-            except:
+            except Exception:
                 pass
                 
             if not stt_result.get("success"):

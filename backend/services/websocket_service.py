@@ -3,11 +3,10 @@ WebSocket Service for Real-time Communication
 Handles voice chat, messaging, and live updates
 """
 
-import asyncio
 import json
 import logging
 import uuid
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Set
 from datetime import datetime
 from fastapi import WebSocket
 from collections import defaultdict

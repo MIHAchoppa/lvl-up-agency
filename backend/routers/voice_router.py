@@ -6,10 +6,9 @@ Handles voice interactions, bocademas, and conversational AI
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 import uuid
 import json
-import asyncio
 import logging
 from datetime import datetime
 
@@ -168,7 +167,7 @@ async def speech_to_text(
         try:
             import os
             os.remove(temp_filename)
-        except:
+        except Exception:
             pass
 
 @voice_router.post("/bocadema")
@@ -274,7 +273,7 @@ async def voice_websocket_endpoint(websocket: WebSocket, user_id: str):
             "bocademas_enabled": True
         }
         
-        session_id = await connection_manager.start_voice_session(connection_id, session_config)
+        await connection_manager.start_voice_session(connection_id, session_config)
         
         while True:
             # Receive data from WebSocket

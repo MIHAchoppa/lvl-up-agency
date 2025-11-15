@@ -5,7 +5,7 @@ Handles automated daily blog generation at random times between 8am-12pm
 
 import asyncio
 import random
-from datetime import datetime, time, timezone, timedelta
+from datetime import datetime, timezone, timedelta
 import logging
 
 logger = logging.getLogger(__name__)
@@ -164,7 +164,7 @@ class BlogSchedulerService:
                 bigo_profile_links=bigo_links
             )
             
-            result = await self.db.blogs.insert_one(blog.dict())
+            await self.db.blogs.insert_one(blog.dict())
             logger.info(f"Daily blog published successfully: {blog.title} (ID: {blog.id})")
             
         except Exception as e:
@@ -176,7 +176,7 @@ class BlogSchedulerService:
             # Check if there's a blog_topics collection
             topics = await self.db.blog_topics.find({"active": True}).to_list(100)
             return topics
-        except:
+        except Exception:
             return []
     
     def _get_random_topic(self) -> dict:
