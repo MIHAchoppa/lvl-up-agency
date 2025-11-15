@@ -10,6 +10,9 @@ from datetime import datetime, timezone
 from enum import Enum
 import uuid
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 # These will be injected from server.py
 db = None
@@ -174,7 +177,7 @@ async def build_link_pyramid(content: str, category: str, current_blog_id: Optio
                 related_section += f"- [**{blog['title']}**](/blog/{blog['slug']})\n"
             enhanced_content += related_section
     except Exception as e:
-        print(f"Error building link pyramid: {e}")
+        logger.error(f"Error building link pyramid: {e}")
 
     # Add links to relevant site pages based on content keywords
     site_links = {
@@ -273,7 +276,7 @@ Format the response as JSON with these fields:
         return blog_data
 
     except Exception as e:
-        print(f"AI generation error: {e}")
+        logger.error(f"AI generation error: {e}")
         # Return a basic template if AI fails
         return {
             "title": topic,

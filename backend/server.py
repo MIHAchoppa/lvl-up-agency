@@ -895,7 +895,7 @@ async def search_influencers(platform: str, keywords: List[str], min_followers: 
                 current_influencer["email"] = email_match.group()
         return influencers
     except Exception as e:
-        print(f"Influencer search error: {e}")
+        logger.error(f"Influencer search error: {e}")
         return []
 
 
@@ -1128,7 +1128,7 @@ async def audition_upload_complete_auth(upload_id: str = Query(...), current_use
                             fout.write(b)
                         await stream.close()
                 except Exception as e:
-                    print(f"Error processing chunk {c['filename']}: {e}")
+                    logger.error(f"Error processing chunk {c['filename']}: {e}")
                     continue
         with open(final_tmp, "rb") as fin:
             await gridfs_bucket.upload_from_stream(
@@ -1375,7 +1375,7 @@ async def audition_upload_complete(upload_id: str = Query(...)):
                             fout.write(b)
                         await stream.close()
                 except Exception as e:
-                    print(f"Error processing chunk {c['filename']}: {e}")
+                    logger.error(f"Error processing chunk {c['filename']}: {e}")
                     continue
         # upload composed file
         with open(final_tmp, "rb") as fin:
