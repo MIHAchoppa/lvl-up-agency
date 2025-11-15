@@ -274,7 +274,10 @@ class AIService:
             if mode == "fill":
                 prompt = f"Generate content for the field '{field_name}'. Context: {context}. Be concise and relevant."
             else:  # improve
-                prompt = f"Improve this content for '{field_name}': '{current_value}'. Context: {context}. Make it more professional and engaging while keeping the same meaning."
+                prompt = (
+                    f"Improve this content for '{field_name}': '{current_value}'. Context: {context}. "
+                    "Make it more professional and engaging while keeping the same meaning."
+                )
 
             result = await self.chat_completion(
                 messages=[{"role": "user", "content": prompt}], max_completion_tokens=300, temperature=0.7
@@ -473,7 +476,11 @@ Generate only the announcement text, no additional commentary."""
                     "intent": "greeting",
                     "confidence": 0.95,
                     "is_bigo_related": False,
-                    "suggested_response": "Hey there! 👋 I'm BeanGenie, your BIGO Live expert assistant. I'm here to help you learn about streaming, earning beans, PK battles, tier progression, and more. What would you like to know about BIGO Live?",
+                    "suggested_response": (
+                        "Hey there! 👋 I'm BeanGenie, your BIGO Live expert assistant. "
+                        "I'm here to help you learn about streaming, earning beans, PK battles, "
+                        "tier progression, and more. What would you like to know about BIGO Live?"
+                    ),
                 }
 
             # Very short messages (likely casual/unclear) - only if not BIGO-related
@@ -482,7 +489,15 @@ Generate only the announcement text, no additional commentary."""
                     "intent": "casual",
                     "confidence": 0.85,
                     "is_bigo_related": False,
-                    "suggested_response": "Hi! 😊 I'm your BIGO Live learning assistant. I can help you with:\n• 💰 Bean earnings and monetization\n• 🎯 Tier system progression\n• ⚔️ PK battle strategies\n• 📅 Streaming schedules\n• 🎁 Gift strategies\n\nWhat BIGO Live topic would you like to explore?",
+                    "suggested_response": (
+                        "Hi! 😊 I'm your BIGO Live learning assistant. I can help you with:\n"
+                        "• 💰 Bean earnings and monetization\n"
+                        "• 🎯 Tier system progression\n"
+                        "• ⚔️ PK battle strategies\n"
+                        "• 📅 Streaming schedules\n"
+                        "• 🎁 Gift strategies\n\n"
+                        "What BIGO Live topic would you like to explore?"
+                    ),
                 }
 
             # Classify based on patterns (prioritize BIGO-related content)
@@ -493,7 +508,11 @@ Generate only the announcement text, no additional commentary."""
                     "intent": "off_topic",
                     "confidence": 0.8,
                     "is_bigo_related": False,
-                    "suggested_response": "I'm specialized in BIGO Live coaching, Boss! 🎯 I can help you with beans, streaming strategies, PK battles, tier progression, audience growth, and monetization. What BIGO topic would you like to discuss?",
+                    "suggested_response": (
+                        "I'm specialized in BIGO Live coaching, Boss! 🎯 I can help you with beans, "
+                        "streaming strategies, PK battles, tier progression, audience growth, and monetization. "
+                        "What BIGO topic would you like to discuss?"
+                    ),
                 }
             elif is_bigo_related:
                 return {"intent": "question", "confidence": 0.75, "is_bigo_related": True, "suggested_response": None}
@@ -502,7 +521,11 @@ Generate only the announcement text, no additional commentary."""
                     "intent": "off_topic",
                     "confidence": 0.7,
                     "is_bigo_related": False,
-                    "suggested_response": "Hey! I'm your BIGO Live expert. 💡 While I'd love to chat about everything, I specialize in helping hosts succeed on BIGO Live. Ask me about bean earnings, PK strategies, streaming tips, or tier progression!",
+                    "suggested_response": (
+                        "Hey! I'm your BIGO Live expert. 💡 While I'd love to chat about everything, "
+                        "I specialize in helping hosts succeed on BIGO Live. Ask me about bean earnings, "
+                        "PK strategies, streaming tips, or tier progression!"
+                    ),
                 }
 
         except Exception as e:

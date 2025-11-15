@@ -127,7 +127,10 @@ async def sync_admins_collection(rebuild: bool = False):
 app = FastAPI(
     lifespan=lifespan,
     title="Level Up Agency - Ultimate BIGO Live Host Recruitment & Management Platform",
-    description="The Most Advanced BIGO Live Host Success Platform with AI Agents, Voice Coaching & Automated Recruitment!",
+    description=(
+        "The Most Advanced BIGO Live Host Success Platform with AI Agents, "
+        "Voice Coaching & Automated Recruitment!"
+    ),
     version="2.0.0",
 )
 
@@ -854,12 +857,18 @@ async def execute_admin_action(action_type: str, action_data: Dict[str, Any], ad
 # Influencer Search and Auto-Outreach System
 async def search_influencers(platform: str, keywords: List[str], min_followers: int = 1000):
     try:
-        search_query = f"Find {platform} influencers with keywords: {', '.join(keywords)} minimum {min_followers} followers contact information email"
+        search_query = (
+            f"Find {platform} influencers with keywords: {', '.join(keywords)} "
+            f"minimum {min_followers} followers contact information email"
+        )
         ai = await ai_service.chat_completion(
             [
                 {
                     "role": "system",
-                    "content": "You are an expert at finding social media influencers with public contact information. Extract names, usernames, follower counts, emails, and profile URLs.",
+                    "content": (
+                        "You are an expert at finding social media influencers with public contact information. "
+                        "Extract names, usernames, follower counts, emails, and profile URLs."
+                    ),
                 },
                 {"role": "user", "content": search_query},
             ],
@@ -878,7 +887,9 @@ async def search_influencers(platform: str, keywords: List[str], min_followers: 
                 if current_influencer.get("name"):
                     influencers.append(current_influencer)
                 current_influencer = {"platform": platform}
-            email_match = re.search(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", line)
+            email_match = re.search(
+                r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b", line
+            )
             if email_match:
                 current_influencer["email"] = email_match.group()
         return influencers
@@ -889,7 +900,8 @@ async def search_influencers(platform: str, keywords: List[str], min_followers: 
 
 async def create_outreach_email(influencer_data: Dict[str, Any]) -> str:
     try:
-        prompt = f"""Create a compelling recruitment email for a {influencer_data.get('platform')} influencer named {influencer_data.get('name')} with {influencer_data.get('follower_count', 'many')} followers.
+        prompt = f"""Create a compelling recruitment email for a {influencer_data.get('platform')} \
+influencer named {influencer_data.get('name')} with {influencer_data.get('follower_count', 'many')} followers.
 
 The email should:
 - Be personalized and engaging
@@ -906,7 +918,10 @@ Keep it under 200 words and professional but exciting."""
             [
                 {
                     "role": "system",
-                    "content": "You are an expert email copywriter specializing in influencer recruitment for BIGO Live hosting.",
+                    "content": (
+                        "You are an expert email copywriter specializing in "
+                        "influencer recruitment for BIGO Live hosting."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],
@@ -1180,7 +1195,8 @@ async def public_onboarding_chat(req: OnboardingChatRequest):
     system_prompt = (
         "You are Lvl-Up, the LVL-UP onboarding agent for a BIGO Live agency. "
         "Your only goal is to warmly recruit visitors to become paid BIGO Live broadcasters. "
-        "Be concise, persuasive, and helpful. Offer next steps like starting a video audition, learning earnings, schedule tips, and WhatsApp contact. "
+        "Be concise, persuasive, and helpful. Offer next steps like starting a video audition, "
+        "learning earnings, schedule tips, and WhatsApp contact. "
         "Avoid making promises; emphasize coaching, community, and realistic earnings ranges based on effort."
     )
     try:
@@ -1734,7 +1750,8 @@ async def generate_quiz(
         f"Generate {req.count} {req.difficulty} questions about {req.topic} for BIGO hosts."
         f" Types allowed: {', '.join(req.types or [])}."
         f" Include for MCQ: 4 options and one correct answer. For TF: correct answer true/false."
-        f" Provide a brief explanation per question. Return JSON list with fields: qtype, question, options, correct_answer, explanation."
+        f" Provide a brief explanation per question. Return JSON list with fields: "
+        f"qtype, question, options, correct_answer, explanation."
     )
     try:
         ai = await ai_service.chat_completion(
@@ -2113,7 +2130,10 @@ async def scan_for_leads(
                 "total_duplicates": duplicate_count,
                 "by_platform": scan_results.get("by_platform", {}),
             },
-            "message": f"Scan completed successfully. Found {scan_results.get('total_found', 0)} leads, saved {saved_count} new leads.",
+            "message": (
+                f"Scan completed successfully. Found {scan_results.get('total_found', 0)} leads, "
+                f"saved {saved_count} new leads."
+            ),
         }
 
     except HTTPException:
@@ -2435,7 +2455,10 @@ async def seo_summary():
             "audition video upload",
             "Agent Mihanna",
         ],
-        "description": "Audition to join LEVEL UP AGENCY by Agent Mihanna. Upload your video, access elite coaching, events, and earn more with our bean/tier mastery.",
+        "description": (
+            "Audition to join LEVEL UP AGENCY by Agent Mihanna. Upload your video, "
+            "access elite coaching, events, and earn more with our bean/tier mastery."
+        ),
     }
 
 
@@ -2910,7 +2933,8 @@ async def admin_assistant_chat(
 
     try:
         # Enhanced intelligent admin prompt with BIGO platform knowledge
-        admin_prompt = f"""You are an intelligent AI Admin Assistant for Level Up Agency, a BIGO Live host management platform.
+        admin_prompt = f"""You are an intelligent AI Admin Assistant for Level Up Agency, \
+a BIGO Live host management platform.
 
 You have deep knowledge of:
 - BIGO Live platform mechanics (beans, diamonds, tiers S1-S25, PK battles)
@@ -2970,7 +2994,10 @@ User: "Schedule a PK battle event next Friday at 7pm PST"
 Response: "I'll schedule that PK battle for you! This will be a great opportunity for hosts to compete and earn beans.
 
 ACTION_JSON:
-{{"action": "create_event", "payload": {{"title": "Friday Night PK Battle", "description": "Weekly competitive PK battle - bring your A-game!", "start_time": "2025-10-31T02:00:00Z", "event_type": "pk", "timezone_display": "PST", "max_participants": 20}}}}"
+{{"action": "create_event", "payload": {{"title": "Friday Night PK Battle", \
+"description": "Weekly competitive PK battle - bring your A-game!", \
+"start_time": "2025-10-31T02:00:00Z", "event_type": "pk", "timezone_display": "PST", \
+"max_participants": 20}}}}"
 
 User: "Show me analytics for top performers this month"
 Response: "Based on the platform data, here are key insights for your top performers:

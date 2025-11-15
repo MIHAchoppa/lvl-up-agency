@@ -223,7 +223,8 @@ class VoiceService:
         """
         agent_config = {
             "name": "BIGO Live Strategy Coach",
-            "prompt": """You are Agent Mihanna's ULTIMATE BIGO Live Strategy AI Coach. You help BIGO Live hosts maximize their earnings through advanced strategies.
+            "prompt": """You are Agent Mihanna's ULTIMATE BIGO Live Strategy AI Coach. \
+You help BIGO Live hosts maximize their earnings through advanced strategies.
 
 **VOICE PERSONALITY:**
 - Energetic and motivational tone
@@ -305,15 +306,32 @@ Remember: You're helping hosts build successful BIGO Live careers!""",
             bocademas = {
                 "hey coach": "¡Hola! I'm your BIGO Live strategy coach. How can I help you maximize your beans today?",
                 "check my beans": self._get_bean_analysis(user_context),
-                "pk strategy": "For PK battles: Start with energy buildup, engage your audience early, use gift psychology - ask for specific amounts, and always have a backup plan. Time your battles during peak hours!",
-                "schedule help": "Optimal streaming times: 7-10 PM your local time for maximum gifts. Weekend mornings work great too. Consistency is key - stick to a schedule!",
+                "pk strategy": (
+                    "For PK battles: Start with energy buildup, engage your audience early, "
+                    "use gift psychology - ask for specific amounts, and always have a backup plan. "
+                    "Time your battles during peak hours!"
+                ),
+                "schedule help": (
+                    "Optimal streaming times: 7-10 PM your local time for maximum gifts. "
+                    "Weekend mornings work great too. Consistency is key - stick to a schedule!"
+                ),
                 "tier advice": self._get_tier_advice(user_context),
-                "event planning": "Create profitable events: PK tournaments with entry fees, wheel spin challenges, or bean accumulation contests. Always ensure profit margins!",
-                "motivation boost": "You're doing amazing! Every stream is progress. Remember: top BIGO hosts started exactly where you are. Focus on your audience, perfect your strategies, and those beans will flow! 🚀",
+                "event planning": (
+                    "Create profitable events: PK tournaments with entry fees, wheel spin challenges, "
+                    "or bean accumulation contests. Always ensure profit margins!"
+                ),
+                "motivation boost": (
+                    "You're doing amazing! Every stream is progress. Remember: top BIGO hosts started "
+                    "exactly where you are. Focus on your audience, perfect your strategies, "
+                    "and those beans will flow! 🚀"
+                ),
             }
 
             # Find matching bocadema
-            response_text = "I didn't quite catch that. Try saying 'Hey Coach' or ask about PK strategy, schedule help, or tier advice!"
+            response_text = (
+                "I didn't quite catch that. Try saying 'Hey Coach' or ask about "
+                "PK strategy, schedule help, or tier advice!"
+            )
 
             for command, response in bocademas.items():
                 if command in transcription:
@@ -341,17 +359,29 @@ Remember: You're helping hosts build successful BIGO Live careers!""",
         if user_context and user_context.get("beans"):
             beans = user_context["beans"]
             tier = user_context.get("tier", "Unknown")
-            return f"You have {beans:,} beans this month! Current tier: {tier}. Keep pushing - you're making great progress toward the next level!"
+            return (
+                f"You have {beans:,} beans this month! Current tier: {tier}. "
+                "Keep pushing - you're making great progress toward the next level!"
+            )
         else:
-            return "I need access to your bean count to give you a detailed analysis. Make sure you're logged in and try again!"
+            return (
+                "I need access to your bean count to give you a detailed analysis. "
+                "Make sure you're logged in and try again!"
+            )
 
     def _get_tier_advice(self, user_context: Dict = None) -> str:
         """Generate tier advancement advice"""
         if user_context and user_context.get("tier"):
             tier = user_context["tier"]
-            return f"For {tier} tier: Focus on consistent daily streaming, engage with your top gifters personally, and participate in agency events. Next tier is within reach!"
+            return (
+                f"For {tier} tier: Focus on consistent daily streaming, engage with your top gifters "
+                "personally, and participate in agency events. Next tier is within reach!"
+            )
         else:
-            return "Tier advancement strategy: Stream consistently, build loyal audience relationships, participate in PK battles, and focus on prime time hours. Each tier unlocks better earnings!"
+            return (
+                "Tier advancement strategy: Stream consistently, build loyal audience relationships, "
+                "participate in PK battles, and focus on prime time hours. Each tier unlocks better earnings!"
+            )
 
 
 # Global voice service instance

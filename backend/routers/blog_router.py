@@ -222,7 +222,10 @@ Category: {request.category}
         user_prompt += f"\nInclude these keywords naturally: {', '.join(request.keywords)}\n"
 
     if request.include_user_profile:
-        user_prompt += f"\nFeature BIGO host profile: {request.include_user_profile} (link as: https://bigo.tv/{request.include_user_profile})\n"
+        user_prompt += (
+            f"\nFeature BIGO host profile: {request.include_user_profile} "
+            f"(link as: https://bigo.tv/{request.include_user_profile})\n"
+        )
 
     user_prompt += """
 Format the response as JSON with these fields:
