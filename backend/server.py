@@ -20,6 +20,7 @@ import openpyxl
 
 # from groq import AsyncGroq  # deprecated direct client, now via REST in ai_service
 import re
+import tempfile
 from contextlib import asynccontextmanager
 
 # Email imports removed - not used in current implementation
@@ -1058,7 +1059,7 @@ async def audition_upload_chunk_auth(
     if not upload_rec:
         raise HTTPException(status_code=404, detail="Upload session not found")
     gridfs_filename = f"{upload_id}_{upload_rec['filename']}"
-    tmp_path = f"/tmp/{gridfs_filename}_{chunk_index}.part"
+    tmp_path = os.path.join(tempfile.gettempdir(), f"{gridfs_filename}_{chunk_index}.part")
     try:
         async with aiofiles.open(tmp_path, "wb") as f:
             while True:
@@ -1114,7 +1115,7 @@ async def audition_upload_complete_auth(upload_id: str = Query(...), current_use
     chunks.sort(key=lambda c: idx(c["filename"]))
 
     try:
-        final_tmp = f"/tmp/{gridfs_filename}.final"
+        final_tmp = os.path.join(tempfile.gettempdir(), f"{gridfs_filename}.final")
         with open(final_tmp, "wb") as fout:
             for c in chunks:
                 try:
@@ -1298,8 +1299,8 @@ async def audition_upload_chunk(
 
     # Append chunk to GridFS file stream named by upload_id
     gridfs_filename = f"{upload_id}_{upload_rec['filename']}"
-    # We store each chunk as a temp file under /tmp then append via GridFS upload_from_stream
-    tmp_path = f"/tmp/{gridfs_filename}_{chunk_index}.part"
+    # We store each chunk as a temp file then append via GridFS upload_from_stream
+    tmp_path = os.path.join(tempfile.gettempdir(), f"{gridfs_filename}_{chunk_index}.part")
     try:
         async with aiofiles.open(tmp_path, "wb") as f:
             while True:
@@ -1360,7 +1361,7 @@ async def audition_upload_complete(upload_id: str = Query(...)):
     # Compose final file into GridFS by filename (no ObjectId tracking)
     try:
         # Create a pipe via temporary file to compose
-        final_tmp = f"/tmp/{gridfs_filename}.final"
+        final_tmp = os.path.join(tempfile.gettempdir(), f"{gridfs_filename}.final")
         with open(final_tmp, "wb") as fout:
             for c in chunks:
                 # download each chunk and append
@@ -1701,9 +1702,9 @@ async def stt_transcribe(file: UploadFile = File(...), current_user: User = Depe
     if not file or not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
     # Save temp and send to Groq Whisper
-    tmp_path = f"/tmp/stt_{uuid.uuid4().hex}_{file.filename}"
-    with open(tmp_path, "wb") as f:
-        f.write(await file.read())
+    with tempfile.NamedTemporaryFile(mode="wb", suffix=f"_{file.filename}", delete=False) as temp_file:
+        tmp_path = temp_file.name
+        temp_file.write(await file.read())
     try:
         res = await ai_service.stt_transcribe_file(tmp_path)
         if not res.get("success"):
@@ -2398,7 +2399,7 @@ async def export_leads_spreadsheet(current_user: User = Depends(require_role([Us
 
     # Save to file
     filename = f"bigo_influencer_leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-    filepath = f"/tmp/{filename}"
+    filepath = os.path.join(tempfile.gettempdir(), filename)
     wb.save(filepath)
 
     return {"download_url": f"/api/recruitment/download/{filename}", "filename": filename}

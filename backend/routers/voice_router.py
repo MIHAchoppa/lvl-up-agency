@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any
 import uuid
 import json
 import logging
+import tempfile
 from datetime import datetime
 
 from services.voice_service import voice_service
@@ -121,12 +122,12 @@ async def speech_to_text(audio: UploadFile = File(...), current_user: User = Dep
         raise HTTPException(status_code=400, detail="Invalid audio file format")
 
     # Save uploaded file temporarily
-    temp_filename = f"/tmp/stt_{uuid.uuid4().hex}.wav"
+    with tempfile.NamedTemporaryFile(mode="wb", suffix=".wav", delete=False) as temp_file:
+        temp_filename = temp_file.name
+        content = await audio.read()
+        temp_file.write(content)
 
     try:
-        with open(temp_filename, "wb") as f:
-            content = await audio.read()
-            f.write(content)
 
         # Process STT
         stt_result = await voice_service.speech_to_text(temp_filename)

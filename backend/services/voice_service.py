@@ -7,8 +7,8 @@ import aiohttp
 import asyncio
 import logging
 import base64
-import uuid
 import os
+import tempfile
 from typing import Dict, Optional, Any, AsyncGenerator
 from datetime import datetime
 
@@ -285,9 +285,9 @@ Remember: You're helping hosts build successful BIGO Live careers!""",
         try:
             # First, transcribe the audio
             # Save audio temporarily for STT processing
-            temp_file = f"/tmp/bocadema_{uuid.uuid4().hex}.wav"
-            with open(temp_file, "wb") as f:
-                f.write(audio_input)
+            with tempfile.NamedTemporaryFile(mode="wb", suffix=".wav", delete=False) as temp_file_obj:
+                temp_file = temp_file_obj.name
+                temp_file_obj.write(audio_input)
 
             stt_result = await self.speech_to_text(temp_file)
 
