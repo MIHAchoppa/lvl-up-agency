@@ -31,19 +31,20 @@ class AIService:
         self.db = None
         self._api_key_cache = None
         self._cache_time = None
-    
+
     def set_db(self, db):
         """Set database reference for dynamic key loading"""
         self.db = db
-    
+
     async def get_api_key(self) -> str:
         """Get API key from DB with fallback to env, with 60s cache"""
         # Check cache (60 second TTL)
         import time
+
         now = time.time()
         if self._api_key_cache and self._cache_time and (now - self._cache_time < 60):
             return self._api_key_cache
-        
+
         # Try to get from database first
         if self.db is not None:
             try:
@@ -54,18 +55,18 @@ class AIService:
                     return self._api_key_cache
             except Exception as e:
                 logger.warning(f"Failed to load API key from DB: {e}")
-        
+
         # Fallback to environment variable
         env_key = os.environ.get("GROQ_API_KEY", "")
         self._api_key_cache = env_key
         self._cache_time = now
         return env_key
-    
+
     def clear_key_cache(self):
         """Clear API key cache to force reload"""
         self._api_key_cache = None
         self._cache_time = None
-    
+
     async def get_headers_json(self) -> Dict[str, str]:
         """Get headers with current API key"""
         api_key = await self.get_api_key()
@@ -73,7 +74,7 @@ class AIService:
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
-    
+
     async def get_headers_auth_only(self) -> Dict[str, str]:
         """Get auth-only headers with current API key"""
         api_key = await self.get_api_key()
@@ -107,11 +108,7 @@ class AIService:
                 async with session.post(self.chat_url, json=payload, headers=headers) as response:
                     if response.status == 200:
                         data = await response.json()
-                        content = (
-                            data.get("choices", [{}])[0]
-                            .get("message", {})
-                            .get("content", "")
-                        )
+                        content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
                         return {
                             "success": True,
                             "content": content,
@@ -129,7 +126,9 @@ class AIService:
             logger.error(f"Groq chat exception: {e}")
             return {"success": False, "error": str(e)}
 
-    async def tts_generate(self, text: str, voice: Optional[str] = None, response_format: str = "wav") -> Dict[str, Any]:
+    async def tts_generate(
+        self, text: str, voice: Optional[str] = None, response_format: str = "wav"
+    ) -> Dict[str, Any]:
         try:
             headers = await self.get_headers_json()
             payload = {
@@ -181,17 +180,17 @@ class AIService:
                     return {"success": True, "data": data.get("data", [])}
         except Exception as e:
             return {"success": False, "error": str(e)}
-    
+
     async def get_memory_context(self, user_id: str, session_id: Optional[str] = None) -> Dict[str, Any]:
         """Get conversation memory for context - token efficient"""
         if self.db is None:
             return {"messages": [], "summary": None}
-        
+
         try:
             # Get long-term memory summary
             memory_doc = await self.db.memories.find_one({"user_id": user_id})
             long_term_summary = memory_doc.get("summary") if memory_doc else None
-            
+
             # Get recent conversation (last 5 messages)
             if session_id:
                 conv_doc = await self.db.conversations.find_one({"session_id": session_id, "user_id": user_id})
@@ -200,115 +199,95 @@ class AIService:
                     return {
                         "messages": messages,
                         "summary": conv_doc.get("summary"),
-                        "long_term_summary": long_term_summary
+                        "long_term_summary": long_term_summary,
                     }
-            
+
             return {"messages": [], "summary": None, "long_term_summary": long_term_summary}
         except Exception as e:
             logger.error(f"Error loading memory: {e}")
             return {"messages": [], "summary": None}
-    
+
     async def save_conversation_turn(self, user_id: str, session_id: str, user_msg: str, ai_msg: str):
         """Save conversation turn and compress if needed"""
         if self.db is None:
             return
-        
+
         try:
             from datetime import datetime, timezone
-            turn = {
-                "role": "user",
-                "content": user_msg,
-                "timestamp": datetime.now(timezone.utc)
-            }
-            ai_turn = {
-                "role": "assistant",
-                "content": ai_msg,
-                "timestamp": datetime.now(timezone.utc)
-            }
-            
+
+            turn = {"role": "user", "content": user_msg, "timestamp": datetime.now(timezone.utc)}
+            ai_turn = {"role": "assistant", "content": ai_msg, "timestamp": datetime.now(timezone.utc)}
+
             # Update conversation
             await self.db.conversations.update_one(
                 {"session_id": session_id, "user_id": user_id},
-                {
-                    "$push": {"messages": {"$each": [turn, ai_turn]}},
-                    "$set": {"updated_at": datetime.now(timezone.utc)}
-                },
-                upsert=True
+                {"$push": {"messages": {"$each": [turn, ai_turn]}}, "$set": {"updated_at": datetime.now(timezone.utc)}},
+                upsert=True,
             )
-            
+
             # Check if we need to compress (>10 messages)
             conv = await self.db.conversations.find_one({"session_id": session_id})
             if conv and len(conv.get("messages", [])) > 10:
                 await self._compress_conversation(session_id, user_id)
         except Exception as e:
             logger.error(f"Error saving conversation: {e}")
-    
+
     async def _compress_conversation(self, session_id: str, user_id: str):
         """Compress old messages into summary"""
         try:
             conv = await self.db.conversations.find_one({"session_id": session_id})
             if not conv:
                 return
-            
+
             messages = conv.get("messages", [])
             if len(messages) <= 10:
                 return
-            
+
             # Take first 5 messages to summarize
             to_summarize = messages[:5]
             keep_recent = messages[5:]
-            
+
             # Create summary prompt
             conversation_text = "\n".join([f"{m['role']}: {m['content']}" for m in to_summarize])
             summary_prompt = f"Summarize this conversation concisely (2-3 sentences max):\n\n{conversation_text}"
-            
+
             result = await self.chat_completion(
-                messages=[{"role": "user", "content": summary_prompt}],
-                max_completion_tokens=150,
-                temperature=0.3
+                messages=[{"role": "user", "content": summary_prompt}], max_completion_tokens=150, temperature=0.3
             )
-            
+
             if result.get("success"):
                 summary = result.get("content", "")
                 # Update conversation with summary and keep only recent messages
                 await self.db.conversations.update_one(
                     {"session_id": session_id},
-                    {
-                        "$set": {
-                            "messages": keep_recent,
-                            "summary": (conv.get("summary", "") + " " + summary).strip()
-                        }
-                    }
+                    {"$set": {"messages": keep_recent, "summary": (conv.get("summary", "") + " " + summary).strip()}},
                 )
                 logger.info(f"Compressed conversation {session_id}")
         except Exception as e:
             logger.error(f"Error compressing conversation: {e}")
-    
-    async def ai_assist(self, field_name: str, current_value: str, context: Dict[str, Any], mode: str = "fill") -> Dict[str, Any]:
+
+    async def ai_assist(
+        self, field_name: str, current_value: str, context: Dict[str, Any], mode: str = "fill"
+    ) -> Dict[str, Any]:
         """AI assist for filling or improving input fields"""
         try:
             if mode == "fill":
                 prompt = f"Generate content for the field '{field_name}'. Context: {context}. Be concise and relevant."
             else:  # improve
                 prompt = f"Improve this content for '{field_name}': '{current_value}'. Context: {context}. Make it more professional and engaging while keeping the same meaning."
-            
+
             result = await self.chat_completion(
-                messages=[{"role": "user", "content": prompt}],
-                max_completion_tokens=300,
-                temperature=0.7
+                messages=[{"role": "user", "content": prompt}], max_completion_tokens=300, temperature=0.7
             )
-            
+
             if result.get("success"):
-                return {
-                    "success": True,
-                    "suggested_text": result.get("content", "").strip()
-                }
+                return {"success": True, "suggested_text": result.get("content", "").strip()}
             else:
                 return {"success": False, "error": result.get("error")}
         except Exception as e:
             logger.error(f"AI assist error: {e}")
             return {"success": False, "error": str(e)}
-    
+
     async def get_bigo_strategy_response(self, query: str, user_context: Dict[str, Any] = None) -> str:
         """Get BIGO Live strategy advice from AI"""
         try:
@@ -317,7 +296,7 @@ class AIService:
                 tier = user_context.get("tier", "Unknown")
                 beans = user_context.get("beans", 0)
                 context_str = f"\nUser Context: Tier {tier}, {beans} beans this month."
-            
+
             system_prompt = """You are a BIGO Live strategy expert coach. Provide actionable advice on:
 - Bean/tier system optimization (S1-S25)
 - PK battle strategies
@@ -326,18 +305,11 @@ class AIService:
 - Audience engagement tactics
 
 Keep responses concise, motivational, and focused on profit maximization."""
-            
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": query + context_str}
-            ]
-            
-            result = await self.chat_completion(
-                messages=messages,
-                max_completion_tokens=500,
-                temperature=0.7
-            )
-            
+
+            messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": query + context_str}]
+
+            result = await self.chat_completion(messages=messages, max_completion_tokens=500, temperature=0.7)
+
             if result.get("success"):
                 return result.get("content", "I'm here to help with BIGO Live strategies!")
             else:
@@ -345,11 +317,11 @@ Keep responses concise, motivational, and focused on profit maximization."""
         except Exception as e:
             logger.error(f"BIGO strategy error: {e}")
             return "Unable to provide strategy advice at the moment."
-    
+
     async def get_admin_assistant_response(self, message: str, available_actions: List[str] = None) -> Dict[str, Any]:
         """Get admin assistant response with action detection"""
         try:
-            system_prompt = f"""You are an AI admin assistant for a BIGO Live agency platform. 
+            system_prompt = f"""You are an AI admin assistant for a BIGO Live agency platform.
 Help admins manage the platform through natural language commands.
 
 Available actions: {', '.join(available_actions or [])}
@@ -361,25 +333,18 @@ Respond helpfully and suggest actions when appropriate. Detect if the user wants
 - Generate reports
 
 Be concise and actionable."""
-            
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": message}
-            ]
-            
-            result = await self.chat_completion(
-                messages=messages,
-                max_completion_tokens=500,
-                temperature=0.7
-            )
-            
+
+            messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
+
+            result = await self.chat_completion(messages=messages, max_completion_tokens=500, temperature=0.7)
+
             if result.get("success"):
                 response_text = result.get("content", "")
-                
+
                 # Simple action detection
                 detected_action = None
                 requires_confirmation = False
-                
+
                 message_lower = message.lower()
                 if "announce" in message_lower or "announcement" in message_lower:
                     detected_action = "system_announcement"
@@ -389,32 +354,25 @@ Be concise and actionable."""
                     requires_confirmation = True
                 elif "user" in message_lower and ("analytics" in message_lower or "report" in message_lower):
                     detected_action = "user_analytics"
-                
+
                 return {
                     "success": True,
                     "response": response_text,
                     "detected_action": detected_action,
-                    "requires_confirmation": requires_confirmation
+                    "requires_confirmation": requires_confirmation,
                 }
             else:
                 return {
                     "success": False,
                     "response": "Admin assistant temporarily unavailable.",
-                    "error": result.get("error")
+                    "error": result.get("error"),
                 }
         except Exception as e:
             logger.error(f"Admin assistant error: {e}")
-            return {
-                "success": False,
-                "response": "An error occurred processing your request.",
-                "error": str(e)
-            }
-    
+            return {"success": False, "response": "An error occurred processing your request.", "error": str(e)}
+
     async def generate_announcement_content(
-        self, 
-        announcement_type: str, 
-        target_audience: str, 
-        key_message: str
+        self, announcement_type: str, target_audience: str, key_message: str
     ) -> str:
         """Generate AI-powered announcement content"""
         try:
@@ -432,15 +390,11 @@ Requirements:
 - Make it actionable
 
 Generate only the announcement text, no additional commentary."""
-            
+
             messages = [{"role": "user", "content": prompt}]
-            
-            result = await self.chat_completion(
-                messages=messages,
-                max_completion_tokens=300,
-                temperature=0.8
-            )
-            
+
+            result = await self.chat_completion(messages=messages, max_completion_tokens=300, temperature=0.8)
+
             if result.get("success"):
                 return result.get("content", "").strip()
             else:
@@ -449,7 +403,7 @@ Generate only the announcement text, no additional commentary."""
         except Exception as e:
             logger.error(f"Announcement generation error: {e}")
             return f"{key_message} Stay tuned for more updates!"
-    
+
     async def classify_intent(self, message: str) -> Dict[str, Any]:
         """
         Classify user message intent
@@ -463,81 +417,99 @@ Generate only the announcement text, no additional commentary."""
         try:
             # Quick pattern matching for common cases
             message_lower = message.lower().strip()
-            
+
             # First, check for BIGO-related keywords (most important check)
             bigo_keywords = [
-                'bean', 'bigo', 'pk', 'tier', 'stream', 'streaming', 'diamond', 'gift', 
-                'host', 'broadcast', 'viewer', 'audience', 'fan', 'earn', 'money',
-                'level', 'rank', 's1', 's25', 'battle', 'live'
+                "bean",
+                "bigo",
+                "pk",
+                "tier",
+                "stream",
+                "streaming",
+                "diamond",
+                "gift",
+                "host",
+                "broadcast",
+                "viewer",
+                "audience",
+                "fan",
+                "earn",
+                "money",
+                "level",
+                "rank",
+                "s1",
+                "s25",
+                "battle",
+                "live",
             ]
             is_bigo_related = any(keyword in message_lower for keyword in bigo_keywords)
-            
+
             # Check for question indicators
-            question_indicators = ['?', 'how', 'what', 'when', 'where', 'why', 'who', 'can', 'should', 'do i', 'help me', 'tell me']
-            is_question = '?' in message or any(indicator in message_lower for indicator in question_indicators)
-            
+            question_indicators = [
+                "?",
+                "how",
+                "what",
+                "when",
+                "where",
+                "why",
+                "who",
+                "can",
+                "should",
+                "do i",
+                "help me",
+                "tell me",
+            ]
+            is_question = "?" in message or any(indicator in message_lower for indicator in question_indicators)
+
             # Common greetings - only if it's JUST a greeting (no BIGO content)
-            greetings = ['hi', 'hello', 'hey', 'yo', 'sup', 'what\'s up', 'whats up', 'hola', 'greetings']
-            is_pure_greeting = (message_lower in greetings or 
-                               (any(message_lower.startswith(g + ' ') or message_lower.startswith(g + ',') for g in greetings) 
-                                and not is_bigo_related))
-            
+            greetings = ["hi", "hello", "hey", "yo", "sup", "what's up", "whats up", "hola", "greetings"]
+            is_pure_greeting = message_lower in greetings or (
+                any(message_lower.startswith(g + " ") or message_lower.startswith(g + ",") for g in greetings)
+                and not is_bigo_related
+            )
+
             if is_pure_greeting and not is_bigo_related:
                 return {
                     "intent": "greeting",
                     "confidence": 0.95,
                     "is_bigo_related": False,
-                    "suggested_response": "Hey there! 👋 I'm BeanGenie, your BIGO Live expert assistant. I'm here to help you learn about streaming, earning beans, PK battles, tier progression, and more. What would you like to know about BIGO Live?"
+                    "suggested_response": "Hey there! 👋 I'm BeanGenie, your BIGO Live expert assistant. I'm here to help you learn about streaming, earning beans, PK battles, tier progression, and more. What would you like to know about BIGO Live?",
                 }
-            
+
             # Very short messages (likely casual/unclear) - only if not BIGO-related
-            if len(message.split()) <= 2 and '?' not in message and not is_bigo_related:
+            if len(message.split()) <= 2 and "?" not in message and not is_bigo_related:
                 return {
                     "intent": "casual",
                     "confidence": 0.85,
                     "is_bigo_related": False,
-                    "suggested_response": "Hi! 😊 I'm your BIGO Live learning assistant. I can help you with:\n• 💰 Bean earnings and monetization\n• 🎯 Tier system progression\n• ⚔️ PK battle strategies\n• 📅 Streaming schedules\n• 🎁 Gift strategies\n\nWhat BIGO Live topic would you like to explore?"
+                    "suggested_response": "Hi! 😊 I'm your BIGO Live learning assistant. I can help you with:\n• 💰 Bean earnings and monetization\n• 🎯 Tier system progression\n• ⚔️ PK battle strategies\n• 📅 Streaming schedules\n• 🎁 Gift strategies\n\nWhat BIGO Live topic would you like to explore?",
                 }
-            
+
             # Classify based on patterns (prioritize BIGO-related content)
             if is_bigo_related and is_question:
-                return {
-                    "intent": "question",
-                    "confidence": 0.9,
-                    "is_bigo_related": True,
-                    "suggested_response": None
-                }
+                return {"intent": "question", "confidence": 0.9, "is_bigo_related": True, "suggested_response": None}
             elif is_question and not is_bigo_related:
                 return {
                     "intent": "off_topic",
                     "confidence": 0.8,
                     "is_bigo_related": False,
-                    "suggested_response": "I'm specialized in BIGO Live coaching, Boss! 🎯 I can help you with beans, streaming strategies, PK battles, tier progression, audience growth, and monetization. What BIGO topic would you like to discuss?"
+                    "suggested_response": "I'm specialized in BIGO Live coaching, Boss! 🎯 I can help you with beans, streaming strategies, PK battles, tier progression, audience growth, and monetization. What BIGO topic would you like to discuss?",
                 }
             elif is_bigo_related:
-                return {
-                    "intent": "question",
-                    "confidence": 0.75,
-                    "is_bigo_related": True,
-                    "suggested_response": None
-                }
+                return {"intent": "question", "confidence": 0.75, "is_bigo_related": True, "suggested_response": None}
             else:
                 return {
                     "intent": "off_topic",
                     "confidence": 0.7,
                     "is_bigo_related": False,
-                    "suggested_response": "Hey! I'm your BIGO Live expert. 💡 While I'd love to chat about everything, I specialize in helping hosts succeed on BIGO Live. Ask me about bean earnings, PK strategies, streaming tips, or tier progression!"
+                    "suggested_response": "Hey! I'm your BIGO Live expert. 💡 While I'd love to chat about everything, I specialize in helping hosts succeed on BIGO Live. Ask me about bean earnings, PK strategies, streaming tips, or tier progression!",
                 }
-                
+
         except Exception as e:
             logger.error(f"Intent classification error: {e}")
             # Default to question if classification fails
-            return {
-                "intent": "question",
-                "confidence": 0.5,
-                "is_bigo_related": True,
-                "suggested_response": None
-            }
+            return {"intent": "question", "confidence": 0.5, "is_bigo_related": True, "suggested_response": None}
+
 
 # Global AI service instance
 ai_service = AIService()
