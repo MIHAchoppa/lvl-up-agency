@@ -6,10 +6,13 @@ Handles blog creation, management, AI generation, and scheduling
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from enum import Enum
 import uuid
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 # These will be injected from server.py
 db = None
@@ -17,6 +20,7 @@ ai_service = None
 get_current_user = None
 require_role = None
 UserRole = None
+
 
 def init_blog_router(database, ai_svc, get_user_func, require_role_func, user_role_enum):
     """Initialize router with dependencies from main server"""
@@ -27,7 +31,9 @@ def init_blog_router(database, ai_svc, get_user_func, require_role_func, user_ro
     require_role = require_role_func
     UserRole = user_role_enum
 
+
 router = APIRouter(prefix="/api/blogs", tags=["blogs"])
+
 
 # Enums
 class BlogStatus(str, Enum):
@@ -35,6 +41,7 @@ class BlogStatus(str, Enum):
     SCHEDULED = "scheduled"
     PUBLISHED = "published"
     ARCHIVED = "archived"
+
 
 # Models
 class Blog(BaseModel):
@@ -63,6 +70,7 @@ class Blog(BaseModel):
     bigo_profile_links: List[str] = []  # BIGO profile links included
     view_count: int = 0
 
+
 class BlogCreate(BaseModel):
     title: str
     excerpt: Optional[str] = None
@@ -75,6 +83,7 @@ class BlogCreate(BaseModel):
     generate_with_ai: bool = False
     ai_prompt: Optional[str] = None
 
+
 class BlogUpdate(BaseModel):
     title: Optional[str] = None
     excerpt: Optional[str] = None
@@ -85,6 +94,7 @@ class BlogUpdate(BaseModel):
     status: Optional[BlogStatus] = None
     scheduled_time: Optional[datetime] = None
 
+
 class BlogGenerateRequest(BaseModel):
     topic: Optional[str] = None
     category: str = "general"
@@ -93,14 +103,16 @@ class BlogGenerateRequest(BaseModel):
     tone: str = "professional"  # professional, casual, inspirational
     length: str = "medium"  # short, medium, long
 
+
 # Helper Functions
 def generate_slug(title: str) -> str:
     """Generate URL-friendly slug from title"""
     slug = title.lower()
-    slug = re.sub(r'[^a-z0-9\s-]', '', slug)
-    slug = re.sub(r'\s+', '-', slug)
-    slug = re.sub(r'-+', '-', slug)
-    return slug.strip('-')
+    slug = re.sub(r"[^a-z0-9\s-]", "", slug)
+    slug = re.sub(r"\s+", "-", slug)
+    slug = re.sub(r"-+", "-", slug)
+    return slug.strip("-")
+
 
 def calculate_read_time(content: str) -> str:
     """Estimate reading time based on word count"""
@@ -108,32 +120,34 @@ def calculate_read_time(content: str) -> str:
     minutes = max(1, round(words / 200))  # Average reading speed: 200 words/min
     return f"{minutes} min read"
 
+
 def extract_links(content: str) -> tuple[List[str], List[str]]:
     """Extract BIGO profile links and internal links from content"""
     bigo_links = []
     internal_links = []
-    
+
     # Limit content length to prevent ReDoS
     if len(content) > 100000:  # 100KB max
         content = content[:100000]
-    
+
     # Find BIGO profile links: bigo.tv/[id]
-    bigo_pattern = r'bigo\.tv/([a-zA-Z0-9_-]+)'
+    bigo_pattern = r"bigo\.tv/([a-zA-Z0-9_-]+)"
     bigo_matches = re.findall(bigo_pattern, content)
     bigo_links = [match for match in bigo_matches]
-    
+
     # Find internal links: /blog/[slug] or other pages
     # Using a simpler, non-catastrophic regex pattern
     # Match markdown links: [text](url)
-    internal_pattern = r'\[([^\]]{1,200})\]\((/[^\)]{1,500})\)'
+    internal_pattern = r"\[([^\]]{1,200})\]\((/[^\)]{1,500})\)"
     try:
         internal_matches = re.findall(internal_pattern, content, re.MULTILINE)
         internal_links = [{"text": match[0], "url": match[1]} for match in internal_matches]
     except re.error:
         # Fallback if regex fails
         internal_links = []
-    
+
     return bigo_links, internal_links
+
 
 async def build_link_pyramid(content: str, category: str, current_blog_id: Optional[str] = None) -> str:
     """
@@ -141,15 +155,21 @@ async def build_link_pyramid(content: str, category: str, current_blog_id: Optio
     other site pages, and BIGO profiles
     """
     enhanced_content = content
-    
+
     # Get related blog posts for internal linking
     try:
-        related_blogs = await db.blogs.find({
-            "status": "published",
-            "category": category,
-            "_id": {"$ne": current_blog_id} if current_blog_id else {}
-        }).limit(3).to_list(3)
-        
+        related_blogs = (
+            await db.blogs.find(
+                {
+                    "status": "published",
+                    "category": category,
+                    "_id": {"$ne": current_blog_id} if current_blog_id else {},
+                }
+            )
+            .limit(3)
+            .to_list(3)
+        )
+
         # Add a "Related Articles" section if not already present
         if related_blogs and "Related Articles" not in content:
             related_section = "\n\n## Related Articles\n\n"
@@ -157,8 +177,8 @@ async def build_link_pyramid(content: str, category: str, current_blog_id: Optio
                 related_section += f"- [**{blog['title']}**](/blog/{blog['slug']})\n"
             enhanced_content += related_section
     except Exception as e:
-        print(f"Error building link pyramid: {e}")
-    
+        logger.error(f"Error building link pyramid: {e}")
+
     # Add links to relevant site pages based on content keywords
     site_links = {
         "audition": "/login",  # Login leads to dashboard with auditions
@@ -167,20 +187,21 @@ async def build_link_pyramid(content: str, category: str, current_blog_id: Optio
         "coach": "/login",
         "event": "/login",
     }
-    
+
     for keyword, link in site_links.items():
         if keyword in content.lower() and link not in enhanced_content:
             # Add contextual call-to-action
             break
-    
+
     return enhanced_content
+
 
 async def generate_blog_with_ai(request: BlogGenerateRequest, user_name: str) -> Dict[str, Any]:
     """Generate blog content using AI"""
-    
+
     # Build the AI prompt
-    topic = request.topic or f"BIGO Live hosting tips and strategies"
-    
+    topic = request.topic or "BIGO Live hosting tips and strategies"
+
     system_prompt = f"""You are an expert content writer for Level Up Agency, a BIGO Live host management platform.
 Write engaging, SEO-optimized blog posts that help BIGO Live hosts succeed.
 
@@ -202,10 +223,13 @@ Category: {request.category}
 
     if request.keywords:
         user_prompt += f"\nInclude these keywords naturally: {', '.join(request.keywords)}\n"
-    
+
     if request.include_user_profile:
-        user_prompt += f"\nFeature BIGO host profile: {request.include_user_profile} (link as: https://bigo.tv/{request.include_user_profile})\n"
-    
+        user_prompt += (
+            f"\nFeature BIGO host profile: {request.include_user_profile} "
+            f"(link as: https://bigo.tv/{request.include_user_profile})\n"
+        )
+
     user_prompt += """
 Format the response as JSON with these fields:
 {
@@ -219,46 +243,40 @@ Format the response as JSON with these fields:
 """
 
     try:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ]
-        
-        response = await ai_service.chat_completion(
-            messages=messages,
-            temperature=0.8,
-            max_completion_tokens=2048
-        )
-        
+        messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}]
+
+        response = await ai_service.chat_completion(messages=messages, temperature=0.8, max_completion_tokens=2048)
+
         # Check if AI request was successful
-        if not response.get('success'):
+        if not response.get("success"):
             raise Exception(f"AI service error: {response.get('error', 'Unknown error')}")
-        
+
         # Parse the AI response
-        content = response.get('content', '')
-        
+        content = response.get("content", "")
+
         # Try to extract JSON from the response
         import json
+
         # Remove markdown code blocks if present
         content = content.strip()
-        if content.startswith('```'):
-            content = '\n'.join(content.split('\n')[1:-1])
-        if content.startswith('json'):
+        if content.startswith("```"):
+            content = "\n".join(content.split("\n")[1:-1])
+        if content.startswith("json"):
             content = content[4:].strip()
-        
+
         blog_data = json.loads(content)
-        
+
         # Ensure title starts with H1
-        if not blog_data['content'].startswith('# '):
-            blog_data['content'] = f"# {blog_data['title']}\n\n{blog_data['content']}"
-        
+        if not blog_data["content"].startswith("# "):
+            blog_data["content"] = f"# {blog_data['title']}\n\n{blog_data['content']}"
+
         # Calculate read time
-        blog_data['read_time'] = calculate_read_time(blog_data['content'])
-        
+        blog_data["read_time"] = calculate_read_time(blog_data["content"])
+
         return blog_data
-        
+
     except Exception as e:
-        print(f"AI generation error: {e}")
+        logger.error(f"AI generation error: {e}")
         # Return a basic template if AI fails
         return {
             "title": topic,
@@ -267,41 +285,33 @@ Format the response as JSON with these fields:
             "tags": request.keywords[:3] if request.keywords else ["bigo", "streaming"],
             "seo_keywords": request.keywords[:5] if request.keywords else ["bigo live", "streaming tips"],
             "meta_description": f"Learn about {topic} for BIGO Live hosts with Level Up Agency.",
-            "read_time": "5 min read"
+            "read_time": "5 min read",
         }
+
 
 # Routes
 @router.get("/")
-async def get_blogs(
-    status: Optional[str] = None,
-    category: Optional[str] = None,
-    limit: int = 50,
-    offset: int = 0
-):
+async def get_blogs(status: Optional[str] = None, category: Optional[str] = None, limit: int = 50, offset: int = 0):
     """Get all blogs (public endpoint)"""
     query = {}
-    
+
     # For public access, only show published blogs
     if status:
         query["status"] = status
     else:
         query["status"] = "published"
-    
+
     if category:
         query["category"] = category
-    
+
     try:
         blogs = await db.blogs.find(query).sort("published_at", -1).skip(offset).limit(limit).to_list(limit)
         total = await db.blogs.count_documents(query)
-        
-        return {
-            "blogs": blogs,
-            "total": total,
-            "limit": limit,
-            "offset": offset
-        }
+
+        return {"blogs": blogs, "total": total, "limit": limit, "offset": offset}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching blogs: {str(e)}")
+
 
 @router.get("/admin")
 async def get_admin_blogs(
@@ -309,29 +319,25 @@ async def get_admin_blogs(
     category: Optional[str] = None,
     limit: int = 50,
     offset: int = 0,
-    current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
+    current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER])),
 ):
     """Get all blogs for admin (includes drafts, scheduled, etc.)"""
     query = {}
-    
+
     if status:
         query["status"] = status
-    
+
     if category:
         query["category"] = category
-    
+
     try:
         blogs = await db.blogs.find(query).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
         total = await db.blogs.count_documents(query)
-        
-        return {
-            "blogs": blogs,
-            "total": total,
-            "limit": limit,
-            "offset": offset
-        }
+
+        return {"blogs": blogs, "total": total, "limit": limit, "offset": offset}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching blogs: {str(e)}")
+
 
 @router.get("/{slug}")
 async def get_blog_by_slug(slug: str):
@@ -340,70 +346,65 @@ async def get_blog_by_slug(slug: str):
         blog = await db.blogs.find_one({"slug": slug})
         if not blog:
             raise HTTPException(status_code=404, detail="Blog not found")
-        
+
         # Increment view count
-        await db.blogs.update_one(
-            {"slug": slug},
-            {"$inc": {"view_count": 1}}
-        )
-        blog['view_count'] = blog.get('view_count', 0) + 1
-        
+        await db.blogs.update_one({"slug": slug}, {"$inc": {"view_count": 1}})
+        blog["view_count"] = blog.get("view_count", 0) + 1
+
         return blog
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching blog: {str(e)}")
 
+
 @router.post("/")
 async def create_blog(
-    blog_data: BlogCreate,
-    current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
+    blog_data: BlogCreate, current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
 ):
     """Create a new blog"""
     try:
         user = current_user()
-        
+
         # Generate content with AI if requested
         if blog_data.generate_with_ai:
             gen_request = BlogGenerateRequest(
-                topic=blog_data.ai_prompt or blog_data.title,
-                category=blog_data.category,
-                keywords=blog_data.tags
+                topic=blog_data.ai_prompt or blog_data.title, category=blog_data.category, keywords=blog_data.tags
             )
             ai_generated = await generate_blog_with_ai(gen_request, user.name)
-            
+
             # Merge AI generated content with provided data
-            blog_data.content = ai_generated['content']
+            blog_data.content = ai_generated["content"]
             if not blog_data.excerpt:
-                blog_data.excerpt = ai_generated['excerpt']
-            blog_data.tags.extend(ai_generated.get('tags', []))
+                blog_data.excerpt = ai_generated["excerpt"]
+            blog_data.tags.extend(ai_generated.get("tags", []))
             blog_data.tags = list(set(blog_data.tags))  # Remove duplicates
-            
+
             generated_by_ai = True
-            seo_keywords = ai_generated.get('seo_keywords', [])
-            meta_description = ai_generated.get('meta_description', '')
-            read_time = ai_generated.get('read_time', '5 min read')
+            seo_keywords = ai_generated.get("seo_keywords", [])
+            meta_description = ai_generated.get("meta_description", "")
+            read_time = ai_generated.get("read_time", "5 min read")
         else:
             generated_by_ai = False
             seo_keywords = []
             meta_description = blog_data.excerpt or ""
             read_time = calculate_read_time(blog_data.content or "")
-        
+
         # Generate slug
         slug = generate_slug(blog_data.title)
-        
+
         # Check if slug exists
         existing = await db.blogs.find_one({"slug": slug})
         if existing:
             slug = f"{slug}-{str(uuid.uuid4())[:8]}"
-        
+
         # Build link pyramid
         content = blog_data.content or ""
         enhanced_content = await build_link_pyramid(content, blog_data.category)
-        
+
         # Extract links
         bigo_links, internal_links = extract_links(enhanced_content)
-        
+
         # Create blog document
         blog = Blog(
             title=blog_data.title,
@@ -424,14 +425,14 @@ async def create_blog(
             seo_keywords=seo_keywords,
             meta_description=meta_description[:160],
             internal_links=internal_links,
-            bigo_profile_links=bigo_links
+            bigo_profile_links=bigo_links,
         )
-        
+
         try:
             result = await db.blogs.insert_one(blog.dict())
             blog_dict = blog.dict()
-            blog_dict['_id'] = str(result.inserted_id)
-            
+            blog_dict["_id"] = str(result.inserted_id)
+
             return blog_dict
         except Exception as insert_error:
             # Handle duplicate key error (e.g., if slug already exists due to race condition)
@@ -440,31 +441,30 @@ async def create_blog(
                 blog.slug = f"{slug}-{str(uuid.uuid4())[:8]}"
                 result = await db.blogs.insert_one(blog.dict())
                 blog_dict = blog.dict()
-                blog_dict['_id'] = str(result.inserted_id)
+                blog_dict["_id"] = str(result.inserted_id)
                 return blog_dict
             else:
                 raise
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating blog: {str(e)}")
 
+
 @router.put("/{blog_id}")
 async def update_blog(
-    blog_id: str,
-    blog_data: BlogUpdate,
-    current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
+    blog_id: str, blog_data: BlogUpdate, current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
 ):
     """Update an existing blog"""
     try:
         existing = await db.blogs.find_one({"id": blog_id})
         if not existing:
             raise HTTPException(status_code=404, detail="Blog not found")
-        
+
         update_data = {k: v for k, v in blog_data.dict(exclude_unset=True).items() if v is not None}
         update_data["updated_at"] = datetime.now(timezone.utc)
-        
+
         # Update slug if title changed
         if "title" in update_data:
             new_slug = generate_slug(update_data["title"])
@@ -474,95 +474,99 @@ async def update_blog(
                 # Append unique identifier to make slug unique
                 new_slug = f"{new_slug}-{str(uuid.uuid4())[:8]}"
             update_data["slug"] = new_slug
-        
+
         # Update published_at if status changed to published
-        if "status" in update_data and update_data["status"] == BlogStatus.PUBLISHED and not existing.get("published_at"):
+        if (
+            "status" in update_data
+            and update_data["status"] == BlogStatus.PUBLISHED
+            and not existing.get("published_at")
+        ):
             update_data["published_at"] = datetime.now(timezone.utc)
-        
+
         # Recalculate read time if content changed
         if "content" in update_data:
             update_data["read_time"] = calculate_read_time(update_data["content"])
             # Rebuild link pyramid
-            update_data["content"] = await build_link_pyramid(update_data["content"], existing.get("category", "general"), blog_id)
+            update_data["content"] = await build_link_pyramid(
+                update_data["content"], existing.get("category", "general"), blog_id
+            )
             # Extract links
             bigo_links, internal_links = extract_links(update_data["content"])
             update_data["bigo_profile_links"] = bigo_links
             update_data["internal_links"] = internal_links
-        
+
         await db.blogs.update_one({"id": blog_id}, {"$set": update_data})
-        
+
         updated_blog = await db.blogs.find_one({"id": blog_id})
         return updated_blog
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating blog: {str(e)}")
 
+
 @router.delete("/{blog_id}")
-async def delete_blog(
-    blog_id: str,
-    current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
-):
+async def delete_blog(blog_id: str, current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))):
     """Delete a blog"""
     try:
         result = await db.blogs.delete_one({"id": blog_id})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Blog not found")
-        
+
         return {"message": "Blog deleted successfully"}
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting blog: {str(e)}")
 
+
 @router.post("/generate")
 async def generate_blog(
-    request: BlogGenerateRequest,
-    current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
+    request: BlogGenerateRequest, current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
 ):
     """Generate a blog using AI"""
     try:
         user = current_user()
         ai_generated = await generate_blog_with_ai(request, user.name)
-        
+
         # Build link pyramid
-        enhanced_content = await build_link_pyramid(ai_generated['content'], request.category)
-        
+        enhanced_content = await build_link_pyramid(ai_generated["content"], request.category)
+
         # Extract links
         bigo_links, internal_links = extract_links(enhanced_content)
-        
+
         # Generate slug
-        slug = generate_slug(ai_generated['title'])
+        slug = generate_slug(ai_generated["title"])
         existing = await db.blogs.find_one({"slug": slug})
         if existing:
             slug = f"{slug}-{str(uuid.uuid4())[:8]}"
-        
+
         # Create blog as draft
         blog = Blog(
-            title=ai_generated['title'],
+            title=ai_generated["title"],
             slug=slug,
-            excerpt=ai_generated['excerpt'],
+            excerpt=ai_generated["excerpt"],
             content=enhanced_content,
             author=user.name,
             author_id=user.id,
             author_bigo_id=user.bigo_id,
             status=BlogStatus.DRAFT,
             category=request.category,
-            tags=ai_generated.get('tags', []),
-            read_time=ai_generated.get('read_time', '5 min read'),
+            tags=ai_generated.get("tags", []),
+            read_time=ai_generated.get("read_time", "5 min read"),
             generated_by_ai=True,
-            seo_keywords=ai_generated.get('seo_keywords', []),
-            meta_description=ai_generated.get('meta_description', ''),
+            seo_keywords=ai_generated.get("seo_keywords", []),
+            meta_description=ai_generated.get("meta_description", ""),
             internal_links=internal_links,
-            bigo_profile_links=bigo_links
+            bigo_profile_links=bigo_links,
         )
-        
+
         try:
             result = await db.blogs.insert_one(blog.dict())
             blog_dict = blog.dict()
-            blog_dict['_id'] = str(result.inserted_id)
-            
+            blog_dict["_id"] = str(result.inserted_id)
+
             return blog_dict
         except Exception as insert_error:
             # Handle duplicate key error (e.g., if slug already exists due to race condition)
@@ -571,44 +575,41 @@ async def generate_blog(
                 blog.slug = f"{slug}-{str(uuid.uuid4())[:8]}"
                 result = await db.blogs.insert_one(blog.dict())
                 blog_dict = blog.dict()
-                blog_dict['_id'] = str(result.inserted_id)
+                blog_dict["_id"] = str(result.inserted_id)
                 return blog_dict
             else:
                 raise
-        
+
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating blog: {str(e)}")
 
+
 @router.get("/stats/overview")
-async def get_blog_stats(
-    current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))
-):
+async def get_blog_stats(current_user=Depends(lambda: require_role([UserRole.ADMIN, UserRole.OWNER]))):
     """Get blog statistics"""
     try:
         total = await db.blogs.count_documents({})
         published = await db.blogs.count_documents({"status": "published"})
         drafts = await db.blogs.count_documents({"status": "draft"})
         scheduled = await db.blogs.count_documents({"status": "scheduled"})
-        
+
         # Get total views
-        pipeline = [
-            {"$group": {"_id": None, "total_views": {"$sum": "$view_count"}}}
-        ]
+        pipeline = [{"$group": {"_id": None, "total_views": {"$sum": "$view_count"}}}]
         views_result = await db.blogs.aggregate(pipeline).to_list(1)
         total_views = views_result[0]["total_views"] if views_result else 0
-        
+
         # Get top blogs by views
         top_blogs = await db.blogs.find({}).sort("view_count", -1).limit(5).to_list(5)
-        
+
         return {
             "total": total,
             "published": published,
             "drafts": drafts,
             "scheduled": scheduled,
             "total_views": total_views,
-            "top_blogs": top_blogs
+            "top_blogs": top_blogs,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching stats: {str(e)}")
