@@ -97,6 +97,8 @@ async def lifespan(app: FastAPI):
     yield
     # shutdown code
     await blog_scheduler.stop()
+    # Close AI service session to release resources
+    await ai_service.close_session()
     client.close()
 
 
@@ -520,14 +522,26 @@ def clean_mongo_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def search_bigo_knowledge(query: str, limit: int = 5) -> List[Dict[str, Any]]:
-    """Search BIGO knowledge base using text search"""
+    """Search BIGO knowledge base using text search with optimized projection"""
     try:
         if not query.strip():
             return []
 
-        # Use MongoDB text search
+        # Use MongoDB text search with projection to reduce data transfer
+        # Only fetch fields we need (id, url, title, content, tags)
         results = (
-            await db.bigo_knowledge.find({"$text": {"$search": query}}, {"score": {"$meta": "textScore"}})
+            await db.bigo_knowledge.find(
+                {"$text": {"$search": query}}, 
+                {
+                    "score": {"$meta": "textScore"},
+                    "id": 1,
+                    "url": 1,
+                    "title": 1,
+                    "content": 1,
+                    "tags": 1,
+                    "_id": 0  # Exclude MongoDB _id for cleaner response
+                }
+            )
             .sort([("score", {"$meta": "textScore"})])
             .limit(limit)
             .to_list(limit)
@@ -564,15 +578,18 @@ def require_role(required_roles: List[UserRole]):
 
 
 # Advanced BIGO Live Bean/Tier System Data
-BIGO_TIER_SYSTEM = {
-    "S25": {
-        "hours_streamed": 50,
-        "min_billable": 25,
-        "max_billable": 2,
-        "local_bean_target": 5000000,
-        "max_local_bean": 535000,
-        "broadcaster_earnings": 535000,
-    },
+# Using a function to lazy-load this data to avoid loading on every module import
+def get_bigo_tier_system():
+    """Lazy load BIGO tier system data to improve startup performance"""
+    return {
+        "S25": {
+            "hours_streamed": 50,
+            "min_billable": 25,
+            "max_billable": 2,
+            "local_bean_target": 5000000,
+            "max_local_bean": 535000,
+            "broadcaster_earnings": 535000,
+        },
     "S23": {
         "hours_streamed": 50,
         "min_billable": 25,
@@ -749,15 +766,25 @@ BIGO_TIER_SYSTEM = {
         "max_local_bean": 100850,
         "broadcaster_earnings": 201500,
     },
-    "S1": {
-        "hours_streamed": 32,
-        "min_billable": 25,
-        "max_billable": 2,
-        "local_bean_target": 140000,
-        "max_local_bean": 100619,
-        "broadcaster_earnings": 201120,
-    },
-}
+        "S1": {
+            "hours_streamed": 32,
+            "min_billable": 25,
+            "max_billable": 2,
+            "local_bean_target": 140000,
+            "max_local_bean": 100619,
+            "broadcaster_earnings": 201120,
+        },
+    }
+
+# Keep module-level constant for backward compatibility but load lazily
+BIGO_TIER_SYSTEM = None
+
+def _ensure_bigo_tier_system():
+    """Ensure BIGO_TIER_SYSTEM is loaded"""
+    global BIGO_TIER_SYSTEM
+    if BIGO_TIER_SYSTEM is None:
+        BIGO_TIER_SYSTEM = get_bigo_tier_system()
+    return BIGO_TIER_SYSTEM
 
 BEAN_CONVERSION_RATES = {
     "beans_to_usd": 210,  # 210 beans = $1

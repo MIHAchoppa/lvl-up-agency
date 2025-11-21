@@ -1,30 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Toaster } from '../components/ui/sonner';
 import { useAuth } from '../context/AuthContext';
 
-import AICoachPanel from '../components/dashboard/AICoachPanel';
-import VoiceAssistantPanel from '../components/dashboard/VoiceAssistantPanel';
-import EnhancedAdminAssistantPanel from '../components/dashboard/EnhancedAdminAssistantPanel';
-import CalendarPanel from '../components/dashboard/CalendarPanel';
-import MessagesPanel from '../components/dashboard/MessagesPanel';
-import AnnouncementsPanel from '../components/dashboard/AnnouncementsPanel';
-import TasksPanel from '../components/dashboard/TasksPanel';
-import UsersPanel from '../components/dashboard/UsersPanel';
-import LeadsPanel from '../components/dashboard/LeadsPanel';
-import AuditionsPanel from '../components/dashboard/AuditionsPanel';
-import RewardsPanel from '../components/dashboard/RewardsPanel';
-import AdminModelsPanel from '../components/dashboard/AdminModelsPanel';
-import SettingsPanel from '../components/dashboard/SettingsPanel';
-import BeanGeniePanel from '../components/dashboard/BeanGeniePanel';
-import BigoAcademyPanel from '../components/dashboard/BigoAcademyPanel';
-import BlogsPanel from '../components/dashboard/BlogsPanel';
+// Lazy load dashboard panels for code splitting and better performance
+const BeanGeniePanel = lazy(() => import('../components/dashboard/BeanGeniePanel'));
+const BigoAcademyPanel = lazy(() => import('../components/dashboard/BigoAcademyPanel'));
+const VoiceAssistantPanel = lazy(() => import('../components/dashboard/VoiceAssistantPanel'));
+const EnhancedAdminAssistantPanel = lazy(() => import('../components/dashboard/EnhancedAdminAssistantPanel'));
+const BlogsPanel = lazy(() => import('../components/dashboard/BlogsPanel'));
+const AdminModelsPanel = lazy(() => import('../components/dashboard/AdminModelsPanel'));
+const SettingsPanel = lazy(() => import('../components/dashboard/SettingsPanel'));
+const CalendarPanel = lazy(() => import('../components/dashboard/CalendarPanel'));
+const MessagesPanel = lazy(() => import('../components/dashboard/MessagesPanel'));
+const AnnouncementsPanel = lazy(() => import('../components/dashboard/AnnouncementsPanel'));
+const TasksPanel = lazy(() => import('../components/dashboard/TasksPanel'));
+const RewardsPanel = lazy(() => import('../components/dashboard/RewardsPanel'));
+const UsersPanel = lazy(() => import('../components/dashboard/UsersPanel'));
+const LeadsPanel = lazy(() => import('../components/dashboard/LeadsPanel'));
+const AuditionsPanel = lazy(() => import('../components/dashboard/AuditionsPanel'));
+const QuotaPanel = lazy(() => import('../components/dashboard/QuotaPanel'));
 
-import QuotaPanel from '../components/dashboard/QuotaPanel';
+// Loading fallback component
+const PanelLoader = () => (
+  <div className="min-h-[400px] flex items-center justify-center">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading panel...</p>
+    </div>
+  </div>
+);
 
 function Dashboard() {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('ai-coach');
+  const [activeTab, setActiveTab] = useState('beangenie');
+  
+  // Memoize logout handler to prevent unnecessary re-renders
+  const handleLogout = useCallback(() => {
+    logout();
+  }, [logout]);
   
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -55,7 +69,7 @@ function Dashboard() {
                 </span>
               </div>
               <button 
-                onClick={logout} 
+                onClick={handleLogout} 
                 className="px-4 py-2 rounded-lg font-bold text-black gradient-gold shadow-gold transition-smooth hover:scale-105 hover:shadow-gold-lg"
               >
                 Logout
@@ -147,30 +161,95 @@ function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="beangenie"><BeanGeniePanel /></TabsContent>
-          <TabsContent value="academy"><BigoAcademyPanel /></TabsContent>
-          <TabsContent value="voice-assistant"><VoiceAssistantPanel /></TabsContent>
+          {/* Wrap lazy-loaded components in Suspense for better UX */}
+          <TabsContent value="beangenie">
+            <Suspense fallback={<PanelLoader />}>
+              <BeanGeniePanel />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="academy">
+            <Suspense fallback={<PanelLoader />}>
+              <BigoAcademyPanel />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="voice-assistant">
+            <Suspense fallback={<PanelLoader />}>
+              <VoiceAssistantPanel />
+            </Suspense>
+          </TabsContent>
           {(user?.role === 'admin' || user?.role === 'owner') && (
             <>
-              <TabsContent value="admin-assistant"><EnhancedAdminAssistantPanel /></TabsContent>
-              <TabsContent value="blogs"><BlogsPanel token={localStorage.getItem('token')} /></TabsContent>
-              <TabsContent value="models"><AdminModelsPanel /></TabsContent>
-              <TabsContent value="settings"><SettingsPanel /></TabsContent>
+              <TabsContent value="admin-assistant">
+                <Suspense fallback={<PanelLoader />}>
+                  <EnhancedAdminAssistantPanel />
+                </Suspense>
+              </TabsContent>
+              <TabsContent value="blogs">
+                <Suspense fallback={<PanelLoader />}>
+                  <BlogsPanel token={localStorage.getItem('token')} />
+                </Suspense>
+              </TabsContent>
+              <TabsContent value="models">
+                <Suspense fallback={<PanelLoader />}>
+                  <AdminModelsPanel />
+                </Suspense>
+              </TabsContent>
+              <TabsContent value="settings">
+                <Suspense fallback={<PanelLoader />}>
+                  <SettingsPanel />
+                </Suspense>
+              </TabsContent>
             </>
           )}
 
-          <TabsContent value="calendar"><CalendarPanel /></TabsContent>
-          <TabsContent value="messages"><MessagesPanel /></TabsContent>
-          <TabsContent value="announcements"><AnnouncementsPanel /></TabsContent>
-          <TabsContent value="tasks"><TasksPanel /></TabsContent>
-          <TabsContent value="rewards"><RewardsPanel /></TabsContent>
+          <TabsContent value="calendar">
+            <Suspense fallback={<PanelLoader />}>
+              <CalendarPanel />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="messages">
+            <Suspense fallback={<PanelLoader />}>
+              <MessagesPanel />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="announcements">
+            <Suspense fallback={<PanelLoader />}>
+              <AnnouncementsPanel />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="tasks">
+            <Suspense fallback={<PanelLoader />}>
+              <TasksPanel />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="rewards">
+            <Suspense fallback={<PanelLoader />}>
+              <RewardsPanel />
+            </Suspense>
+          </TabsContent>
 
           {(user?.role === 'admin' || user?.role === 'owner') && (
             <>
-              <TabsContent value="users"><UsersPanel /></TabsContent>
-              <TabsContent value="leads"><LeadsPanel /></TabsContent>
-              <TabsContent value="auditions"><AuditionsPanel /></TabsContent>
-              <TabsContent value="quotas"><QuotaPanel /></TabsContent>
+              <TabsContent value="users">
+                <Suspense fallback={<PanelLoader />}>
+                  <UsersPanel />
+                </Suspense>
+              </TabsContent>
+              <TabsContent value="leads">
+                <Suspense fallback={<PanelLoader />}>
+                  <LeadsPanel />
+                </Suspense>
+              </TabsContent>
+              <TabsContent value="auditions">
+                <Suspense fallback={<PanelLoader />}>
+                  <AuditionsPanel />
+                </Suspense>
+              </TabsContent>
+              <TabsContent value="quotas">
+                <Suspense fallback={<PanelLoader />}>
+                  <QuotaPanel />
+                </Suspense>
+              </TabsContent>
             </>
           )}
         </Tabs>

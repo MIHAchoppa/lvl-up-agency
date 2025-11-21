@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -10,6 +10,12 @@ import { useAuth } from '../../context/AuthContext';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
+
+// Memoize axios instance to avoid recreating on every render
+const axiosInstance = axios.create({
+  baseURL: API,
+  timeout: 30000, // 30 second timeout
+});
 
 function BeanGeniePanel() {
   const { user } = useAuth();
@@ -112,9 +118,10 @@ function BeanGeniePanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const loadBeanGenieData = async () => {
+  // Memoize loadBeanGenieData to prevent recreation on every render
+  const loadBeanGenieData = useCallback(async () => {
     try {
-      const { data } = await axios.get(`${API}/beangenie/data`);
+      const { data } = await axiosInstance.get('/beangenie/data');
       
       // Load dynamic panels
       setDynamicPanels(data.dynamicPanels || {});
@@ -127,9 +134,9 @@ function BeanGeniePanel() {
     } catch (error) {
       console.error('Error loading LVL UP Coach data:', error);
     }
-  };
+  }, []); // Empty deps since it doesn't depend on any props/state
 
-  const sendMessage = async (messageText = null, contextCategory = null) => {
+  const sendMessage = useCallback(async (messageText = null, contextCategory = null) => {
     const message = (messageText || input).trim();
     if (!message) return;
     
@@ -152,7 +159,7 @@ function BeanGeniePanel() {
         recent_items: panel.items.slice(-3).map(i => i.content)
       }));
 
-      const { data } = await axios.post(`${API}/beangenie/chat`, {
+      const { data } = await axiosInstance.post('/beangenie/chat', {
         message,
         session_id: sessionId.current,
         active_context: contextCategory,
@@ -190,7 +197,7 @@ function BeanGeniePanel() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dynamicPanels, messages.length, user?.role]); // Add dependencies for useCallback
 
   const speakText = async (text) => {
     try {
