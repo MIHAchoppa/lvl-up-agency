@@ -113,7 +113,8 @@ async def sync_admins_collection(rebuild: bool = False):
             await db.admins.delete_many({})
         
         # Fetch all admin/owner users at once (more efficient than cursor iteration)
-        admin_users = await db.users.find({"role": {"$in": ["admin", "owner"]}}).to_list(None)
+        # Using reasonable limit of 500 - if more admins needed, increase this value
+        admin_users = await db.users.find({"role": {"$in": ["admin", "owner"]}}).to_list(500)
         
         if not admin_users:
             logging.getLogger(__name__).info("No admin users found to sync")
