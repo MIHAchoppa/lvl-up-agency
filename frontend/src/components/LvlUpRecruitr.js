@@ -1,39 +1,68 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Mic, Users, Video, Calendar, MessageCircle, TrendingUp } from 'lucide-react';
 
+// Static features array moved outside component to prevent recreation on every render
+const FEATURES_DATA = [
+  {
+    id: 'ai-voice',
+    IconComponent: Mic,
+    title: "AI Voice Coaching",
+    description: "Get personalized coaching from LVL UP Coach, your AI-powered voice assistant that helps you improve your streaming skills in real-time."
+  },
+  {
+    id: 'auditions',
+    IconComponent: Video,
+    title: "Easy Auditions",
+    description: "Upload your audition video directly through our platform and get fast feedback from our experienced team."
+  },
+  {
+    id: 'events',
+    IconComponent: Calendar,
+    title: "Event Management",
+    description: "Never miss an important stream event. Our calendar keeps you organized with automatic reminders and RSVP tracking."
+  },
+  {
+    id: 'chat',
+    IconComponent: MessageCircle,
+    title: "Community Chat",
+    description: "Connect with fellow hosts, share tips, and grow together in our supportive group chat environment."
+  },
+  {
+    id: 'analytics',
+    IconComponent: TrendingUp,
+    title: "Growth Analytics",
+    description: "Track your progress with detailed analytics and get insights on how to maximize your earnings and viewer engagement."
+  },
+  {
+    id: 'support',
+    IconComponent: Users,
+    title: "Agency Support",
+    description: "Join a thriving community of hosts with dedicated support from Level Up Agency mentors and staff."
+  }
+];
+
+// Memoized Feature Card component to prevent unnecessary re-renders
+const FeatureCard = React.memo(({ feature }) => {
+  const IconComponent = feature.IconComponent;
+  
+  return (
+    <div className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 card-hover">
+      <div className="w-16 h-16 bg-gold-100 rounded-lg flex items-center justify-center mb-6 text-gold-600">
+        <IconComponent className="w-8 h-8" />
+      </div>
+      <h3 className="text-xl font-semibold font-serif text-gray-900 mb-3">
+        {feature.title}
+      </h3>
+      <p className="text-gray-600 leading-relaxed">
+        {feature.description}
+      </p>
+    </div>
+  );
+});
+
+FeatureCard.displayName = 'FeatureCard';
+
 function LvlUpRecruitr() {
-  const features = [
-    {
-      icon: <Mic className="w-8 h-8" />,
-      title: "AI Voice Coaching",
-      description: "Get personalized coaching from LVL UP Coach, your AI-powered voice assistant that helps you improve your streaming skills in real-time."
-    },
-    {
-      icon: <Video className="w-8 h-8" />,
-      title: "Easy Auditions",
-      description: "Upload your audition video directly through our platform and get fast feedback from our experienced team."
-    },
-    {
-      icon: <Calendar className="w-8 h-8" />,
-      title: "Event Management",
-      description: "Never miss an important stream event. Our calendar keeps you organized with automatic reminders and RSVP tracking."
-    },
-    {
-      icon: <MessageCircle className="w-8 h-8" />,
-      title: "Community Chat",
-      description: "Connect with fellow hosts, share tips, and grow together in our supportive group chat environment."
-    },
-    {
-      icon: <TrendingUp className="w-8 h-8" />,
-      title: "Growth Analytics",
-      description: "Track your progress with detailed analytics and get insights on how to maximize your earnings and viewer engagement."
-    },
-    {
-      icon: <Users className="w-8 h-8" />,
-      title: "Agency Support",
-      description: "Join a thriving community of hosts with dedicated support from Level Up Agency mentors and staff."
-    }
-  ];
 
   return (
     <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-white">
@@ -48,21 +77,8 @@ function LvlUpRecruitr() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl p-8 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 card-hover"
-            >
-              <div className="w-16 h-16 bg-gold-100 rounded-lg flex items-center justify-center mb-6 text-gold-600">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-semibold font-serif text-gray-900 mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
+          {FEATURES_DATA.map((feature) => (
+            <FeatureCard key={feature.id} feature={feature} />
           ))}
         </div>
 
@@ -87,4 +103,5 @@ function LvlUpRecruitr() {
   );
 }
 
-export default LvlUpRecruitr;
+// Memoize the entire component since it has no props and doesn't change
+export default React.memo(LvlUpRecruitr);
