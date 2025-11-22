@@ -31,6 +31,9 @@ class AIService:
         self.db = None
         self._api_key_cache = None
         self._cache_time = None
+        # Session reuse for better performance
+        self._session = None
+        self._session_created = None
 
     def set_db(self, db):
         """Set database reference for dynamic key loading"""
@@ -82,6 +85,29 @@ class AIService:
             "Authorization": f"Bearer {api_key}",
         }
 
+    async def _get_session(self, timeout: int = 60):
+        """Get or create a reusable aiohttp session for better performance"""
+        import time
+        now = time.time()
+        
+        # Recreate session every 5 minutes to avoid stale connections
+        if self._session is None or self._session_created is None or (now - self._session_created > 300):
+            if self._session and not self._session.closed:
+                await self._session.close()
+            
+            timeout_config = aiohttp.ClientTimeout(total=timeout)
+            self._session = aiohttp.ClientSession(timeout=timeout_config)
+            self._session_created = now
+        
+        return self._session
+
+    async def close_session(self):
+        """Close the reusable session - call this on shutdown"""
+        if self._session and not self._session.closed:
+            await self._session.close()
+            self._session = None
+            self._session_created = None
+
     async def chat_completion(
         self,
         messages: List[Dict[str, str]],
@@ -103,22 +129,22 @@ class AIService:
             if stream:
                 payload["stream"] = True
 
-            timeout_config = aiohttp.ClientTimeout(total=timeout)
-            async with aiohttp.ClientSession(timeout=timeout_config) as session:
-                async with session.post(self.chat_url, json=payload, headers=headers) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                        return {
-                            "success": True,
-                            "content": content,
-                            "model": payload["model"],
-                            "usage": data.get("usage", {}),
-                        }
-                    else:
-                        err = await response.text()
-                        logger.error(f"Groq chat error {response.status}: {err}")
-                        return {"success": False, "error": f"API error: {response.status}", "details": err}
+            # Reuse session for better performance (connection pooling)
+            session = await self._get_session(timeout)
+            async with session.post(self.chat_url, json=payload, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                    return {
+                        "success": True,
+                        "content": content,
+                        "model": payload["model"],
+                        "usage": data.get("usage", {}),
+                    }
+                else:
+                    err = await response.text()
+                    logger.error(f"Groq chat error {response.status}: {err}")
+                    return {"success": False, "error": f"API error: {response.status}", "details": err}
         except asyncio.TimeoutError:
             logger.error(f"Groq chat timeout after {timeout}s")
             return {"success": False, "error": "Request timeout"}
@@ -137,16 +163,17 @@ class AIService:
                 "voice": voice or self.default_tts_voice,
                 "response_format": response_format,
             }
-            async with aiohttp.ClientSession() as session:
-                async with session.post(self.tts_url, headers=headers, json=payload) as r:
-                    if r.status != 200:
-                        detail = await r.text()
-                        logger.error(f"Groq TTS error {r.status}: {detail}")
-                        return {"success": False, "error": detail}
-                    data = await r.read()
-                    audio_b64 = base64.b64encode(data).decode("utf-8")
-                    mime = f"audio/{'wav' if response_format == 'wav' else response_format}"
-                    return {"success": True, "audio_base64": audio_b64, "mime": mime}
+            # Reuse session for better performance
+            session = await self._get_session()
+            async with session.post(self.tts_url, headers=headers, json=payload) as r:
+                if r.status != 200:
+                    detail = await r.text()
+                    logger.error(f"Groq TTS error {r.status}: {detail}")
+                    return {"success": False, "error": detail}
+                data = await r.read()
+                audio_b64 = base64.b64encode(data).decode("utf-8")
+                mime = f"audio/{'wav' if response_format == 'wav' else response_format}"
+                return {"success": True, "audio_base64": audio_b64, "mime": mime}
         except Exception as e:
             return {"success": False, "error": str(e)}
 

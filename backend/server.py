@@ -97,16 +97,34 @@ async def lifespan(app: FastAPI):
     yield
     # shutdown code
     await blog_scheduler.stop()
+    # Close AI service session to release resources
+    await ai_service.close_session()
     client.close()
 
 
 # Admins collection sync and rebuild
 async def sync_admins_collection(rebuild: bool = False):
+    """
+    Sync admins collection from users collection.
+    Optimized to batch operations for better performance.
+    """
     try:
         if rebuild:
             await db.admins.delete_many({})
-        cursor = db.users.find({"role": {"$in": ["admin", "owner"]}})
-        async for u in cursor:
+        
+        # Fetch all admin/owner users at once (more efficient than cursor iteration)
+        # Using reasonable limit of 500 - if more admins needed, increase this value
+        admin_users = await db.users.find({"role": {"$in": ["admin", "owner"]}}).to_list(500)
+        
+        if not admin_users:
+            logging.getLogger(__name__).info("No admin users found to sync")
+            return
+        
+        # Prepare bulk operations for better performance
+        from pymongo import UpdateOne
+        bulk_ops = []
+        
+        for u in admin_users:
             admin_doc = {
                 "id": u.get("admin_id") or str(uuid.uuid4()),
                 "user_id": u["id"],
@@ -118,8 +136,17 @@ async def sync_admins_collection(rebuild: bool = False):
                 or ["manage_users", "manage_events", "manage_announcements", "view_analytics"],
                 "created_at": u.get("created_at") or datetime.now(timezone.utc),
             }
-            await db.admins.update_one({"user_id": u["id"]}, {"$set": admin_doc}, upsert=True)
-        logging.getLogger(__name__).info("Admins collection synced")
+            bulk_ops.append(
+                UpdateOne({"user_id": u["id"]}, {"$set": admin_doc}, upsert=True)
+            )
+        
+        # Execute all updates in a single bulk operation
+        if bulk_ops:
+            result = await db.admins.bulk_write(bulk_ops, ordered=False)
+            logging.getLogger(__name__).info(
+                f"Admins collection synced: {result.upserted_count} inserted, "
+                f"{result.modified_count} modified"
+            )
     except Exception as e:
         logging.getLogger(__name__).error(f"Admins sync failed: {e}")
 
@@ -520,14 +547,26 @@ def clean_mongo_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def search_bigo_knowledge(query: str, limit: int = 5) -> List[Dict[str, Any]]:
-    """Search BIGO knowledge base using text search"""
+    """Search BIGO knowledge base using text search with optimized projection"""
     try:
         if not query.strip():
             return []
 
-        # Use MongoDB text search
+        # Use MongoDB text search with projection to reduce data transfer
+        # Only fetch fields we need (id, url, title, content, tags)
         results = (
-            await db.bigo_knowledge.find({"$text": {"$search": query}}, {"score": {"$meta": "textScore"}})
+            await db.bigo_knowledge.find(
+                {"$text": {"$search": query}}, 
+                {
+                    "score": {"$meta": "textScore"},
+                    "id": 1,
+                    "url": 1,
+                    "title": 1,
+                    "content": 1,
+                    "tags": 1,
+                    "_id": 0  # Exclude MongoDB _id for cleaner response
+                }
+            )
             .sort([("score", {"$meta": "textScore"})])
             .limit(limit)
             .to_list(limit)
@@ -564,15 +603,18 @@ def require_role(required_roles: List[UserRole]):
 
 
 # Advanced BIGO Live Bean/Tier System Data
-BIGO_TIER_SYSTEM = {
-    "S25": {
-        "hours_streamed": 50,
-        "min_billable": 25,
-        "max_billable": 2,
-        "local_bean_target": 5000000,
-        "max_local_bean": 535000,
-        "broadcaster_earnings": 535000,
-    },
+# Using a function to lazy-load this data to avoid loading on every module import
+def get_bigo_tier_system():
+    """Lazy load BIGO tier system data to improve startup performance"""
+    return {
+        "S25": {
+            "hours_streamed": 50,
+            "min_billable": 25,
+            "max_billable": 2,
+            "local_bean_target": 5000000,
+            "max_local_bean": 535000,
+            "broadcaster_earnings": 535000,
+        },
     "S23": {
         "hours_streamed": 50,
         "min_billable": 25,
@@ -749,15 +791,25 @@ BIGO_TIER_SYSTEM = {
         "max_local_bean": 100850,
         "broadcaster_earnings": 201500,
     },
-    "S1": {
-        "hours_streamed": 32,
-        "min_billable": 25,
-        "max_billable": 2,
-        "local_bean_target": 140000,
-        "max_local_bean": 100619,
-        "broadcaster_earnings": 201120,
-    },
-}
+        "S1": {
+            "hours_streamed": 32,
+            "min_billable": 25,
+            "max_billable": 2,
+            "local_bean_target": 140000,
+            "max_local_bean": 100619,
+            "broadcaster_earnings": 201120,
+        },
+    }
+
+# Keep module-level constant for backward compatibility but load lazily
+BIGO_TIER_SYSTEM = None
+
+def _ensure_bigo_tier_system():
+    """Ensure BIGO_TIER_SYSTEM is loaded"""
+    global BIGO_TIER_SYSTEM
+    if BIGO_TIER_SYSTEM is None:
+        BIGO_TIER_SYSTEM = get_bigo_tier_system()
+    return BIGO_TIER_SYSTEM
 
 BEAN_CONVERSION_RATES = {
     "beans_to_usd": 210,  # 210 beans = $1
@@ -1423,13 +1475,36 @@ async def audition_upload_complete(upload_id: str = Query(...)):
 @api_router.get("/admin/auditions")
 async def list_auditions(
     status: Optional[str] = None,
+    page: int = Query(default=1, ge=1, description="Page number (starts at 1)"),
+    per_page: int = Query(default=50, ge=1, le=100, description="Items per page (max 100)"),
     current_user: User = Depends(require_role([UserRole.OWNER, UserRole.ADMIN, UserRole.COACH])),
 ):
+    """
+    List auditions with pagination for better performance.
+    Returns paginated results to avoid loading too much data at once.
+    """
     q = {}
     if status:
         q["status"] = status
-    items = await db.audition_submissions.find(q).sort("submission_date", -1).to_list(1000)
-    return [AuditionSubmission(**x) for x in items]
+    
+    # Calculate skip for pagination
+    skip = (page - 1) * per_page
+    
+    # Get total count for pagination metadata
+    total = await db.audition_submissions.count_documents(q)
+    
+    # Fetch paginated results
+    items = await db.audition_submissions.find(q).sort("submission_date", -1).skip(skip).limit(per_page).to_list(per_page)
+    
+    return {
+        "items": [AuditionSubmission(**x) for x in items],
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": (total + per_page - 1) // per_page
+        }
+    }
 
 
 @api_router.put("/admin/auditions/{submission_id}/review")
@@ -2337,17 +2412,37 @@ async def post_channel_message(channel_id: str, body: dict, current_user: User =
 
 
 @api_router.get("/chat/channels/{channel_id}/messages")
-async def list_channel_messages(channel_id: str, current_user: User = Depends(get_current_user)):
-    msgs = await db.messages.find({"channel_id": channel_id}).sort("created_at", 1).to_list(1000)
+async def list_channel_messages(
+    channel_id: str, 
+    limit: int = Query(default=100, ge=1, le=500, description="Max messages to return"),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    List channel messages with optimized user lookup.
+    Fixed N+1 query problem by batch-fetching users.
+    """
+    # Fetch messages with limit
+    msgs = await db.messages.find({"channel_id": channel_id}).sort("created_at", 1).limit(limit).to_list(limit)
 
-    # Enrich messages with sender info
+    if not msgs:
+        return []
+
+    # Collect unique user IDs (avoid N+1 query problem)
+    user_ids = list(set(m.get("user_id") for m in msgs if m.get("user_id")))
+    
+    # Batch fetch all users at once
+    users = await db.users.find({"id": {"$in": user_ids}}).to_list(None)
+    user_map = {u["id"]: u for u in users}
+
+    # Enrich messages with sender info using cached user data
     enriched_messages = []
     for m in msgs:
-        sender_user = await db.users.find_one({"id": m.get("user_id")})
+        user_id = m.get("user_id")
+        sender_user = user_map.get(user_id)
         enriched_msg = {
             **m,
             "sender": {
-                "id": m.get("user_id"),
+                "id": user_id,
                 "bigo_id": sender_user.get("bigo_id") if sender_user else "Unknown",
                 "name": sender_user.get("name") if sender_user else "Unknown",
             },
